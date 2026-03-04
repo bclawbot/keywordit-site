@@ -1,12 +1,11 @@
+import asyncio
 import json
 import re
-import time
-import random
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from pathlib import Path
 from datetime import datetime
 
-import requests
+import aiohttp
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 
@@ -78,41 +77,49 @@ def is_long_form(url, snippet):
     return word_count >= LONG_FORM_MIN_WORDS
 
 
-def search_ddg(keyword):
-    """Search via DuckDuckGo with hard 15s wall-clock timeout."""
-    def _fetch():
-        return list(DDGS(timeout=10).text(keyword, max_results=10))
+def _ddg_fetch_sync(keyword):
+    """Synchronous DDG fetch — wrapped in executor for async use."""
+    return list(DDGS(timeout=10).text(keyword, max_results=10))
+
+
+async def search_ddg(keyword: str, executor: ThreadPoolExecutor) -> list:
+    """DDG search via thread executor with 15s wall-clock timeout."""
+    loop = asyncio.get_event_loop()
     try:
-        with ThreadPoolExecutor(max_workers=1) as ex:
-            future = ex.submit(_fetch)
-            results = future.result(timeout=15)
-        return [{"url": r["href"], "title": r["title"], "snippet": r["body"]} for r in results]
-    except (FuturesTimeout, Exception) as e:
+        raw = await asyncio.wait_for(
+            loop.run_in_executor(executor, _ddg_fetch_sync, keyword),
+            timeout=15,
+        )
+        return [{"url": r["href"], "title": r["title"], "snippet": r["body"]} for r in raw]
+    except (asyncio.TimeoutError, FuturesTimeout, Exception) as e:
         print(f"  ⚠️  DDG search failed for '{keyword}': {type(e).__name__}")
         return []
 
 
-def search_brave(keyword, retries=2):
-    """Brave HTML scrape — used as fallback if DDG returns nothing."""
-    url = f"https://search.brave.com/search?q={requests.utils.quote(keyword)}&source=web"
+async def search_brave(keyword: str, session: aiohttp.ClientSession, retries: int = 2) -> list:
+    """Brave HTML scrape — async fallback."""
+    import urllib.parse
+    url = f"https://search.brave.com/search?q={urllib.parse.quote(keyword)}&source=web"
     for attempt in range(retries):
         try:
-            r = requests.get(url, headers=SEARCH_HEADERS, timeout=12)
-            if r.status_code == 429:
-                wait = 10 * (attempt + 1) + random.uniform(0, 5)
-                print(f"  ⚠️  Brave 429 — backing off {wait:.0f}s (attempt {attempt+1}/{retries})")
-                time.sleep(wait)
-                continue
-            r.raise_for_status()
-            soup = BeautifulSoup(r.text, "html.parser")
+            async with session.get(url, headers=SEARCH_HEADERS,
+                                   timeout=aiohttp.ClientTimeout(total=12)) as r:
+                if r.status == 429:
+                    wait = 10 * (attempt + 1)
+                    print(f"  ⚠️  Brave 429 — backing off {wait}s (attempt {attempt+1}/{retries})")
+                    await asyncio.sleep(wait)
+                    continue
+                r.raise_for_status()
+                text = await r.text()
+            soup = BeautifulSoup(text, "html.parser")
             results = []
             for item in soup.select('#results .snippet[data-type="web"]')[:10]:
                 a = item.select_one("a.l1[href]")
                 if not a or not a.get("href", "").startswith("http"):
                     continue
-                href    = a["href"]
-                title   = item.select_one(".title")
-                desc    = item.select_one(".snippet-description, .generic-snippet .content")
+                href  = a["href"]
+                title = item.select_one(".title")
+                desc  = item.select_one(".snippet-description, .generic-snippet .content")
                 results.append({
                     "url":     href,
                     "title":   title.get_text(strip=True) if title else "",
@@ -125,50 +132,62 @@ def search_brave(keyword, retries=2):
     return []
 
 
-def search(keyword):
-    """DDG first, Brave fallback if DDG returns no results."""
-    results = search_ddg(keyword)
-    if not results:
-        results = search_brave(keyword)
-    return results
+async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
+                      executor: ThreadPoolExecutor, semaphore: asyncio.Semaphore) -> list:
+    async with semaphore:
+        keyword = entry.get("term", "")
+        country = entry.get("geo", "US")
+
+        results = await search_ddg(keyword, executor)
+        if not results:
+            results = await search_brave(keyword, session)
+
+        survivors = []
+        for r in results:
+            url     = r.get("url", "")
+            title   = r.get("title", "")
+            snippet = r.get("snippet", "")
+
+            if not is_long_form(url, snippet):
+                continue
+
+            noise_domains = ("youtube.com", "twitter.com", "x.com", "instagram.com",
+                             "tiktok.com", "facebook.com", "reddit.com", "wikipedia.org")
+            if any(d in url.lower() for d in noise_domains):
+                continue
+
+            survivors.append({
+                "keyword":         keyword,
+                "country":         country,
+                "vertical":        classify_vertical(keyword, url),
+                "hook_theme":      extract_hook_theme(title),
+                "lander_url":      url,
+                "lander_title":    title,
+                "ad_age_days":     90,
+                "explosive_score": entry.get("explosive_score", 0),
+                "data_source":     "ddg_serp",
+                "vetted_at":       datetime.now().isoformat(),
+            })
+
+        # Small polite delay between keywords
+        await asyncio.sleep(0.5)
+        return survivors
 
 
-def vet_keyword(entry):
-    keyword = entry.get("term", "")
-    country = entry.get("geo", "US")
-    results = search(keyword)
+async def vet_all(trends: list) -> list:
+    semaphore = asyncio.Semaphore(5)  # max 5 concurrent SERP checks (rate limit respect)
+    executor  = ThreadPoolExecutor(max_workers=5)
 
-    survivors = []
+    async with aiohttp.ClientSession() as session:
+        tasks = [vet_keyword(entry, session, executor, semaphore) for entry in trends]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    executor.shutdown(wait=False)
+    all_vetted = []
     for r in results:
-        url     = r.get("url", "")
-        title   = r.get("title", "")
-        snippet = r.get("snippet", "")
-
-        if not is_long_form(url, snippet):
-            continue
-
-        # Skip social media, video, and aggregator noise
-        noise_domains = ("youtube.com", "twitter.com", "x.com", "instagram.com",
-                         "tiktok.com", "facebook.com", "reddit.com", "wikipedia.org")
-        if any(d in url.lower() for d in noise_domains):
-            continue
-
-        survivors.append({
-            "keyword":         keyword,
-            "country":         country,
-            "vertical":        classify_vertical(keyword, url),
-            "hook_theme":      extract_hook_theme(title),
-            "lander_url":      url,
-            "lander_title":    title,
-            "ad_age_days":     90,   # conservative: established if ranking organically
-            "explosive_score": entry.get("explosive_score", 0),
-            "data_source":     "ddg_serp",
-            "vetted_at":       datetime.now().isoformat(),
-        })
-
-    # Polite delay between keywords (DDG handles its own backoff internally)
-    time.sleep(random.uniform(0.5, 1.5))
-    return survivors
+        if isinstance(r, list):
+            all_vetted.extend(r)
+    return all_vetted
 
 
 if __name__ == "__main__":
@@ -177,11 +196,7 @@ if __name__ == "__main__":
         raise SystemExit(1)
 
     trends = json.loads(INPUT.read_text())
-    all_vetted = []
-
-    for entry in trends:
-        results = vet_keyword(entry)
-        all_vetted.extend(results)
+    all_vetted = asyncio.run(vet_all(trends))
 
     OUTPUT.write_text(json.dumps(all_vetted, indent=2))
 

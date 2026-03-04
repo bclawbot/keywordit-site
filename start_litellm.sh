@@ -4,6 +4,9 @@ set -a
 source /Users/newmac/.openclaw/.env 2>/dev/null || true
 set +a
 
-exec /opt/homebrew/bin/python3 -m litellm \
+# Force asyncio loop — uvloop is incompatible with Python 3.14
+export UVICORN_LOOP=asyncio
+
+exec /opt/homebrew/bin/litellm \
     --config /Users/newmac/.openclaw/litellm_config.yaml \
     --port 4000
