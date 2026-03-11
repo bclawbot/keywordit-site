@@ -295,6 +295,15 @@ OUTPUT  = BASE / "validated_opportunities.json"
 GOLDEN  = BASE / "golden_opportunities.json"
 HISTORY = BASE / "validation_history.jsonl"
 
+VERTICAL_REF_PATH = BASE / "vertical_cpc_reference.json"
+_VERTICAL_CPC_REF: dict = {}
+try:
+    _VERTICAL_CPC_REF = json.loads(VERTICAL_REF_PATH.read_text())
+except Exception:
+    pass
+
+_EMERGING_THRESHOLD = 1.50  # minimum vertical CPC ceiling to qualify as EMERGING
+
 # ── Credentials ───────────────────────────────────────────────────────────────
 GADS_CLIENT_ID       = os.environ.get("GOOGLE_ADS_CLIENT_ID", "")
 GADS_CLIENT_SECRET   = os.environ.get("GOOGLE_ADS_CLIENT_SECRET", "")
@@ -679,6 +688,11 @@ for opp in vetted:
             "validated_at":            datetime.now().isoformat(),
         })
     else:
+        vertical = opp.get("vertical", "general")
+        tier = _country_tier(country)
+        tier_key = f"tier_{tier}"
+        vertical_ceiling = _VERTICAL_CPC_REF.get(vertical, {}).get(tier_key, 0)
+        tag = "EMERGING" if vertical_ceiling >= _EMERGING_THRESHOLD else "UNSCORED"
         validated.append({
             **opp,
             "search_volume":           None,
@@ -692,7 +706,8 @@ for opp in vetted:
             "weighted_score":          None,
             "persistence_score":       None,
             "predicted_halflife_days": None,
-            "tag":                     "UNSCORED",
+            "tag":                     tag,
+            "vertical_ceiling_usd":    vertical_ceiling if tag == "EMERGING" else None,
             "metrics_source":          "none_configured",
             "validated_at":            datetime.now().isoformat(),
         })
@@ -709,7 +724,7 @@ validated = _deduped
 
 OUTPUT.write_text(json.dumps(validated, indent=2))
 
-golden_watch = [r for r in validated if r["tag"] in ("GOLDEN_OPPORTUNITY", "WATCH")]
+golden_watch = [r for r in validated if r["tag"] in ("GOLDEN_OPPORTUNITY", "WATCH", "EMERGING")]
 GOLDEN.write_text(json.dumps(golden_watch, indent=2))
 
 with HISTORY.open("a") as f:
@@ -739,13 +754,14 @@ except Exception as _e:
 
 golden_count   = sum(1 for r in validated if r["tag"] == "GOLDEN_OPPORTUNITY")
 watch_count    = sum(1 for r in validated if r["tag"] == "WATCH")
+emerging_count = sum(1 for r in validated if r["tag"] == "EMERGING")
 unscored_count = sum(1 for r in validated if r["tag"] == "UNSCORED")
-low_count      = len(validated) - golden_count - watch_count - unscored_count
+low_count      = len(validated) - golden_count - watch_count - emerging_count - unscored_count
 
 print(
     f"✅ Validation complete: {len(validated)} records — "
     f"{golden_count} GOLDEN, {watch_count} WATCH, "
-    f"{low_count} LOW, {unscored_count} UNSCORED → {OUTPUT.name}"
+    f"{emerging_count} EMERGING, {low_count} LOW, {unscored_count} UNSCORED → {OUTPUT.name}"
 )
 print(f"   API calls this run: {api_calls_made} | "
       f"Daily total: {today_usage + api_calls_made}/{DAILY_API_BUDGET} | "

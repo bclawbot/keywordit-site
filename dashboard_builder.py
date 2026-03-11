@@ -57,6 +57,7 @@ for opp in opportunities:
 
 total          = len(opportunities)
 golden_count   = sum(1 for o in opportunities if o.get('tag') == 'GOLDEN_OPPORTUNITY')
+emerging_count = sum(1 for o in opportunities if o.get('tag') == 'EMERGING')
 scored_count   = sum(1 for o in opportunities if o.get('tag') not in ('UNSCORED', None))
 unscored_count = sum(1 for o in opportunities if o.get('tag') == 'UNSCORED')
 countries_cnt  = len({o.get('country') for o in opportunities if o.get('country')})
@@ -70,6 +71,7 @@ meta = {
     'total_validated': total,
     'total_scored': scored_count,
     'total_golden': golden_count,
+    'total_emerging': emerging_count,
     'total_unscored': unscored_count,
     'countries_covered': countries_cnt,
     'last_run_at': last_run,
