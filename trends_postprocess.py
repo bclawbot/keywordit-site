@@ -8,6 +8,7 @@ SNAP = BASE / "latest_trends.json"
 EXP  = BASE / "explosive_trends.json"
 EXP_LOG = BASE / "explosive_trends_history.jsonl"  # append-only
 ERROR_LOG = BASE / "error_log.jsonl"
+DEDUP_LOG = BASE / "dedup_log.jsonl"
 
 sys.path.insert(0, str(BASE))
 try:
@@ -19,7 +20,7 @@ except Exception:
 data = json.loads(SNAP.read_text())
 
 def score(t):
-    val = t.get("traffic", "0").replace("+","").replace(",","")
+    val = str(t.get("traffic", "0")).replace("+","").replace(",","")
     val = val.replace("K","000").replace("M","000000")
     try:
         return int(val)
@@ -40,7 +41,7 @@ for rec in explosive_sorted:
         try:
             if is_duplicate(keyword, country):
                 skipped_semantic += 1
-                with ERROR_LOG.open("a") as f:
+                with DEDUP_LOG.open("a") as f:
                     f.write(json.dumps({
                         "timestamp": datetime.now().isoformat(),
                         "stage": "trends_postprocess",
