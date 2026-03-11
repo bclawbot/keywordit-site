@@ -49,6 +49,9 @@ if VALIDATED_FILE.exists():
     for rec in validated:
         kw = rec.get("keyword", "").lower()
         validated_keywords.add(kw)
+        st = rec.get("source_trend", "").lower()
+        if st:
+            validated_keywords.add(st)
         geo = rec.get("country", "??")
         country_golden.setdefault(geo, {"golden": 0, "total": 0})
         country_golden[geo]["total"] += 1
