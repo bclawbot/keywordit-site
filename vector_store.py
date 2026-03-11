@@ -25,7 +25,7 @@ def add_trend(keyword: str, country: str, date: str, source: str, score: float, 
     if table_name in db.table_names():
         db.open_table(table_name).add(data)
     else:
-        db.create_table(table_name, data=data)
+        db.create_table(table_name, data=data, metric="cosine")
 
 def is_duplicate(keyword: str, country: str, threshold: float = 0.85) -> bool:
     db = _get_db()
@@ -53,4 +53,4 @@ def add_opportunity(keyword: str, country: str, arbitrage_index: float, tag: str
     if "opportunities" in db.table_names():
         db.open_table("opportunities").add(data)
     else:
-        db.create_table("opportunities", data=data)
+        db.create_table("opportunities", data=data, metric="cosine")
