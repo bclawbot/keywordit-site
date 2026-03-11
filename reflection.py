@@ -104,8 +104,21 @@ for geo, weight in sorted(signal_weights.items(), key=lambda x: -x[1])[:20]:
 
 new_section += "\n---\n"
 
+MAX_MEMORY_LINES = 2000
+
 if MEMORY_FILE.exists():
     existing = MEMORY_FILE.read_text()
+    lines = existing.splitlines()
+    if len(lines) > MAX_MEMORY_LINES:
+        # Preserve the static header (everything before the first ## Reflection section)
+        header_end = 0
+        for i, line in enumerate(lines):
+            if line.startswith("## Reflection"):
+                header_end = i
+                break
+        header = "\n".join(lines[:header_end]) if header_end > 0 else "# OpenClaw Memory\n"
+        recent = "\n".join(lines[-MAX_MEMORY_LINES:])
+        existing = header + "\n\n" + recent + "\n"
 else:
     existing = "# OpenClaw Memory\n\n"
 
