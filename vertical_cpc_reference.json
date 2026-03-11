@@ -1,0 +1,18 @@
+{
+  "_description": "Average CPC ceiling by vertical and country tier. Used to detect EMERGING keywords (zero/low CPC but in a high-value vertical).",
+  "_updated": "2026-03-11",
+  "health":        {"tier_1": 5.00, "tier_2": 1.50, "tier_3": 0.40, "tier_4": 0.15},
+  "finance":       {"tier_1": 4.00, "tier_2": 1.20, "tier_3": 0.30, "tier_4": 0.10},
+  "legal":         {"tier_1": 8.00, "tier_2": 2.00, "tier_3": 0.50, "tier_4": 0.20},
+  "insurance":     {"tier_1": 6.00, "tier_2": 1.80, "tier_3": 0.35, "tier_4": 0.12},
+  "real_estate":   {"tier_1": 2.50, "tier_2": 0.80, "tier_3": 0.20, "tier_4": 0.08},
+  "tech":          {"tier_1": 2.00, "tier_2": 0.60, "tier_3": 0.15, "tier_4": 0.05},
+  "education":     {"tier_1": 1.50, "tier_2": 0.50, "tier_3": 0.12, "tier_4": 0.04},
+  "travel":        {"tier_1": 1.00, "tier_2": 0.40, "tier_3": 0.10, "tier_4": 0.03},
+  "food":          {"tier_1": 0.80, "tier_2": 0.30, "tier_3": 0.08, "tier_4": 0.03},
+  "entertainment": {"tier_1": 0.50, "tier_2": 0.20, "tier_3": 0.05, "tier_4": 0.02},
+  "sports":        {"tier_1": 0.40, "tier_2": 0.15, "tier_3": 0.04, "tier_4": 0.02},
+  "politics":      {"tier_1": 0.30, "tier_2": 0.10, "tier_3": 0.03, "tier_4": 0.01},
+  "news":          {"tier_1": 0.20, "tier_2": 0.08, "tier_3": 0.02, "tier_4": 0.01},
+  "general":       {"tier_1": 0.80, "tier_2": 0.30, "tier_3": 0.08, "tier_4": 0.03}
+}
