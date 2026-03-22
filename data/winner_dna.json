@@ -1,0 +1,957 @@
+[
+  {
+    "keyword": "Ssi Apartments for Rent Near Me",
+    "country": "US",
+    "revenue": 11845.59,
+    "clicks": 20376,
+    "rpc": 0.5814,
+    "vertical": "housing_ssi",
+    "entity": "SSI",
+    "entity_type": "government_program",
+    "intent_signals": [
+      "demographic_targeted",
+      "near_me"
+    ],
+    "demographic": "ssi",
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Government program seekers are highly engaged. SSI/Section 8 keywords have strong RSOC match."
+  },
+  {
+    "keyword": "Sam's Club Auto Insurance Cost",
+    "country": "US",
+    "revenue": 11287.62,
+    "clicks": 3759,
+    "rpc": 3.0028,
+    "vertical": "auto_insurance",
+    "entity": "Sam's Club",
+    "entity_type": "membership_retailer",
+    "intent_signals": [
+      "membership_brand",
+      "branded",
+      "cost_comparison"
+    ],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "High-CPC vertical. Advertiser pool is massive — every major insurer bids aggressively. Strong intent signal."
+  },
+  {
+    "keyword": "Va Veterans Discounts",
+    "country": "US",
+    "revenue": 10861.62,
+    "clicks": 22632,
+    "rpc": 0.4799,
+    "vertical": "veterans_military",
+    "entity": "VA",
+    "entity_type": "government_program",
+    "intent_signals": [
+      "branded",
+      "discount",
+      "demographic_targeted"
+    ],
+    "demographic": "veteran",
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Emotionally charged, highly loyal demographic. VA/USAA brand keywords dominate upper funnel."
+  },
+  {
+    "keyword": "Sam's Car Insurance",
+    "country": "US",
+    "revenue": 10719.15,
+    "clicks": 2739,
+    "rpc": 3.9135,
+    "vertical": "auto_insurance",
+    "entity": "Sam's",
+    "entity_type": "membership_retailer",
+    "intent_signals": [
+      "membership_brand",
+      "branded"
+    ],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "High-CPC vertical. Advertiser pool is massive — every major insurer bids aggressively. Strong intent signal."
+  },
+  {
+    "keyword": "Social Security Apartments Near Me",
+    "country": "US",
+    "revenue": 5180.26,
+    "clicks": 8097,
+    "rpc": 0.6398,
+    "vertical": "housing_ssi",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "near_me"
+    ],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Government program seekers are highly engaged. SSI/Section 8 keywords have strong RSOC match."
+  },
+  {
+    "keyword": "Multi Insurance Car and Home",
+    "country": "US",
+    "revenue": 4235.93,
+    "clicks": 1211,
+    "rpc": 3.4979,
+    "vertical": "general",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Military Deals",
+    "country": "US",
+    "revenue": 4164.81,
+    "clicks": 7400,
+    "rpc": 0.5628,
+    "vertical": "veterans_military",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "discount",
+      "demographic_targeted"
+    ],
+    "demographic": "military",
+    "linguistic_flags": [],
+    "why_it_works": "Emotionally charged, highly loyal demographic. VA/USAA brand keywords dominate upper funnel."
+  },
+  {
+    "keyword": "Entrega de Paquetes Amazon con Auto Propio",
+    "country": "MX",
+    "revenue": 3871.43,
+    "clicks": 12885,
+    "rpc": 0.3005,
+    "vertical": "latam_delivery",
+    "entity": "Amazon",
+    "entity_type": "gig_platform",
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Gig economy demand in LATAM. MX/AR have 9x vertical premium vs country average. Strong employment intent."
+  },
+  {
+    "keyword": "Ssi Apartments Near Me",
+    "country": "US",
+    "revenue": 3747.52,
+    "clicks": 6289,
+    "rpc": 0.5959,
+    "vertical": "housing_ssi",
+    "entity": "SSI",
+    "entity_type": "government_program",
+    "intent_signals": [
+      "demographic_targeted",
+      "near_me"
+    ],
+    "demographic": "ssi",
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Government program seekers are highly engaged. SSI/Section 8 keywords have strong RSOC match."
+  },
+  {
+    "keyword": "Amazon Cleaning Products",
+    "country": "US",
+    "revenue": 3686.46,
+    "clicks": 7872,
+    "rpc": 0.4683,
+    "vertical": "general",
+    "entity": "Amazon",
+    "entity_type": "gig_platform",
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "ブラックだけど今すぐお金が必要",
+    "country": "JP",
+    "revenue": 3577.34,
+    "clicks": 7740,
+    "rpc": 0.4622,
+    "vertical": "general",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Altenpfleger Ausbildung mit A2",
+    "country": "DE",
+    "revenue": 3507.73,
+    "clicks": 2080,
+    "rpc": 1.6864,
+    "vertical": "german_ausbildung",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Diaspora demand from 67+ countries. Language-level specificity (B1/A2) signals real immigration intent. High DE advertiser CPC."
+  },
+  {
+    "keyword": "Ausbildung für Ausländer mit B1",
+    "country": "DE",
+    "revenue": 3106.33,
+    "clicks": 3036,
+    "rpc": 1.0232,
+    "vertical": "german_ausbildung",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": "ausländer",
+    "linguistic_flags": [],
+    "why_it_works": "Diaspora demand from 67+ countries. Language-level specificity (B1/A2) signals real immigration intent. High DE advertiser CPC."
+  },
+  {
+    "keyword": "Car Insurance with Military Discount",
+    "country": "US",
+    "revenue": 3096.01,
+    "clicks": 732,
+    "rpc": 4.2295,
+    "vertical": "auto_insurance",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "discount",
+      "demographic_targeted"
+    ],
+    "demographic": "military",
+    "linguistic_flags": [],
+    "why_it_works": "High-CPC vertical. Advertiser pool is massive — every major insurer bids aggressively. Strong intent signal."
+  },
+  {
+    "keyword": "Free Ostomy Covers",
+    "country": "US",
+    "revenue": 3077.37,
+    "clicks": 1150,
+    "rpc": 2.676,
+    "vertical": "medical_pharma",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "GLP-1 price-discovery phase. Patients in active research mode. High engagement, growing advertiser pool."
+  },
+  {
+    "keyword": "Military Insurance Discounts",
+    "country": "US",
+    "revenue": 2936.66,
+    "clicks": 885,
+    "rpc": 3.3183,
+    "vertical": "veterans_military",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "discount",
+      "demographic_targeted"
+    ],
+    "demographic": "military",
+    "linguistic_flags": [],
+    "why_it_works": "Emotionally charged, highly loyal demographic. VA/USAA brand keywords dominate upper funnel."
+  },
+  {
+    "keyword": "Best Kitchen Cleaner Spray",
+    "country": "US",
+    "revenue": 2920.71,
+    "clicks": 5696,
+    "rpc": 0.5128,
+    "vertical": "general",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Altenpfleger Ausbildung Deutsch A2",
+    "country": "DE",
+    "revenue": 2803.9,
+    "clicks": 1715,
+    "rpc": 1.6349,
+    "vertical": "german_ausbildung",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Diaspora demand from 67+ countries. Language-level specificity (B1/A2) signals real immigration intent. High DE advertiser CPC."
+  },
+  {
+    "keyword": "Plunge Pools for Small Backyards",
+    "country": "US",
+    "revenue": 2700.36,
+    "clicks": 6621,
+    "rpc": 0.4078,
+    "vertical": "home_services",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "I Can't Find a Lawyer to Take My Case",
+    "country": "US",
+    "revenue": 2625.71,
+    "clicks": 683,
+    "rpc": 3.8444,
+    "vertical": "legal_services",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "first_person_desperation"
+    ],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Legal CPCs are highest in the industry. Injury/settlement keywords attract law firm bidding wars."
+  },
+  {
+    "keyword": "Veteran Car Insurance",
+    "country": "US",
+    "revenue": 2425.63,
+    "clicks": 551,
+    "rpc": 4.4022,
+    "vertical": "auto_insurance",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "demographic_targeted"
+    ],
+    "demographic": "veteran",
+    "linguistic_flags": [],
+    "why_it_works": "High-CPC vertical. Advertiser pool is massive — every major insurer bids aggressively. Strong intent signal."
+  },
+  {
+    "keyword": "Alaska Cruises for Seniors Over 60",
+    "country": "US",
+    "revenue": 2417.64,
+    "clicks": 6947,
+    "rpc": 0.348,
+    "vertical": "cruises_travel",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "demographic_targeted"
+    ],
+    "demographic": "senior",
+    "linguistic_flags": [],
+    "why_it_works": "Aspirational purchase with high AOV. Branded cruise lines (Viking) + destination = qualified buyer."
+  },
+  {
+    "keyword": "How to Get Mounjaro for $25 Without Insurance",
+    "country": "US",
+    "revenue": 2364.77,
+    "clicks": 3394,
+    "rpc": 0.6968,
+    "vertical": "medical_pharma",
+    "entity": "Mounjaro",
+    "entity_type": "pharma_drug",
+    "intent_signals": [
+      "negative_qualifier"
+    ],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "GLP-1 price-discovery phase. Patients in active research mode. High engagement, growing advertiser pool."
+  },
+  {
+    "keyword": "Erzieherin Ausbildung mit B1",
+    "country": "DE",
+    "revenue": 2361.53,
+    "clicks": 2123,
+    "rpc": 1.1124,
+    "vertical": "german_ausbildung",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Diaspora demand from 67+ countries. Language-level specificity (B1/A2) signals real immigration intent. High DE advertiser CPC."
+  },
+  {
+    "keyword": "Deliver Packages with Own Car",
+    "country": "US",
+    "revenue": 2310.65,
+    "clicks": 3071,
+    "rpc": 0.7524,
+    "vertical": "general",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Handyvertrag mit Handy Trotz Negativer Schufa und Bonität",
+    "country": "DE",
+    "revenue": 2288.52,
+    "clicks": 1800,
+    "rpc": 1.2714,
+    "vertical": "general",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "negative_qualifier"
+    ],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Costco Members Water Heater Installation Pricing",
+    "country": "US",
+    "revenue": 2262.47,
+    "clicks": 2486,
+    "rpc": 0.9101,
+    "vertical": "membership_retail",
+    "entity": "Costco",
+    "entity_type": "membership_retailer",
+    "intent_signals": [
+      "membership_brand",
+      "branded",
+      "cost_comparison"
+    ],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Brand trust transfer. Searcher already trusts the retailer — CTR is 3.2x unbranded. Sam's/Costco = pre-qualified buyers."
+  },
+  {
+    "keyword": "Ausbildung Pflege für Ausländer mit B1",
+    "country": "DE",
+    "revenue": 2236.34,
+    "clicks": 1496,
+    "rpc": 1.4949,
+    "vertical": "german_ausbildung",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": "ausländer",
+    "linguistic_flags": [],
+    "why_it_works": "Diaspora demand from 67+ countries. Language-level specificity (B1/A2) signals real immigration intent. High DE advertiser CPC."
+  },
+  {
+    "keyword": "2 for 1 River Cruise Deals 2026",
+    "country": "AU",
+    "revenue": 2187.33,
+    "clicks": 5019,
+    "rpc": 0.4358,
+    "vertical": "cruises_travel",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "year_current",
+      "discount"
+    ],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Aspirational purchase with high AOV. Branded cruise lines (Viking) + destination = qualified buyer."
+  },
+  {
+    "keyword": "Viking River Cruise 2 for 1 Sale 2026",
+    "country": "US",
+    "revenue": 2178.38,
+    "clicks": 4973,
+    "rpc": 0.438,
+    "vertical": "cruises_travel",
+    "entity": "Viking",
+    "entity_type": "travel_brand",
+    "intent_signals": [
+      "year_current",
+      "discount"
+    ],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Aspirational purchase with high AOV. Branded cruise lines (Viking) + destination = qualified buyer."
+  },
+  {
+    "keyword": "Costco Health Insurance for Members",
+    "country": "US",
+    "revenue": 2102.97,
+    "clicks": 3630,
+    "rpc": 0.5793,
+    "vertical": "membership_retail",
+    "entity": "Costco",
+    "entity_type": "membership_retailer",
+    "intent_signals": [
+      "membership_brand",
+      "branded",
+      "cost_comparison"
+    ],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Brand trust transfer. Searcher already trusts the retailer — CTR is 3.2x unbranded. Sam's/Costco = pre-qualified buyers."
+  },
+  {
+    "keyword": "State Farms Auto Insurance",
+    "country": "US",
+    "revenue": 2071.31,
+    "clicks": 532,
+    "rpc": 3.8934,
+    "vertical": "auto_insurance",
+    "entity": "State Farm",
+    "entity_type": "insurance_carrier",
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "High-CPC vertical. Advertiser pool is massive — every major insurer bids aggressively. Strong intent signal."
+  },
+  {
+    "keyword": "Sam's Auto Insurance",
+    "country": "US",
+    "revenue": 2069.59,
+    "clicks": 488,
+    "rpc": 4.241,
+    "vertical": "auto_insurance",
+    "entity": "Sam's",
+    "entity_type": "membership_retailer",
+    "intent_signals": [
+      "membership_brand",
+      "branded"
+    ],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "High-CPC vertical. Advertiser pool is massive — every major insurer bids aggressively. Strong intent signal."
+  },
+  {
+    "keyword": "Apartments that Accept Disability Near Me",
+    "country": "US",
+    "revenue": 2004.85,
+    "clicks": 3200,
+    "rpc": 0.6265,
+    "vertical": "general",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "near_me"
+    ],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Adult Auto Insurance Rates",
+    "country": "US",
+    "revenue": 1987.57,
+    "clicks": 671,
+    "rpc": 2.9621,
+    "vertical": "auto_insurance",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "cost_comparison"
+    ],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "High-CPC vertical. Advertiser pool is massive — every major insurer bids aggressively. Strong intent signal."
+  },
+  {
+    "keyword": "Apartments Accepting SSI",
+    "country": "US",
+    "revenue": 1911.92,
+    "clicks": 2889,
+    "rpc": 0.6618,
+    "vertical": "general",
+    "entity": "SSI",
+    "entity_type": "government_program",
+    "intent_signals": [
+      "demographic_targeted"
+    ],
+    "demographic": "ssi",
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Bad Credit Motorcycle Loans Guaranteed Approval Near Me",
+    "country": "US",
+    "revenue": 1871.46,
+    "clicks": 2109,
+    "rpc": 0.8874,
+    "vertical": "loans_credit",
+    "entity": "VA",
+    "entity_type": "government_program",
+    "intent_signals": [
+      "near_me",
+      "guaranteed"
+    ],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Financial desperation + guaranteed approval = highest commercial intent. Trotz SCHUFA/bad credit = qualified borrower."
+  },
+  {
+    "keyword": "What to do If an Attorney Won't Take Your Case",
+    "country": "US",
+    "revenue": 1858.7,
+    "clicks": 530,
+    "rpc": 3.507,
+    "vertical": "legal_services",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Legal CPCs are highest in the industry. Injury/settlement keywords attract law firm bidding wars."
+  },
+  {
+    "keyword": "Birthday Yacht Packages",
+    "country": "US",
+    "revenue": 1850.25,
+    "clicks": 3849,
+    "rpc": 0.4807,
+    "vertical": "general",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "SSI Apartment Application",
+    "country": "US",
+    "revenue": 1786.73,
+    "clicks": 2934,
+    "rpc": 0.609,
+    "vertical": "housing_ssi",
+    "entity": "SSI",
+    "entity_type": "government_program",
+    "intent_signals": [
+      "demographic_targeted"
+    ],
+    "demographic": "ssi",
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Government program seekers are highly engaged. SSI/Section 8 keywords have strong RSOC match."
+  },
+  {
+    "keyword": "Child Support Attorneys for Fathers",
+    "country": "US",
+    "revenue": 1770.31,
+    "clicks": 605,
+    "rpc": 2.9261,
+    "vertical": "legal_services",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Legal CPCs are highest in the industry. Injury/settlement keywords attract law firm bidding wars."
+  },
+  {
+    "keyword": "Whole House Generator Cost with Installation",
+    "country": "US",
+    "revenue": 1738.28,
+    "clicks": 3306,
+    "rpc": 0.5258,
+    "vertical": "home_services",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "cost_comparison"
+    ],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Pet Insurance for Members",
+    "country": "US",
+    "revenue": 1732.8,
+    "clicks": 984,
+    "rpc": 1.761,
+    "vertical": "general",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "membership_brand"
+    ],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "信用情報に傷があっても借りれる",
+    "country": "JP",
+    "revenue": 1714.12,
+    "clicks": 3434,
+    "rpc": 0.4992,
+    "vertical": "general",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Quiero Ser Repartidor de Mercado Libre con Auto Propio",
+    "country": "MX",
+    "revenue": 1704.05,
+    "clicks": 5267,
+    "rpc": 0.3235,
+    "vertical": "latam_delivery",
+    "entity": "Mercado Libre",
+    "entity_type": "gig_platform",
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Gig economy demand in LATAM. MX/AR have 9x vertical premium vs country average. Strong employment intent."
+  },
+  {
+    "keyword": "1 Year Bachelor Degree Online",
+    "country": "US",
+    "revenue": 1653.01,
+    "clicks": 1391,
+    "rpc": 1.1884,
+    "vertical": "general",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Laser Eye Bag Removal Near Me",
+    "country": "US",
+    "revenue": 1624.82,
+    "clicks": 2097,
+    "rpc": 0.7748,
+    "vertical": "general",
+    "entity": "VA",
+    "entity_type": "government_program",
+    "intent_signals": [
+      "near_me"
+    ],
+    "demographic": null,
+    "linguistic_flags": [
+      "branded"
+    ],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Arbeiten beim Jugendamt Quereinsteiger",
+    "country": "DE",
+    "revenue": 1607.3,
+    "clicks": 5777,
+    "rpc": 0.2782,
+    "vertical": "german_ausbildung",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Diaspora demand from 67+ countries. Language-level specificity (B1/A2) signals real immigration intent. High DE advertiser CPC."
+  },
+  {
+    "keyword": "2 Year Law Degree Online",
+    "country": "US",
+    "revenue": 1587.3,
+    "clicks": 884,
+    "rpc": 1.7956,
+    "vertical": "general",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_works": "Strong commercial intent in proven vertical."
+  },
+  {
+    "keyword": "Car Insurance Military Discount",
+    "country": "US",
+    "revenue": 1573.15,
+    "clicks": 390,
+    "rpc": 4.0337,
+    "vertical": "auto_insurance",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "discount",
+      "demographic_targeted"
+    ],
+    "demographic": "military",
+    "linguistic_flags": [],
+    "why_it_works": "High-CPC vertical. Advertiser pool is massive — every major insurer bids aggressively. Strong intent signal."
+  },
+  {
+    "keyword": "Electric Bike",
+    "country": "LT",
+    "revenue": 0.0,
+    "clicks": 0,
+    "rpc": 0.0,
+    "vertical": "financial_trading",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_fails": "Industrial B2B / freebie-seeker in low-CPC market. No consumer advertiser match. Wrong audience for RSOC model."
+  },
+  {
+    "keyword": "Digital Label Printing Machine",
+    "country": "DZ",
+    "revenue": 0.01,
+    "clicks": 0,
+    "rpc": 0.0,
+    "vertical": "industrial_equipment",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_fails": "Industrial B2B / freebie-seeker in low-CPC market. No consumer advertiser match. Wrong audience for RSOC model."
+  },
+  {
+    "keyword": "Autolink Cnc",
+    "country": "IQ",
+    "revenue": 0.01,
+    "clicks": 0,
+    "rpc": 0.0,
+    "vertical": "industrial_equipment",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_fails": "Industrial B2B / freebie-seeker in low-CPC market. No consumer advertiser match. Wrong audience for RSOC model."
+  },
+  {
+    "keyword": "Welding and Fabrication Companies",
+    "country": "AS",
+    "revenue": 0.01,
+    "clicks": 0,
+    "rpc": 0.0,
+    "vertical": "industrial_equipment",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_fails": "Industrial B2B / freebie-seeker in low-CPC market. No consumer advertiser match. Wrong audience for RSOC model."
+  },
+  {
+    "keyword": "Yrm Prop Firm",
+    "country": "AF",
+    "revenue": 0.01,
+    "clicks": 0,
+    "rpc": 0.0,
+    "vertical": "financial_trading",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_fails": "Industrial B2B / freebie-seeker in low-CPC market. No consumer advertiser match. Wrong audience for RSOC model."
+  },
+  {
+    "keyword": "Best Prop Firms 2025",
+    "country": "IQ",
+    "revenue": 0.01,
+    "clicks": 0,
+    "rpc": 0.0,
+    "vertical": "financial_trading",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_fails": "Industrial B2B / freebie-seeker in low-CPC market. No consumer advertiser match. Wrong audience for RSOC model."
+  },
+  {
+    "keyword": "Best Future Prop Firms",
+    "country": "BD",
+    "revenue": 0.01,
+    "clicks": 0,
+    "rpc": 0.0,
+    "vertical": "financial_trading",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_fails": "Industrial B2B / freebie-seeker in low-CPC market. No consumer advertiser match. Wrong audience for RSOC model."
+  },
+  {
+    "keyword": "Khm Spring Machine",
+    "country": "TR",
+    "revenue": 0.01,
+    "clicks": 0,
+    "rpc": 0.0,
+    "vertical": "industrial_equipment",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_fails": "Industrial B2B / freebie-seeker in low-CPC market. No consumer advertiser match. Wrong audience for RSOC model."
+  },
+  {
+    "keyword": "Free Prop Firm Challenge 2026",
+    "country": "FJ",
+    "revenue": 0.01,
+    "clicks": 0,
+    "rpc": 0.0,
+    "vertical": "financial_trading",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "year_current"
+    ],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_fails": "Industrial B2B / freebie-seeker in low-CPC market. No consumer advertiser match. Wrong audience for RSOC model."
+  },
+  {
+    "keyword": "Portable Laser Welding Machine Price",
+    "country": "GD",
+    "revenue": 0.01,
+    "clicks": 0,
+    "rpc": 0.0,
+    "vertical": "industrial_equipment",
+    "entity": null,
+    "entity_type": null,
+    "intent_signals": [
+      "cost_comparison"
+    ],
+    "demographic": null,
+    "linguistic_flags": [],
+    "why_it_fails": "Industrial B2B / freebie-seeker in low-CPC market. No consumer advertiser match. Wrong audience for RSOC model."
+  }
+]

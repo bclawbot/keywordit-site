@@ -1,0 +1,101 @@
+{
+  "schema_version": "1",
+  "last_updated": "2026-03-22T00:36:47.687175",
+  "subreddits": {
+    "r/BusinessDeconstructed": {
+      "name": "r/BusinessDeconstructed",
+      "status": "active",
+      "date_added": "2026-03-17T22:39:09.783541",
+      "discovery_source": "keyword_search",
+      "pre_score": 10.0,
+      "llm_score": 10,
+      "llm_rationale": "Directly relevant to search arbitrage, traffic monetization, and digital marketing strategies.",
+      "times_yielded_zero_posts": 0,
+      "feeds": [
+        "hot",
+        "new"
+      ],
+      "limit": 15,
+      "priority": 3
+    },
+    "r/passiveincome": {
+      "name": "r/passiveincome",
+      "status": "active",
+      "date_added": "2026-03-17T23:03:33.643392",
+      "discovery_source": "wiki:r/Affiliatemarketing",
+      "pre_score": 6.0,
+      "llm_score": 7,
+      "llm_rationale": "Directly relevant to search arbitrage and digital marketing monetization strategies.",
+      "times_yielded_zero_posts": 0,
+      "feeds": [
+        "hot"
+      ],
+      "limit": 15,
+      "priority": 3
+    },
+    "r/AppBusiness": {
+      "name": "r/AppBusiness",
+      "status": "active",
+      "date_added": "2026-03-17T23:39:15.214233",
+      "discovery_source": "keyword_search",
+      "pre_score": 4.0,
+      "llm_score": 8,
+      "llm_rationale": "Directly overlaps with SaaS and app monetization; users discuss CPC, ads, and publisher strategies relevant to paid search arbitrage.",
+      "times_yielded_zero_posts": 0,
+      "feeds": [
+        "hot",
+        "new"
+      ],
+      "limit": 15,
+      "priority": 1
+    },
+    "r/Investments": {
+      "name": "r/Investments",
+      "status": "active",
+      "date_added": "2026-03-17T23:39:15.214253",
+      "discovery_source": "keyword_search",
+      "pre_score": 4.0,
+      "llm_score": 7,
+      "llm_rationale": "High overlap with finance and investment topics; users often discuss pricing, comparing, and buying financial products or services.",
+      "times_yielded_zero_posts": 0,
+      "feeds": [
+        "hot",
+        "new"
+      ],
+      "limit": 15,
+      "priority": 1
+    },
+    "r/gundeals": {
+      "name": "r/gundeals",
+      "status": "active",
+      "date_added": "2026-03-20T14:48:21.308718",
+      "discovery_source": "keyword_search",
+      "pre_score": 4.0,
+      "llm_score": 7,
+      "llm_rationale": "Community dedicated to sharing firearm deals, directly surfacing commercial intent and purchase keywords.",
+      "times_yielded_zero_posts": 0,
+      "feeds": [
+        "hot",
+        "new"
+      ],
+      "limit": 15,
+      "priority": 2
+    },
+    "r/SEO_Digital_Marketing": {
+      "name": "r/SEO_Digital_Marketing",
+      "status": "active",
+      "date_added": "2026-03-22T00:36:47.685244",
+      "discovery_source": "keyword_search:SEO",
+      "pre_score": 9.0,
+      "llm_score": 9,
+      "llm_rationale": "Practitioner community directly discussing paid traffic monetization and acquisition, a prime source for arbitrage tactics and keyword signals.",
+      "times_yielded_zero_posts": 0,
+      "feeds": [
+        "hot",
+        "new"
+      ],
+      "limit": 15,
+      "priority": 1
+    }
+  }
+}

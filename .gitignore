@@ -1,0 +1,20 @@
+# Secrets
+.env
+.env.local
+.telegram_chat_id
+
+# Caches & databases
+*.db
+*.sqlite3
+__pycache__/
+*.pyc
+
+# Generated output (deployed via gh-pages)
+dashboard.html
+
+# OS
+.DS_Store
+.Thumbs.db
+
+# Backup files
+*.bak

@@ -1,0 +1,100 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-03-20",
+
+  "membership_retailer": {
+    "US": {"proven": ["Sam's Club", "Sam's", "Costco", "Walmart"],
+           "test": ["BJ's Wholesale", "Target", "Kroger", "Amazon", "Publix"],
+           "blocked": [], "max_expand": 5},
+    "DE": {"proven": [], "test": ["Aldi", "Lidl", "REWE", "Edeka"], "blocked": [], "max_expand": 3},
+    "AU": {"proven": ["Costco"], "test": ["Aldi", "Woolworths"], "blocked": [], "max_expand": 3}
+  },
+
+  "insurance_carrier": {
+    "US": {"proven": ["State Farm", "USAA"],
+           "test": ["GEICO", "Progressive", "Allstate", "Liberty Mutual", "Nationwide", "Travelers", "Lemonade"],
+           "blocked": [], "max_expand": 5},
+    "AU": {"proven": [], "test": ["Allianz", "NRMA", "Budget Direct"], "blocked": [], "max_expand": 3}
+  },
+
+  "government_program": {
+    "US": {"proven": ["SSI", "Medicare", "VA", "Section 8"],
+           "test": ["HUD VASH", "Medicaid", "SNAP", "WIC", "CHIP"],
+           "blocked": [], "max_expand": 4},
+    "AU": {"proven": ["DVA"], "test": ["Centrelink", "NDIS"], "blocked": [], "max_expand": 3},
+    "DE": {"proven": [], "test": ["Bürgergeld", "Sozialhilfe", "Wohngeld"], "blocked": [], "max_expand": 3}
+  },
+
+  "demographic_org": {
+    "US": {"proven": ["AARP", "VA"],
+           "test": ["AAA", "VFW", "American Legion", "Navy Federal", "Tricare"],
+           "blocked": [], "max_expand": 4}
+  },
+
+  "gig_platform": {
+    "MX": {"proven": ["Amazon", "Mercado Libre"],
+           "test": ["Rappi", "DiDi", "Temu", "Uber Eats"],
+           "blocked": [], "max_expand": 3},
+    "BR": {"proven": [], "test": ["iFood", "Rappi", "99", "Amazon"], "blocked": [], "max_expand": 3},
+    "AR": {"proven": ["Mercado Libre"], "test": ["Rappi", "DiDi", "PedidosYa"], "blocked": [], "max_expand": 3},
+    "CO": {"proven": ["Mercado Libre"], "test": ["Rappi", "DiDi"], "blocked": [], "max_expand": 2},
+    "US": {"proven": ["Amazon"], "test": ["DoorDash", "Uber Eats", "Instacart"], "blocked": [], "max_expand": 3}
+  },
+
+  "employer": {
+    "DE": {"proven": [],
+           "test": ["Aldi", "Lidl", "Deutsche Bahn", "DM", "REWE", "Edeka", "Telekom", "BMW", "Bosch"],
+           "blocked": [], "max_expand": 4},
+    "CH": {"proven": [], "test": ["Migros", "Coop", "SBB", "Swiss Post"], "blocked": [], "max_expand": 3}
+  },
+
+  "destination": {
+    "*": {"proven": ["Alaska"],
+          "test": ["Mediterranean", "Caribbean", "European", "Danube", "Rhine", "Nile", "Douro", "Mekong"],
+          "blocked": [], "max_expand": 4}
+  },
+
+  "medical_condition": {
+    "*": {"proven": ["COPD"],
+          "test": ["Diabetes", "Asthma", "Heart Failure", "Arthritis", "Sleep Apnea", "Cancer", "Ostomy"],
+          "blocked": [], "max_expand": 3}
+  },
+
+  "pharma_drug": {
+    "*": {"proven": ["Mounjaro", "Ozempic"],
+          "test": ["Wegovy", "Zepbound", "Trulicity", "Saxenda"],
+          "blocked": [], "max_expand": 3,
+          "note": "GLP-1 vertical. Use Track B inherited CPC. Monitor FDA/EMA approvals."}
+  },
+
+  "vehicle_type": {
+    "*": {"proven": ["Motorcycle", "Car", "Truck"],
+          "test": ["RV", "Boat", "ATV", "Van", "Semi"],
+          "blocked": [], "max_expand": 3}
+  },
+
+  "travel_brand": {
+    "US": {"proven": ["Viking"],
+           "test": ["Avalon", "AmaWaterways", "Scenic", "Emerald", "Tauck"],
+           "blocked": [], "max_expand": 3},
+    "AU": {"proven": [], "test": ["Viking", "Avalon", "APT"], "blocked": [], "max_expand": 3}
+  },
+
+  "auction_program": {
+    "CA": {"proven": [], "test": ["RCMP", "Police Auction", "Crown Assets"], "blocked": [], "max_expand": 3},
+    "US": {"proven": [], "test": ["Police Impound", "Government Surplus", "IRS Seized"], "blocked": [], "max_expand": 3},
+    "CH": {"proven": [], "test": ["Auktion", "Versteigerung"], "blocked": [], "max_expand": 2}
+  },
+
+  "education_format": {
+    "US": {"proven": [], "test": ["1 Year", "8 Week", "Accelerated", "Online"], "blocked": [], "max_expand": 3},
+    "LATAM": {"proven": [], "test": ["2 Años", "12 Meses", "Acelerada"], "blocked": [], "max_expand": 3}
+  },
+
+  "_promotion_rules": {
+    "test_to_proven": ">= $50 revenue across expanded keywords in 14-day window",
+    "proven_to_test": "< $10 revenue for 4 consecutive weeks",
+    "test_to_blocked": "< $1 revenue across all expansions for 3+ consecutive weeks",
+    "new_discovery": "Entity found by decomposer not in registry -> add to test with discovered:true flag -> Telegram alert"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "version": "1.0",
+  "country_whitelist": ["US","JP","DE","CH","AU","HK","CA","MX","FR","ES","PE","IT","AT","AE","SG","IN","AR","CL","CO","GB","NL","SE","IE","NO","DK","FI","BE","NZ","ZA","KR","TW","IL"],
+  "tier_c_requires_tier_s_vertical": true,
+  "word_count": {
+    "min": 1,
+    "max": 10,
+    "note": "Single-word and 8-word keywords outperform 2-3 word noise; collapse after 10"
+  },
+  "blocklist_words": [
+    "machine", "welding", "prop firm", "wholesale", "processing equipment",
+    "electric bike", "laser cutting", "cnc machine", "3d printer",
+    "zoom bike", "pergola kit", "2025"
+  ],
+  "blocklist_verticals": [
+    "laser cutting machine", "welding machine", "cnc router", "forklift",
+    "hydraulic press", "industrial equipment", "b2b supplier"
+  ],
+  "tier_s_verticals": [
+    "auto insurance", "car insurance", "vehicle insurance", "insurance cost", "insurance rates",
+    "insurance for", "insurance discount", "insurance quote"
+  ],
+  "tier_c_countries": ["BR","PH","PK","BD","NG","GH","KE","TZ","UG",
+    "EG","MA","TN","DZ","GT","EC","PA","CR","UY","PY","BO","NI","HN","SV",
+    "DO","CU","JM","TT","PR","GU","VI","BB","BS","LC","VC","KY","BM","VU",
+    "FJ","PG","SB","TO","WS","LA","KH","MM","MN","UZ","KZ","TJ","TM","KG",
+    "AM","GE","AZ","MD","BY","UA","RS","BA","AL","MK","XK","ME","HR","SI",
+    "SK","CZ","HU","RO","BG","PL","LT","LV","EE","IS",
+    "PT","GR","CY","MT","LU","LI","MC","SM","AD",
+    "RU","TR","SA","QA","KW","BH","OM","ID","MY","TH","VN"]
+}

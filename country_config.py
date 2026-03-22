@@ -32,13 +32,34 @@ CACHE_TTL_MIN_HOURS      = 24    # absolute minimum — never re-fetch within 24
 ONCE_PER_DAY_DFS         = True  # DataForSEO fires on the FIRST pipeline run each day only.
                                   # Subsequent runs (every 6h) are served from cache or deferred.
                                   # Set to False to allow multiple runs per day (watch costs!).
-DAILY_API_BUDGET         = 75    # max DataForSEO keyword lookups per calendar day.
-                                  # Cost guide at ~$0.08/keyword:
-                                  #   40  → ~$3/day
-                                  #   75  → ~$6/day  ← current
-                                  #   130 → ~$10/day
+
+# ── Dollar-based budget (replaces DAILY_API_BUDGET) ────────────────────────────
+DFS_DAILY_BUDGET_USD     = 2.00  # Hard daily dollar cap. Tune after pricing confirmed.
+                                  # Expected spend with Labs-only: $0.15-0.50/day
+                                  # $2.00 provides safety margin for unexpected spikes.
+
+DAILY_API_BUDGET         = 500   # Legacy task-count budget (kept for backward compat)
 BUDGET_PRIORITY_ORDER    = [1, 2, 3, 4]   # tier 1 first when trimming to budget
 HIGH_CONFIDENCE_PRIORITY = True  # within same tier, prioritize "high" confidence keywords
+
+# ── Expansion result cap (secondary guard alongside dollar cap) ─────────────────
+# Labs keyword_ideas has server-side 200-result cap, but this guards against
+# unexpected behavior or future endpoint changes.
+DFS_EXPAND_RESULTS_DAILY_CAP = 3000
+DFS_SEEDS_PER_EXPAND_TASK    = 5    # Seeds per keyword_ideas/live call (was 20, smaller = earlier cap detection)
+
+# ── DataForSEO endpoint costs (update from billing dashboard after first run) ───
+DFS_ENDPOINT_COSTS = {
+    "bulk_kd":                0.00001,   # $0.01 per 1,000 keywords
+    "keyword_overview":       0.0000286, # $0.02 per 700 keywords
+    "keyword_ideas":          0.01,      # $0.01 base cost per call
+    "keyword_ideas_per_result": 0.0001,  # $0.0001 per result (max 200 = $0.02)
+}
+
+# ── Non-English market minimums ───────────────────────────────────────────────
+# Applied to non-English expansion results before they enter the pipeline.
+NON_ENGLISH_MIN_VOLUME = 500    # minimum monthly volume for non-English keywords
+NON_ENGLISH_MIN_CPC    = 0.30   # minimum CPC (USD) for non-English keywords
 
 # Default for countries not listed below
 DEFAULT_COUNTRY = {
@@ -130,3 +151,122 @@ def get_country_tier(country_code: str) -> int:
     """Return the tier for a country code. Used by validation.py and dashboard_builder.py."""
     cfg = COUNTRY_CONFIG.get(country_code.upper(), DEFAULT_COUNTRY)
     return cfg["tier"]
+
+
+# ── Country-specific CPC floors (Master Plan Section 4) ───────────────────────
+# Per-country measured floors based on Google Ads CPC benchmarks (WordStream, Statista, 2024-2025).
+# Two floors per country:
+#   cpc  = floor for keyword_info.cpc field
+#   htpb = floor for high_top_of_page_bid field (set at 2.5× CPC floor)
+# Confidence: H = empirical data, M = calculated %, L = estimated
+
+COUNTRY_CPC_FLOORS = {
+    # ── Premium English Markets ────────────────────────────────────────────────
+    "US": {"cpc": 2.50, "htpb": 6.25, "avg_cpc": 2.69, "confidence": "H",
+           "notes": "WordStream 2025 baseline. Existing floor retained."},
+    "AU": {"cpc": 2.35, "htpb": 5.90, "avg_cpc": 2.56, "confidence": "H",
+           "notes": "WordStream: -5% vs US."},
+    "GB": {"cpc": 2.10, "htpb": 5.25, "avg_cpc": 2.34, "confidence": "H",
+           "notes": "WordStream: -13% vs US. Use 'GB' not 'UK' for DFS."},
+    "NZ": {"cpc": 1.80, "htpb": 4.50, "avg_cpc": 2.00, "confidence": "M",
+           "notes": "WordStream: listed in 'next 10 most expensive'. ~$2.00 est."},
+    "CA": {"cpc": 1.75, "htpb": 4.40, "avg_cpc": 1.91, "confidence": "H",
+           "notes": "WordStream: -29% vs US."},
+
+    # ── Western Europe ─────────────────────────────────────────────────────────
+    "AT": {"cpc": 2.40, "htpb": 6.00, "avg_cpc": 2.64, "confidence": "H",
+           "notes": "WordStream: -2% vs US. Very close to US market depth."},
+    "CH": {"cpc": 1.90, "htpb": 4.75, "avg_cpc": 2.13, "confidence": "H",
+           "notes": "WordStream: -21% vs US."},
+    "IT": {"cpc": 1.90, "htpb": 4.75, "avg_cpc": 2.10, "confidence": "M",
+           "notes": "WordStream: top-10 most expensive. Estimated ~$2.10."},
+    "DE": {"cpc": 1.70, "htpb": 4.25, "avg_cpc": 1.86, "confidence": "H",
+           "notes": "WordStream: -31% vs US."},
+    "NO": {"cpc": 1.65, "htpb": 4.10, "avg_cpc": 1.78, "confidence": "H",
+           "notes": "WordStream: -34% vs US."},
+    "IE": {"cpc": 1.45, "htpb": 3.65, "avg_cpc": 1.61, "confidence": "H",
+           "notes": "WordStream: -40% vs US. Statista: €1.22/click."},
+    "SE": {"cpc": 1.25, "htpb": 3.15, "avg_cpc": 1.37, "confidence": "H",
+           "notes": "WordStream: -49% vs US."},
+    "ES": {"cpc": 1.20, "htpb": 3.00, "avg_cpc": 1.35, "confidence": "H",
+           "notes": "WordStream: -50% vs US."},
+    "NL": {"cpc": 1.10, "htpb": 2.75, "avg_cpc": 1.18, "confidence": "H",
+           "notes": "WordStream: -56% vs US."},
+    "DK": {"cpc": 1.05, "htpb": 2.65, "avg_cpc": 1.16, "confidence": "H",
+           "notes": "WordStream: -57% vs US."},
+    "FR": {"cpc": 0.90, "htpb": 2.25, "avg_cpc": 0.97, "confidence": "H",
+           "notes": "WordStream: -64% vs US. Lower than expected for G7."},
+    "BE": {"cpc": 0.75, "htpb": 1.90, "avg_cpc": 0.83, "confidence": "H",
+           "notes": "WordStream: -69% vs US."},
+
+    # ── Middle East ────────────────────────────────────────────────────────────
+    "AE": {"cpc": 2.60, "htpb": 6.50, "avg_cpc": 2.91, "confidence": "H",
+           "notes": "WordStream: +8% vs US. Only country above US avg."},
+    "SA": {"cpc": 1.00, "htpb": 2.50, "avg_cpc": 1.08, "confidence": "H",
+           "notes": "WordStream: -60% vs US."},
+
+    # ── Asia-Pacific ───────────────────────────────────────────────────────────
+    "SG": {"cpc": 1.05, "htpb": 2.60, "avg_cpc": 1.13, "confidence": "H",
+           "notes": "WordStream: -58% vs US. Premium APAC hub."},
+    "HK": {"cpc": 1.65, "htpb": 4.10, "avg_cpc": 1.80, "confidence": "L",
+           "notes": "Estimated. High-income city-state. Validate vs DFS."},
+    "JP": {"cpc": 1.30, "htpb": 3.25, "avg_cpc": 1.43, "confidence": "H",
+           "notes": "WordStream: -47% vs US. Yahoo Japan dominates."},
+    "KR": {"cpc": 0.70, "htpb": 1.75, "avg_cpc": 0.75, "confidence": "H",
+           "notes": "WordStream: -72% vs US. Naver dominates."},
+    "TH": {"cpc": 1.00, "htpb": 2.50, "avg_cpc": 1.13, "confidence": "H",
+           "notes": "WordStream: -58% vs US."},
+    "MY": {"cpc": 0.60, "htpb": 1.50, "avg_cpc": 0.67, "confidence": "H",
+           "notes": "WordStream: -75% vs US."},
+    "PH": {"cpc": 0.60, "htpb": 1.50, "avg_cpc": 0.67, "confidence": "H",
+           "notes": "WordStream: -75% vs US."},
+    "ID": {"cpc": 0.30, "htpb": 0.75, "avg_cpc": 0.32, "confidence": "H",
+           "notes": "Statista: $0.32 specific. Lowest in APAC."},
+    "IN": {"cpc": 0.55, "htpb": 1.40, "avg_cpc": 0.62, "confidence": "H",
+           "notes": "WordStream: -77% vs US. Scale play."},
+
+    # ── Latin America ──────────────────────────────────────────────────────────
+    "BR": {"cpc": 0.65, "htpb": 1.60, "avg_cpc": 0.70, "confidence": "M",
+           "notes": "LATAM range $0.20-$1.50; Brazil highest. Est. ~$0.70."},
+    "MX": {"cpc": 0.30, "htpb": 0.75, "avg_cpc": 0.35, "confidence": "L",
+           "notes": "'~10x less than US' → ~$0.27. Using $0.35. Validate."},
+    "AR": {"cpc": 0.55, "htpb": 1.35, "avg_cpc": 0.59, "confidence": "H",
+           "notes": "WordStream: -78% vs US."},
+    "CO": {"cpc": 0.40, "htpb": 1.00, "avg_cpc": 0.46, "confidence": "H",
+           "notes": "WordStream: -83% vs US."},
+
+    # ── Africa ─────────────────────────────────────────────────────────────────
+    "ZA": {"cpc": 0.45, "htpb": 1.15, "avg_cpc": 0.51, "confidence": "H",
+           "notes": "Statista: $0.51 specific (May 2023)."},
+    "NG": {"cpc": 0.60, "htpb": 1.50, "avg_cpc": 0.66, "confidence": "H",
+           "notes": "Statista: $0.66 specific. Competitive vs ZA."},
+
+    # ── Eastern Europe ─────────────────────────────────────────────────────────
+    "PL": {"cpc": 0.45, "htpb": 1.15, "avg_cpc": 0.51, "confidence": "H",
+           "notes": "WordStream: -81% vs US."},
+}
+
+# Default floor for countries not in the table above
+COUNTRY_CPC_FLOOR_DEFAULT = {"cpc": 0.50, "htpb": 1.25}
+
+
+def get_cpc_floor(country_code: str, field: str = "cpc") -> float:
+    """
+    Returns the minimum viable CPC floor for a given country and field.
+    
+    Args:
+        country_code: ISO 3166-1 alpha-2 country code (e.g. 'US', 'GB', 'AU')
+        field: 'cpc' for keyword_info.cpc or 'htpb' for high_top_of_page_bid
+    
+    Returns:
+        float: minimum CPC required for RSOC viability in that market
+    
+    Note: 'GB' is the correct code for United Kingdom (not 'UK').
+    """
+    country_data = COUNTRY_CPC_FLOORS.get(country_code.upper(), COUNTRY_CPC_FLOOR_DEFAULT)
+    return country_data.get(field, COUNTRY_CPC_FLOOR_DEFAULT[field])
+
+
+def get_floor_confidence(country_code: str) -> str:
+    """Returns data confidence level: H (empirical), M (calculated %), L (estimated)."""
+    return COUNTRY_CPC_FLOORS.get(country_code.upper(), {}).get("confidence", "L")

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keywordit · Access</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+[data-theme="dark"] {
+  --bg: #020203;
+  --surface: #0a0a0c;
+  --border: #141418;
+  --border-light: #1c1c22;
+  --text: #e8e8f0;
+  --text-dim: #6a6a7a;
+  --text-muted: #3a3a48;
+  --teal: #2dd4bf;
+  --teal-glow: rgba(45,212,191,0.15);
+  --red: #ef4444;
+  --green: #22c55e;
+}
+[data-theme="light"] {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --border: #dcdce4;
+  --border-light: #e8e8f0;
+  --text: #1a1a2e;
+  --text-dim: #5a5a70;
+  --text-muted: #9a9ab0;
+  --teal: #0d9488;
+  --teal-glow: rgba(13,148,136,0.10);
+  --red: #dc2626;
+  --green: #16a34a;
+}
+:root {
+  --font: 'Space Grotesk', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+html { font-size: 16px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+body::before {
+  content: '';
+  position: absolute;
+  top: -300px; left: 50%; transform: translateX(-50%);
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, var(--teal-glow) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* Logo */
+.logo-area {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 48px;
+  position: relative;
+}
+.logo-icon {
+  width: 32px; height: 32px;
+  background: var(--teal);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: #000; font-weight: 800; font-size: 16px;
+}
+.logo-text { font-weight: 700; font-size: 18px; letter-spacing: -0.02em; }
+.logo-dot { color: var(--teal); }
+
+/* Auth container */
+.auth-container {
+  width: 380px;
+  max-width: 90vw;
+  position: relative;
+}
+
+/* Tabs */
+.auth-tabs {
+  display: flex;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+.auth-tab {
+  flex: 1;
+  padding: 12px;
+  background: var(--surface);
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-right: 1px solid var(--border);
+}
+.auth-tab:last-child { border-right: none; }
+.auth-tab:hover { color: var(--text); }
+.auth-tab.active {
+  background: var(--bg);
+  color: var(--teal);
+  border-bottom: 2px solid var(--teal);
+}
+
+/* Form panels */
+.auth-panel {
+  display: none;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 32px 28px;
+}
+.auth-panel.active { display: block; }
+
+.form-group {
+  margin-bottom: 20px;
+}
+.form-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--mono);
+  margin-bottom: 8px;
+}
+.form-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--teal); }
+.form-input::placeholder { color: var(--text-muted); }
+
+.form-textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+  min-height: 60px;
+}
+.form-textarea:focus { border-color: var(--teal); }
+.form-textarea::placeholder { color: var(--text-muted); }
+
+.btn-submit {
+  width: 100%;
+  background: var(--teal);
+  border: none;
+  color: #000;
+  padding: 13px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+.btn-submit:hover { box-shadow: 0 0 24px var(--teal-glow); }
+.btn-submit:disabled { opacity: 0.5; cursor: default; }
+
+/* Messages */
+.msg {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+.msg.error { display: block; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; }
+.msg.success { display: block; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: #4ade80; }
+.msg.info { display: block; background: var(--teal-glow); border: 1px solid rgba(45,212,191,0.2); color: var(--teal); }
+
+/* Back link */
+.back-link {
+  margin-top: 24px;
+  text-align: center;
+}
+.back-link a {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.back-link a:hover { color: var(--text-dim); }
+
+/* Footer */
+.login-footer {
+  margin-top: 48px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.logo-area, .auth-container, .back-link, .login-footer {
+  animation: fadeIn 0.6s ease-out forwards;
+  opacity: 0;
+}
+.auth-container { animation-delay: 0.1s; }
+.back-link { animation-delay: 0.2s; }
+.login-footer { animation-delay: 0.25s; }
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed; top: 20px; right: 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 100;
+  transition: all 0.2s;
+}
+.theme-toggle:hover { border-color: var(--text-muted); color: var(--text); }
+.theme-toggle svg { width: 16px; height: 16px; }
+[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+[data-theme="light"] .theme-toggle .icon-moon { display: block; }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+  <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
+  <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+</button>
+
+<div class="logo-area">
+  <div class="logo-icon">K</div>
+  <span class="logo-text">keywordit<span class="logo-dot">.xyz</span></span>
+</div>
+
+<div class="auth-container">
+  <div class="auth-tabs">
+    <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+    <button class="auth-tab" id="tab-request" onclick="switchTab('request')">Request Access</button>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="auth-panel active" id="panel-login">
+    <div class="msg" id="login-msg"></div>
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input class="form-input" type="text" id="login-user" placeholder="Enter username" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password">
+    </div>
+    <button class="btn-submit" id="login-btn" onclick="doLogin()">Sign In</button>
+  </div>
+
+  <!-- REQUEST ACCESS -->
+  <div class="auth-panel" id="panel-request">
+    <div class="msg" id="request-msg"></div>
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input class="form-input" type="text" id="req-name" placeholder="Your name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" id="req-email" placeholder="you@company.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Company / Project</label>
+      <input class="form-input" type="text" id="req-company" placeholder="Company name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Why do you want access?</label>
+      <textarea class="form-textarea" id="req-reason" placeholder="Brief description of your use case..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Preferred Username</label>
+      <input class="form-input" type="text" id="req-username" placeholder="Choose a username">
+    </div>
+    <button class="btn-submit" id="request-btn" onclick="doRequest()">Submit Request</button>
+  </div>
+</div>
+
+<div class="back-link">
+  <a href="landing.html">← Back to keywordit.xyz</a>
+</div>
+
+<div class="login-footer">Access is reviewed manually · Typical approval: &lt;24h</div>
+
+<script>
+/**
+ * AUTH SYSTEM
+ * 
+ * Uses localStorage for session tokens and a users.json-based credential store.
+ * In production, the dashboard_builder.py generates the users database.
+ * 
+ * Storage keys:
+ *   keywordit_session   - { user, token, loginAt }
+ *   keywordit_users     - [{ username, passwordHash, role, status, name, email }]
+ *   keywordit_requests  - [{ name, email, company, reason, username, requestedAt, status }]
+ */
+
+// Simple hash (not cryptographic — use bcrypt in production)
+async function hashStr(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// Init default admin if no users exist
+async function initDefaults() {
+  let users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
+  if (users.length === 0) {
+    const adminHash = await hashStr('admin123');
+    users = [
+      { username: 'admin', passwordHash: adminHash, role: 'admin', status: 'approved', name: 'Admin', email: 'admin@keywordit.xyz', createdAt: new Date().toISOString() }
+    ];
+    localStorage.setItem('keywordit_users', JSON.stringify(users));
+  }
+  if (!localStorage.getItem('keywordit_requests')) {
+    localStorage.setItem('keywordit_requests', '[]');
+  }
+}
+initDefaults();
+
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+  // Clear messages
+  document.querySelectorAll('.msg').forEach(m => { m.className = 'msg'; m.textContent = ''; });
+}
+
+function showMsg(id, type, text) {
+  const el = document.getElementById(id);
+  el.className = 'msg ' + type;
+  el.textContent = text;
+}
+
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if (!user || !pass) { showMsg('login-msg', 'error', 'Please enter both fields.'); return; }
+
+  const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
+  const passHash = await hashStr(pass);
+  const found = users.find(u => u.username === user && u.passwordHash === passHash);
+
+  if (!found) {
+    showMsg('login-msg', 'error', 'Invalid username or password.');
+    return;
+  }
+  if (found.status === 'pending') {
+    showMsg('login-msg', 'info', 'Your account is pending approval. Please check back later.');
+    return;
+  }
+  if (found.status === 'declined') {
+    showMsg('login-msg', 'error', 'Your access request was declined.');
+    return;
+  }
+
+  // Create session
+  const session = {
+    user: found.username,
+    role: found.role,
+    token: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2),
+    loginAt: new Date().toISOString()
+  };
+  localStorage.setItem('keywordit_session', JSON.stringify(session));
+  showMsg('login-msg', 'success', 'Authenticated. Redirecting...');
+
+  setTimeout(() => {
+    if (found.role === 'admin') {
+      // Admin can choose
+      window.location.href = 'dashboard.html';
+    } else {
+      window.location.href = 'dashboard.html';
+    }
+  }, 600);
+}
+
+async function doRequest() {
+  const name = document.getElementById('req-name').value.trim();
+  const email = document.getElementById('req-email').value.trim();
+  const company = document.getElementById('req-company').value.trim();
+  const reason = document.getElementById('req-reason').value.trim();
+  const username = document.getElementById('req-username').value.trim().toLowerCase();
+
+  if (!name || !email || !username) {
+    showMsg('request-msg', 'error', 'Name, email, and username are required.');
+    return;
+  }
+  if (username.length < 3) {
+    showMsg('request-msg', 'error', 'Username must be at least 3 characters.');
+    return;
+  }
+
+  const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
+  const requests = JSON.parse(localStorage.getItem('keywordit_requests') || '[]');
+
+  if (users.find(u => u.username === username) || requests.find(r => r.username === username && r.status === 'pending')) {
+    showMsg('request-msg', 'error', 'That username is already taken or pending.');
+    return;
+  }
+
+  requests.push({
+    name, email, company, reason, username,
+    requestedAt: new Date().toISOString(),
+    status: 'pending'
+  });
+  localStorage.setItem('keywordit_requests', JSON.stringify(requests));
+
+  showMsg('request-msg', 'success', 'Access request submitted! You will be notified when approved.');
+  document.getElementById('request-btn').disabled = true;
+  document.getElementById('request-btn').textContent = 'Submitted';
+}
+
+// Auto-redirect if already authenticated
+(function() {
+  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
+  if (session && session.token) {
+    const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
+    const user = users.find(u => u.username === session.user && u.status === 'approved');
+    if (user) {
+      window.location.href = 'dashboard.html';
+    }
+  }
+})();
+
+// Enter key to submit
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// Theme toggle
+(function() {
+  const saved = localStorage.getItem('keywordit-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('theme-toggle').addEventListener('click', function() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('keywordit-theme', next);
+  });
+})();
+</script>
+</body>
+</html>

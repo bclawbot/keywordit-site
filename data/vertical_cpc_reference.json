@@ -1,0 +1,499 @@
+{
+  "version": "2.0",
+  "source": "keywords_report_03-16 (174,631 keywords, $899,323 total)",
+  "generated": "2026-03-20T21:21:49.226034+00:00",
+  "verticals": {
+    "auto_insurance": {
+      "tier": "S",
+      "total_revenue": 54260.42,
+      "keyword_count": 556,
+      "avg_rpc": 3.728,
+      "rev_per_keyword": 97.73,
+      "trigger_phrases": [
+        "auto insurance",
+        "car insurance",
+        "vehicle insurance",
+        "insurance cost",
+        "insurance rates",
+        "insurance for",
+        "insurance discount",
+        "insurance quote"
+      ],
+      "country_overrides": {
+        "AU": {
+          "multiplier": 2.8,
+          "note": "AU life+auto RPC $8-11, traffic-starved — massive upside"
+        },
+        "CA": {
+          "multiplier": 1.8,
+          "note": "Life insurance avg $84/kw"
+        },
+        "US": {
+          "multiplier": 2.0
+        },
+        "DE": {
+          "multiplier": 1.2
+        }
+      }
+    },
+    "life_insurance": {
+      "tier": "A",
+      "total_revenue": 15764.85,
+      "keyword_count": 318,
+      "avg_rpc": 3.52,
+      "rev_per_keyword": 49.58,
+      "trigger_phrases": [
+        "life insurance",
+        "term life",
+        "whole life",
+        "burial insurance",
+        "final expense",
+        "life insurance rates",
+        "life insurance cost"
+      ],
+      "country_overrides": {
+        "AU": {
+          "multiplier": 3.0,
+          "note": "RPC $8.95-11.53, Tier S+ — highest RPC in dataset"
+        },
+        "CA": {
+          "multiplier": 2.5,
+          "note": "Avg $84.46/kw"
+        },
+        "US": {
+          "multiplier": 2.0
+        }
+      }
+    },
+    "legal_services": {
+      "tier": "A",
+      "total_revenue": 28417.26,
+      "keyword_count": 1066,
+      "avg_rpc": 3.0,
+      "rev_per_keyword": 26.66,
+      "trigger_phrases": [
+        "lawyer",
+        "attorney",
+        "legal",
+        "lawsuit",
+        "settlement",
+        "negligence",
+        "malpractice",
+        "injury",
+        "wrongful",
+        "pro bono",
+        "no win no fee"
+      ],
+      "linguistic_bonus": {
+        "first_person_desperation": 1.5,
+        "note": "'I can't find a lawyer' vs 'lawyer near me' = 50-90% RPC premium"
+      },
+      "country_overrides": {
+        "AU": {
+          "multiplier": 2.5,
+          "note": "AU legal avg RPC $10.41"
+        },
+        "US": {
+          "multiplier": 2.0
+        },
+        "ES": {
+          "multiplier": 1.8,
+          "note": "ES legal $16.38/kw — Tier A despite Tier B country"
+        }
+      }
+    },
+    "housing_ssi": {
+      "tier": "A",
+      "total_revenue": 78734.96,
+      "keyword_count": 8819,
+      "avg_rpc": 1.333,
+      "rev_per_keyword": 8.93,
+      "trigger_phrases": [
+        "ssi apartment",
+        "section 8",
+        "housing assistance",
+        "hud",
+        "low income housing",
+        "affordable apartment",
+        "disability housing",
+        "social security apartment"
+      ]
+    },
+    "membership_retail": {
+      "tier": "A",
+      "total_revenue": 69883.38,
+      "keyword_count": 1533,
+      "avg_rpc": 0.82,
+      "rev_per_keyword": 45.59,
+      "trigger_phrases": [
+        "costco",
+        "sam's club",
+        "sam's",
+        "bj's",
+        "members",
+        "membership",
+        "club card",
+        "warehouse club"
+      ],
+      "brand_trust_multiplier": 3.2,
+      "note": "Branded insurance keywords 3.2x more revenue than unbranded — mostly from 2.9x CTR on Facebook"
+    },
+    "veterans_military": {
+      "tier": "A",
+      "total_revenue": 49281.84,
+      "keyword_count": 1352,
+      "avg_rpc": 0.84,
+      "rev_per_keyword": 36.45,
+      "trigger_phrases": [
+        "veteran",
+        "military",
+        "va loan",
+        "va discount",
+        "gi bill",
+        "navy federal",
+        "usaa",
+        "tricare",
+        "disabled veteran",
+        "military discount"
+      ]
+    },
+    "german_ausbildung": {
+      "tier": "A",
+      "total_revenue": 61976.98,
+      "keyword_count": 3711,
+      "avg_rpc": 1.27,
+      "rev_per_keyword": 16.7,
+      "trigger_phrases": [
+        "ausbildung",
+        "quereinsteiger",
+        "lehrstelle",
+        "azubi",
+        "berufsausbildung",
+        "mit b1",
+        "mit a2",
+        "mit b2",
+        "für ausländer",
+        "pflegefachfrau",
+        "altenpfleger"
+      ],
+      "country_overrides": {
+        "DE": {
+          "multiplier": 2.0
+        },
+        "CH": {
+          "multiplier": 2.2,
+          "note": "CH Ausbildung $18.81/kw, RPC $11.57 for loans — dual vertical"
+        },
+        "AT": {
+          "multiplier": 1.8
+        }
+      },
+      "diaspora_opportunity": "Same keyword appears in 67 countries. Create localized variants: 'Ausbildung für [nationality] mit B1'"
+    },
+    "medical_pharma": {
+      "tier": "B",
+      "total_revenue": 21920.45,
+      "keyword_count": 5353,
+      "avg_rpc": 0.37,
+      "rev_per_keyword": 4.09,
+      "trigger_phrases": [
+        "mounjaro",
+        "ozempic",
+        "wegovy",
+        "zepbound",
+        "glp-1",
+        "without insurance",
+        "patient assistance",
+        "discount card",
+        "ostomy",
+        "cpap",
+        "inhaler covered",
+        "cgm"
+      ],
+      "emerging_sub_verticals": {
+        "glp1_pharma_access": {
+          "total_revenue": 18838,
+          "avg_rev_per_kw": 20.39,
+          "note": "4x dataset average. Price-discovery phase — CPC data catching up. Use Track B (inherited CPC)."
+        }
+      }
+    },
+    "latam_delivery": {
+      "tier": "B",
+      "total_revenue": 19599.62,
+      "keyword_count": 1581,
+      "avg_rpc": 0.39,
+      "rev_per_keyword": 12.4,
+      "trigger_phrases": [
+        "entrega",
+        "repartidor",
+        "moto propia",
+        "auto propio",
+        "amazon flex",
+        "mercado libre",
+        "delivery driver",
+        "conductor",
+        "motorista"
+      ],
+      "country_overrides": {
+        "MX": {
+          "multiplier": 3.0,
+          "note": "MX gig delivery avg $46.45/kw — 9x premium vs MX overall"
+        },
+        "AR": {
+          "multiplier": 3.5,
+          "note": "AR gig delivery avg $25.69/kw — 9.5x premium"
+        },
+        "CO": {
+          "multiplier": 3.2,
+          "note": "CO gig delivery avg $18.83/kw — 8.6x premium"
+        },
+        "note": "Flat country tiers dramatically undervalue LATAM gig delivery. Use vertical-specific overrides."
+      }
+    },
+    "cruises_travel": {
+      "tier": "B",
+      "total_revenue": 19675.76,
+      "keyword_count": 1564,
+      "avg_rpc": 0.43,
+      "rev_per_keyword": 12.58,
+      "trigger_phrases": [
+        "cruise",
+        "river cruise",
+        "2 for 1",
+        "viking",
+        "alaska cruise",
+        "caribbean cruise",
+        "mediterranean cruise",
+        "senior cruise",
+        "vacation package",
+        "all inclusive"
+      ]
+    },
+    "home_services": {
+      "tier": "B",
+      "total_revenue": 17983.2,
+      "keyword_count": 1758,
+      "avg_rpc": 0.48,
+      "rev_per_keyword": 10.23,
+      "trigger_phrases": [
+        "installation cost",
+        "water heater",
+        "generator",
+        "plunge pool",
+        "roof installation",
+        "hvac",
+        "solar panels",
+        "kitchen remodel",
+        "home improvement price"
+      ]
+    },
+    "loans_credit": {
+      "tier": "B",
+      "total_revenue": 24084.09,
+      "keyword_count": 4033,
+      "avg_rpc": 1.6,
+      "rev_per_keyword": 5.97,
+      "trigger_phrases": [
+        "bad credit",
+        "no credit check",
+        "guaranteed approval",
+        "personal loan",
+        "debt consolidation",
+        "mortgage",
+        "refinance",
+        "payday loan",
+        "trotz schufa",
+        "sin credito"
+      ]
+    },
+    "seniors_demographics": {
+      "tier": "B",
+      "total_revenue": 25566.17,
+      "keyword_count": 1920,
+      "avg_rpc": 0.79,
+      "rev_per_keyword": 13.32,
+      "trigger_phrases": [
+        "senior",
+        "over 60",
+        "over 65",
+        "elderly",
+        "retiree",
+        "medicare supplement",
+        "hearing aid",
+        "aarp",
+        "assisted living"
+      ]
+    }
+  },
+  "country_tiers": {
+    "S": {
+      "countries": [
+        "US",
+        "JP",
+        "DE"
+      ],
+      "base_multiplier": 2.0,
+      "avg_rev_per_kw": "$13-16"
+    },
+    "A": {
+      "countries": [
+        "CH",
+        "AU",
+        "HK",
+        "CA",
+        "MX"
+      ],
+      "base_multiplier": 1.5,
+      "avg_rev_per_kw": "$5-10",
+      "note": "Use country×vertical overrides, not flat multiplier — AU insurance Tier S+, MX gig delivery Tier S+"
+    },
+    "B": {
+      "countries": [
+        "FR",
+        "ES",
+        "PE",
+        "IT",
+        "AT",
+        "AE",
+        "SG",
+        "IN",
+        "AR",
+        "CL",
+        "CO"
+      ],
+      "base_multiplier": 1.0,
+      "avg_rev_per_kw": "$2-5"
+    },
+    "C": {
+      "countries": [
+        "*all others*"
+      ],
+      "base_multiplier": 0.3,
+      "avg_rev_per_kw": "<$2",
+      "exception": "Can pass hard filter if keyword matches Tier S vertical with quality_score >= 14"
+    }
+  },
+  "intent_modifiers": {
+    "cost_price_inquiry": {
+      "triggers": [
+        "cost",
+        "price",
+        "pricing",
+        "rates",
+        "how much",
+        "cotizacion"
+      ],
+      "multiplier": 1.5
+    },
+    "near_me_local": {
+      "triggers": [
+        "near me",
+        "near by",
+        "in my area",
+        "cerca de mi"
+      ],
+      "multiplier": 1.4
+    },
+    "membership_brand": {
+      "triggers": [
+        "costco",
+        "sam's",
+        "member",
+        "club",
+        "bj's"
+      ],
+      "multiplier": 1.5
+    },
+    "year_current": {
+      "triggers": [
+        "2026",
+        "2027"
+      ],
+      "multiplier": 1.3
+    },
+    "discount_deal": {
+      "triggers": [
+        "discount",
+        "deal",
+        "sale",
+        "2 for 1",
+        "savings",
+        "coupon"
+      ],
+      "multiplier": 1.3
+    },
+    "demographic_targeted": {
+      "triggers": [
+        "senior",
+        "veteran",
+        "military",
+        "disabled",
+        "ssi",
+        "over 60",
+        "immigrant"
+      ],
+      "multiplier": 1.4
+    },
+    "guaranteed_approval": {
+      "triggers": [
+        "guaranteed",
+        "approval",
+        "no credit check",
+        "sin rechazo",
+        "trotz schufa"
+      ],
+      "multiplier": 1.6
+    },
+    "first_person_desperation": {
+      "triggers": [
+        "i can't",
+        "i need",
+        "i have no",
+        "can't afford",
+        "need help"
+      ],
+      "multiplier": 1.5
+    },
+    "negative_qualifier": {
+      "triggers": [
+        "without insurance",
+        "no credit check",
+        "take over payments",
+        "despite",
+        "trotz",
+        "sans"
+      ],
+      "multiplier": 1.2
+    },
+    "informational_generic": {
+      "triggers": [
+        "how to",
+        "what is",
+        "guide",
+        "tutorial"
+      ],
+      "multiplier": 0.7
+    },
+    "generic_best": {
+      "triggers": [
+        "best",
+        "top 10"
+      ],
+      "multiplier": 0.8
+    }
+  },
+  "scoring_formula": {
+    "formula": "vertical_tier_score × intent_multiplier_product × country_multiplier",
+    "vertical_tier_scores": {
+      "S": 10,
+      "A": 7,
+      "B": 4,
+      "Unknown": 1
+    },
+    "intent_cap": 3.0,
+    "pass_threshold": 4.0,
+    "priority_threshold": 14.0,
+    "linguistic_bonus_note": "Apply linguistic_scorer.py bonuses BEFORE this formula. First-person +25%, negative qualifier +20%, price anchor +15%, urgency +10%. These compound non-linearly."
+  }
+}

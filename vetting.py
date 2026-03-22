@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 
 BASE    = Path("/Users/newmac/.openclaw/workspace")
-INPUT   = BASE / "explosive_trends.json"
+INPUT   = BASE / "commercial_keywords.json"
 OUTPUT  = BASE / "vetted_opportunities.json"
 HISTORY = BASE / "vetted_history.jsonl"
 
@@ -135,8 +135,8 @@ async def search_brave(keyword: str, session: aiohttp.ClientSession, retries: in
 async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
                       executor: ThreadPoolExecutor, semaphore: asyncio.Semaphore) -> list:
     async with semaphore:
-        keyword = entry.get("term", "")
-        country = entry.get("geo", "US")
+        keyword = entry.get("keyword", "")
+        country = entry.get("country", "US")
 
         results = await search_ddg(keyword, executor)
         if not results:
@@ -156,7 +156,8 @@ async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
             if any(d in url.lower() for d in noise_domains):
                 continue
 
-            survivors.append({
+            # Preserve all CPC and metrics data from commercial_keywords.json
+            vetted_entry = {
                 "keyword":         keyword,
                 "country":         country,
                 "vertical":        classify_vertical(keyword, url),
@@ -164,10 +165,18 @@ async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
                 "lander_url":      url,
                 "lander_title":    title,
                 "ad_age_days":     90,
-                "explosive_score": entry.get("explosive_score", 0),
                 "data_source":     "ddg_serp",
                 "vetted_at":       datetime.now().isoformat(),
-            })
+            }
+            # Copy all CPC and metrics fields from commercial_keywords
+            for key in ["cpc_usd", "search_volume", "competition", "competition_index",
+                        "opportunity_score", "estimated_rpm", "metrics_source",
+                        "commercial_category", "confidence", "country_tier",
+                        "efficiency_factor", "processed_at", "cpc_low_usd", "cpc_high_usd"]:
+                if key in entry:
+                    vetted_entry[key] = entry[key]
+            
+            survivors.append(vetted_entry)
 
         # Small polite delay between keywords
         await asyncio.sleep(0.5)
@@ -190,13 +199,64 @@ async def vet_all(trends: list) -> list:
     return all_vetted
 
 
+def is_news_headline(keyword: str) -> bool:
+    """Quick heuristic to filter non-commercial news headlines.
+    Uses word-boundary matching to avoid false positives like 'fire extinguisher'."""
+    import re
+    # Only match as whole words to prevent substring false positives
+    _NEWS_VERBS = [
+        "arrested", "dies", "died", "shooting", "shot", "killed",
+        "scandal", "investigation", "elected", "resigns", "explodes",
+    ]
+    # These are only news when NOT paired with product context
+    _CONTEXT_VERBS = ["fire", "earthquake", "flood", "storm", "hurricane",
+                      "weather", "forecast", "crashes", "wins", "loses", "lost"]
+    # Product/commercial modifiers that override news classification
+    _COMMERCIAL_CONTEXT = [
+        "extinguisher", "pit", "door", "proof", "resistant", "insurance",
+        "protection", "alarm", "detector", "damage", "repair", "restoration",
+        "cleanup", "service", "company", "kit", "equipment", "gear", "supply",
+        "sale", "buy", "best", "top", "review", "price", "cost", "cheap",
+    ]
+    kw_lower = keyword.lower()
+
+    # Check hard news verbs (always filter)
+    for verb in _NEWS_VERBS:
+        if re.search(rf'\b{verb}\b', kw_lower):
+            return True
+
+    # Check context-dependent verbs — only filter if NO commercial modifier present
+    has_commercial = any(cm in kw_lower for cm in _COMMERCIAL_CONTEXT)
+    if not has_commercial:
+        for verb in _CONTEXT_VERBS:
+            if re.search(rf'\b{verb}\b', kw_lower):
+                return True
+
+    return False
+
+
 if __name__ == "__main__":
     if not INPUT.exists():
-        print(f"⚠️  {INPUT} not found — run trends_postprocess.py first")
+        print(f"⚠️  {INPUT} not found — run keyword_extractor.py first")
         raise SystemExit(1)
 
-    trends = json.loads(INPUT.read_text())
-    all_vetted = asyncio.run(vet_all(trends))
+    commercial_keywords = json.loads(INPUT.read_text())
+    
+    if not commercial_keywords:
+        print(f"❌  {INPUT.name} is empty — keyword_extractor.py must have failed.")
+        raise SystemExit(1)
+    
+    # Filter out news headlines before vetting
+    original_count = len(commercial_keywords)
+    commercial_keywords = [
+        kw for kw in commercial_keywords
+        if not is_news_headline(kw.get("keyword", ""))
+    ]
+    filtered_count = original_count - len(commercial_keywords)
+    if filtered_count > 0:
+        print(f"  [News Filter] Removed {filtered_count} news headlines from {original_count} keywords")
+    
+    all_vetted = asyncio.run(vet_all(commercial_keywords))
 
     OUTPUT.write_text(json.dumps(all_vetted, indent=2))
 
@@ -204,4 +264,4 @@ if __name__ == "__main__":
         for rec in all_vetted:
             f.write(json.dumps(rec) + "\n")
 
-    print(f"✅ Vetting complete: {len(all_vetted)} opportunities from {len(trends)} trends → {OUTPUT.name}")
+    print(f"✅ Vetting complete: {len(all_vetted)} opportunities from {len(commercial_keywords)} commercial keywords → {OUTPUT.name}")

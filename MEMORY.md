@@ -9,1700 +9,7 @@
 - Receipt: awaiting Telegram delivery confirmation in this chat
 
 
-## Reflection — 2026-02-26T11:12:51
 
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- US: 2 golden / 2 total
-- ID: 1 golden / 1 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- ID: 1.00
-- US: 1.00
-
----
-
-## Reflection — 2026-02-26T11:29:58
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- US: 1 golden / 1 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- US: 1.00
-
----
-
-## Reflection — 2026-02-26T12:10:02
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- ZA: 1 golden / 1 total
-- VN: 1 golden / 1 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- ZA: 1.00
-- VN: 1.00
-
----
-
-## Reflection — 2026-02-26T12:37:15
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- VN: 1 golden / 1 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- VN: 1.00
-
----
-
-## Reflection — 2026-02-26T13:03:58
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- ID: 1 golden / 1 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- ID: 1.00
-
----
-
-## Reflection — 2026-02-26T22:49:06
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-26T22:57:18
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- IN: 0 golden / 1 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- IN: 0.00
-
----
-
-## Reflection — 2026-02-26T22:59:29
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-26T23:56:46
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T00:49:31
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T01:20:28
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T01:51:31
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T02:17:24
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T03:12:20
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- TH: 0 golden / 2 total
-- VN: 0 golden / 1 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- TH: 0.00
-- VN: 0.00
-
----
-
-## Reflection — 2026-02-27T03:56:17
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T11:36:09
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T12:07:11
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T12:40:37
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T13:31:34
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- GR: 0 golden / 2 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- GR: 0.00
-
----
-
-## Reflection — 2026-02-27T14:21:05
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- GR: 0 golden / 2 total
-- PL: 0 golden / 2 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- GR: 0.00
-- PL: 0.00
-
----
-
-## Reflection — 2026-02-27T14:57:58
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T15:29:09
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T16:00:16
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T17:00:34
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T18:03:55
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- RO: 0 golden / 2 total
-- SG: 0 golden / 2 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- RO: 0.00
-- SG: 0.00
-
----
-
-## Reflection — 2026-02-27T18:56:04
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T19:57:38
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T20:57:12
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- US: 0 golden / 4 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- US: 0.00
-
----
-
-## Reflection — 2026-02-27T21:18:57
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T21:25:44
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T21:26:04
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T21:39:35
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T21:39:41
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T21:40:04
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T21:55:55
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T21:56:19
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:12:06
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:12:32
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:22:22
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:22:33
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:22:50
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:23:17
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:23:42
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:23:57
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:24:12
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:24:27
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:24:40
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:24:55
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:25:09
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:25:27
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:25:41
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:25:55
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:26:33
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:26:47
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:27:08
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:27:28
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:27:45
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:27:59
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:28:26
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:28:41
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:28:55
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:29:19
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:29:37
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:29:53
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:30:07
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:30:28
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:30:55
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:31:09
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:31:38
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:31:53
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:32:07
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:32:23
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:32:40
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:32:59
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:33:18
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:33:37
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:33:52
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:34:07
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:34:22
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:34:37
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:34:53
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:35:10
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:35:25
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:35:41
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:35:55
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:36:10
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:36:26
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:36:40
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:36:57
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:38:33
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:38:50
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T22:50:49
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T23:05:07
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T23:21:16
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T23:21:20
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T23:21:31
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T23:38:20
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-27T23:53:54
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- IT: 0 golden / 3 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- IT: 0.00
-
----
-
-## Reflection — 2026-02-28T00:12:21
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-- ID: 0 golden / 1 total
-- IT: 0 golden / 1 total
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-- ID: 0.00
-- IT: 0.00
-
----
-
-## Reflection — 2026-02-28T00:29:29
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:34:29
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:44:52
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:45:20
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:45:33
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:45:43
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:46:09
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:46:29
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:46:45
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:47:02
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:47:06
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:47:18
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:47:56
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:48:16
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:48:32
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:48:47
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:49:03
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:49:32
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:49:47
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:50:02
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:50:19
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:50:49
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:51:15
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:51:34
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:51:49
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:52:04
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:52:25
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:52:40
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:52:53
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
 ### False Positives by Country
 
 ### Golden Opportunities by Country
@@ -1711,137 +18,16 @@ Total: 0
 
 ---
 
-## Reflection — 2026-02-28T00:53:10
 
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:53:25
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:53:36
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:53:46
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:54:10
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:54:28
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
 
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:54:43
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
-
-## Reflection — 2026-02-28T00:54:59
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
 ### Signal Weights (golden_rate per country, 0.0–1.0)
 
 ---
-
-## Reflection — 2026-02-28T00:55:16
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
 
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
 
 ---
-
-## Reflection — 2026-02-28T00:55:44
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
-
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
 
----
 
-## Reflection — 2026-02-28T00:56:05
 
 ### False Positives (trends >48h old, never reached validation)
 Total: 0
@@ -1853,32 +39,11 @@ Total: 0
 ### Signal Weights (golden_rate per country, 0.0–1.0)
 
 ---
-
-## Reflection — 2026-02-28T00:56:31
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
 
-### Golden Opportunities by Country
 
-### Signal Weights (golden_rate per country, 0.0–1.0)
 
 ---
-
-## Reflection — 2026-02-28T00:56:54
-
-### False Positives (trends >48h old, never reached validation)
-Total: 0
-
-### False Positives by Country
 
-### Golden Opportunities by Country
-
-### Signal Weights (golden_rate per country, 0.0–1.0)
-
----
 
 ## Reflection — 2026-02-28T00:57:27
 
@@ -3441,5 +1606,536 @@ Total: 3121
 - IE: 0.00
 - JP: 0.00
 - KE: 0.00
+
+---
+
+## Reflection — 2026-03-21T12:06:00
+
+### False Positives (trends >48h old, never reached validation)
+Total: 10641
+- [PL] "200 tys. zł na każde dziecko" zamiast 800 plus? minister "otwarta na debatę"
+- [AR] "aumento del 11%": estos son los gremios docentes de tucumán que alcanzaron un acuerdo con la provincia
+- [PL] "bałam się go. wyzywał i groził nożem”. przerażająca relacja na procesie łukasza żaka
+- [FR] "c’est une course contre la montre" : comment lucie, 12 ans, a été retrouvée 3h11 après le déclenchement de l'alerte enlèvement
+- [PE] "esta es mi segunda oportunidad": laura spoya descarta victimizarse y reflexiona sobre accidente en surco
+- [SE] "ett fönster av möjligheter" är väl inte ett svenskt begrepp?
+- [IN] "even if she survives, who will marry her?" father of bride shot at on stage
+- [PH] "general" manager torre mocks dds who says he took a demotion: "mas mataas sweldo ko ngayon"
+- [FR] "ils sont autour de 50 000" : le nombre de foyers très aisés qui ne paient pas d’impôts largement revu à la hausse par éric lombard ( contre 13 000 dans la 1ere news )
+- [CL] "improvisador, poco efectivo y poco transparente": crudo balance de provoste sobre gobierno de boric
+- [PT] "ironia do destino. deus escreve direito por linhas direitas e tortas"
+- [PL] "kaczyński na pewno jest poirytowany". odwilż na linii nawrocki - sikorski
+- [FR] "l’impression de trahir les lecteurs" : comment le groupe bolloré remplace les journalistes par l’ia
+- [BE] "mamie jeaninne a suivi un homme en belgique et disparu des radars": l'appel de samantha, à la recherche d'infos sur sa grand-mère
+- [PL] "moim zdaniem nie będzie dwóch krs-ów". żurek mówi o planie "c"
+- [PL] "nawrocki jest w stanie wyeliminować kaczyńskiego". leszek miller o napięciach w pis w sprawie safe - wiadomości z kraju i ze świata
+- [PL] "nie chcemy umierać na kolanach". szpitale idą protestować. dziura w budżecie na zdrowie to 25 zł mld zł
+- [BR] "o que o trump está fazendo lá, referente à venezuela e ao irã, que ele fez ontem, representa o que a direita tá querendo aqui no brasil."
+- [DE] "ort der stillen dankbarkeit": erinnerung an laura dahlmeier - garmisch benennt park um
+- [PT] "os norte-americanos usam a base das lajes como entendem e quando entendem"
+- [DE] "photovoltaik rechnet sich auch ohne zuschüsse": förder-aus sorgt für diskussionen
+- [PL] "rz": zapadł wyrok ws. prezentów od brzoski dla nawrockiego. "sąd przyznał nam rację"
+- [AT] "science communication center" in wien wird zu "q"
+- [PT] "serei sempre polícia". mai deixa aviso sobre "desvios"
+- [PL] "stan wyjątkowy". morawiecki stawia się kaczyńskiemu. nawrocki pod presją tuska. macierewicz wraca do łask
+- [BR] "vamos libertar as meninas iranianas... bombardeando elas!"
+- [UA] "ми не можемо пересувати ноги меру": зеленський розкритикував кличка за підготовку до зими
+- [UA] "із проблеми намагаються зробити піар": чому сесія міськради у чернігові не відбулася та що буде із транспортом у місті
+- [IL] "ישראל חדרה למצלמות בטהראן ועקבה אחר חמינאי במשך שנים"
+- [IL] "שמענו פיצוצים והתחלנו לחגוג": עדות בלעדית מ-n12 מלב טהראן עם פתיחת מבצע "שאגת הארי"
+  ...and 10611 more
+
+### False Positives by Country
+- US: 462 FP
+- JP: 392 FP
+- GB: 391 FP
+- BR: 365 FP
+- FR: 350 FP
+- KR: 307 FP
+- ID: 296 FP
+- DE: 293 FP
+- IN: 286 FP
+- CA: 281 FP
+- TR: 271 FP
+- TW: 268 FP
+- PL: 259 FP
+- MX: 254 FP
+- AR: 253 FP
+
+### Golden Opportunities by Country
+- TH: 0 golden / 29 total
+- VN: 0 golden / 8 total
+- IT: 0 golden / 2 total
+- MY: 0 golden / 46 total
+- GB: 0 golden / 99 total
+- CO: 0 golden / 3 total
+- GR: 0 golden / 11 total
+- PE: 0 golden / 5 total
+- AR: 0 golden / 9 total
+- AU: 0 golden / 34 total
+- BR: 0 golden / 5 total
+- CA: 0 golden / 50 total
+- DK: 0 golden / 7 total
+- FR: 0 golden / 27 total
+- DE: 0 golden / 20 total
+
+### Signal Weights (golden_rate per country, 0.0–1.0)
+- TH: 0.00
+- VN: 0.00
+- IT: 0.00
+- MY: 0.00
+- GB: 0.00
+- CO: 0.00
+- GR: 0.00
+- PE: 0.00
+- AR: 0.00
+- AU: 0.00
+- BR: 0.00
+- CA: 0.00
+- DK: 0.00
+- FR: 0.00
+- DE: 0.00
+- IN: 0.00
+- ID: 0.00
+- IE: 0.00
+- JP: 0.00
+- KE: 0.00
+
+---
+
+## Reflection — 2026-03-21T14:45:59
+
+### False Positives (trends >48h old, never reached validation)
+Total: 10984
+- [PL] "200 tys. zł na każde dziecko" zamiast 800 plus? minister "otwarta na debatę"
+- [AR] "aumento del 11%": estos son los gremios docentes de tucumán que alcanzaron un acuerdo con la provincia
+- [PL] "bałam się go. wyzywał i groził nożem”. przerażająca relacja na procesie łukasza żaka
+- [US] "cancel chatgpt" movement goes big after openai's latest move
+- [FR] "c’est une course contre la montre" : comment lucie, 12 ans, a été retrouvée 3h11 après le déclenchement de l'alerte enlèvement
+- [PE] "esta es mi segunda oportunidad": laura spoya descarta victimizarse y reflexiona sobre accidente en surco
+- [SE] "ett fönster av möjligheter" är väl inte ett svenskt begrepp?
+- [IN] "even if she survives, who will marry her?" father of bride shot at on stage
+- [PH] "general" manager torre mocks dds who says he took a demotion: "mas mataas sweldo ko ngayon"
+- [BE] "il est pratiquement inintelligible" : un politicien flamand demande la démission de bertin mampaka en tant que président du parlement bruxellois
+- [FR] "ils sont autour de 50 000" : le nombre de foyers très aisés qui ne paient pas d’impôts largement revu à la hausse par éric lombard ( contre 13 000 dans la 1ere news )
+- [CL] "improvisador, poco efectivo y poco transparente": crudo balance de provoste sobre gobierno de boric
+- [PT] "ironia do destino. deus escreve direito por linhas direitas e tortas"
+- [PL] "kaczyński na pewno jest poirytowany". odwilż na linii nawrocki - sikorski
+- [FR] "l’impression de trahir les lecteurs" : comment le groupe bolloré remplace les journalistes par l’ia
+- [BE] "mamie jeaninne a suivi un homme en belgique et disparu des radars": l'appel de samantha, à la recherche d'infos sur sa grand-mère
+- [PL] "moim zdaniem nie będzie dwóch krs-ów". żurek mówi o planie "c"
+- [PL] "nawrocki jest w stanie wyeliminować kaczyńskiego". leszek miller o napięciach w pis w sprawie safe - wiadomości z kraju i ze świata
+- [PL] "nie chcemy umierać na kolanach". szpitale idą protestować. dziura w budżecie na zdrowie to 25 zł mld zł
+- [FR] "nous ne partageons pas leur vision sur le vivre-ensemble, sur la république, sur la laïcité...": carole delga estime que toute alliance avec lfi aux municipales serait un "déshonneur" pour le ps
+- [BR] "o que o trump está fazendo lá, referente à venezuela e ao irã, que ele fez ontem, representa o que a direita tá querendo aqui no brasil."
+- [DE] "ort der stillen dankbarkeit": erinnerung an laura dahlmeier - garmisch benennt park um
+- [PT] "os norte-americanos usam a base das lajes como entendem e quando entendem"
+- [DE] "photovoltaik rechnet sich auch ohne zuschüsse": förder-aus sorgt für diskussionen
+- [PL] "rz": zapadł wyrok ws. prezentów od brzoski dla nawrockiego. "sąd przyznał nam rację"
+- [AT] "science communication center" in wien wird zu "q"
+- [PT] "serei sempre polícia". mai deixa aviso sobre "desvios"
+- [PL] "stan wyjątkowy". morawiecki stawia się kaczyńskiemu. nawrocki pod presją tuska. macierewicz wraca do łask
+- [BR] "vamos libertar as meninas iranianas... bombardeando elas!"
+- [UA] "ми не можемо пересувати ноги меру": зеленський розкритикував кличка за підготовку до зими
+  ...and 10954 more
+
+### False Positives by Country
+- US: 493 FP
+- GB: 414 FP
+- JP: 405 FP
+- BR: 370 FP
+- FR: 361 FP
+- KR: 317 FP
+- ID: 304 FP
+- DE: 303 FP
+- IN: 298 FP
+- CA: 293 FP
+- TW: 273 FP
+- TR: 271 FP
+- PL: 266 FP
+- AR: 258 FP
+- MX: 258 FP
+
+### Golden Opportunities by Country
+- RO: 0 golden / 7 total
+- SG: 0 golden / 8 total
+- ZA: 0 golden / 9 total
+- SE: 0 golden / 3 total
+- UA: 0 golden / 13 total
+- GB: 0 golden / 25 total
+- AR: 0 golden / 3 total
+- AU: 0 golden / 11 total
+- AT: 0 golden / 5 total
+- BE: 0 golden / 8 total
+- BR: 0 golden / 10 total
+- CA: 0 golden / 13 total
+- CL: 0 golden / 7 total
+- CO: 0 golden / 5 total
+- CZ: 0 golden / 3 total
+
+### Signal Weights (golden_rate per country, 0.0–1.0)
+- RO: 0.00
+- SG: 0.00
+- ZA: 0.00
+- SE: 0.00
+- UA: 0.00
+- GB: 0.00
+- AR: 0.00
+- AU: 0.00
+- AT: 0.00
+- BE: 0.00
+- BR: 0.00
+- CA: 0.00
+- CL: 0.00
+- CO: 0.00
+- CZ: 0.00
+- DK: 0.00
+- EG: 0.00
+- FI: 0.00
+- FR: 0.00
+- DE: 0.00
+
+---
+
+## Reflection — 2026-03-21T18:49:29
+
+### False Positives (trends >48h old, never reached validation)
+Total: 10984
+- [PL] "200 tys. zł na każde dziecko" zamiast 800 plus? minister "otwarta na debatę"
+- [AR] "aumento del 11%": estos son los gremios docentes de tucumán que alcanzaron un acuerdo con la provincia
+- [PL] "bałam się go. wyzywał i groził nożem”. przerażająca relacja na procesie łukasza żaka
+- [US] "cancel chatgpt" movement goes big after openai's latest move
+- [FR] "c’est une course contre la montre" : comment lucie, 12 ans, a été retrouvée 3h11 après le déclenchement de l'alerte enlèvement
+- [PE] "esta es mi segunda oportunidad": laura spoya descarta victimizarse y reflexiona sobre accidente en surco
+- [SE] "ett fönster av möjligheter" är väl inte ett svenskt begrepp?
+- [IN] "even if she survives, who will marry her?" father of bride shot at on stage
+- [PH] "general" manager torre mocks dds who says he took a demotion: "mas mataas sweldo ko ngayon"
+- [BE] "il est pratiquement inintelligible" : un politicien flamand demande la démission de bertin mampaka en tant que président du parlement bruxellois
+- [FR] "ils sont autour de 50 000" : le nombre de foyers très aisés qui ne paient pas d’impôts largement revu à la hausse par éric lombard ( contre 13 000 dans la 1ere news )
+- [CL] "improvisador, poco efectivo y poco transparente": crudo balance de provoste sobre gobierno de boric
+- [PT] "ironia do destino. deus escreve direito por linhas direitas e tortas"
+- [PL] "kaczyński na pewno jest poirytowany". odwilż na linii nawrocki - sikorski
+- [FR] "l’impression de trahir les lecteurs" : comment le groupe bolloré remplace les journalistes par l’ia
+- [BE] "mamie jeaninne a suivi un homme en belgique et disparu des radars": l'appel de samantha, à la recherche d'infos sur sa grand-mère
+- [PL] "moim zdaniem nie będzie dwóch krs-ów". żurek mówi o planie "c"
+- [PL] "nawrocki jest w stanie wyeliminować kaczyńskiego". leszek miller o napięciach w pis w sprawie safe - wiadomości z kraju i ze świata
+- [PL] "nie chcemy umierać na kolanach". szpitale idą protestować. dziura w budżecie na zdrowie to 25 zł mld zł
+- [FR] "nous ne partageons pas leur vision sur le vivre-ensemble, sur la république, sur la laïcité...": carole delga estime que toute alliance avec lfi aux municipales serait un "déshonneur" pour le ps
+- [BR] "o que o trump está fazendo lá, referente à venezuela e ao irã, que ele fez ontem, representa o que a direita tá querendo aqui no brasil."
+- [DE] "ort der stillen dankbarkeit": erinnerung an laura dahlmeier - garmisch benennt park um
+- [PT] "os norte-americanos usam a base das lajes como entendem e quando entendem"
+- [DE] "photovoltaik rechnet sich auch ohne zuschüsse": förder-aus sorgt für diskussionen
+- [PL] "rz": zapadł wyrok ws. prezentów od brzoski dla nawrockiego. "sąd przyznał nam rację"
+- [AT] "science communication center" in wien wird zu "q"
+- [PT] "serei sempre polícia". mai deixa aviso sobre "desvios"
+- [PL] "stan wyjątkowy". morawiecki stawia się kaczyńskiemu. nawrocki pod presją tuska. macierewicz wraca do łask
+- [BR] "vamos libertar as meninas iranianas... bombardeando elas!"
+- [UA] "ми не можемо пересувати ноги меру": зеленський розкритикував кличка за підготовку до зими
+  ...and 10954 more
+
+### False Positives by Country
+- US: 493 FP
+- GB: 414 FP
+- JP: 405 FP
+- BR: 370 FP
+- FR: 361 FP
+- KR: 317 FP
+- ID: 304 FP
+- DE: 303 FP
+- IN: 298 FP
+- CA: 293 FP
+- TW: 273 FP
+- TR: 271 FP
+- PL: 266 FP
+- AR: 258 FP
+- MX: 258 FP
+
+### Golden Opportunities by Country
+- AR: 0 golden / 1 total
+- AU: 0 golden / 1 total
+- AT: 0 golden / 1 total
+- BE: 0 golden / 1 total
+- BR: 0 golden / 4 total
+- CA: 0 golden / 8 total
+- CL: 0 golden / 3 total
+- CO: 0 golden / 2 total
+- CZ: 0 golden / 4 total
+- DK: 0 golden / 3 total
+- EG: 0 golden / 5 total
+- FI: 0 golden / 1 total
+- FR: 0 golden / 9 total
+- DE: 0 golden / 8 total
+- GR: 0 golden / 4 total
+
+### Signal Weights (golden_rate per country, 0.0–1.0)
+- AR: 0.00
+- AU: 0.00
+- AT: 0.00
+- BE: 0.00
+- BR: 0.00
+- CA: 0.00
+- CL: 0.00
+- CO: 0.00
+- CZ: 0.00
+- DK: 0.00
+- EG: 0.00
+- FI: 0.00
+- FR: 0.00
+- DE: 0.00
+- GR: 0.00
+- IN: 0.00
+- ID: 0.00
+- IE: 0.00
+- IL: 0.00
+- JP: 0.00
+
+---
+
+## Reflection — 2026-03-21T22:53:29
+
+### False Positives (trends >48h old, never reached validation)
+Total: 10984
+- [PL] "200 tys. zł na każde dziecko" zamiast 800 plus? minister "otwarta na debatę"
+- [AR] "aumento del 11%": estos son los gremios docentes de tucumán que alcanzaron un acuerdo con la provincia
+- [PL] "bałam się go. wyzywał i groził nożem”. przerażająca relacja na procesie łukasza żaka
+- [US] "cancel chatgpt" movement goes big after openai's latest move
+- [FR] "c’est une course contre la montre" : comment lucie, 12 ans, a été retrouvée 3h11 après le déclenchement de l'alerte enlèvement
+- [PE] "esta es mi segunda oportunidad": laura spoya descarta victimizarse y reflexiona sobre accidente en surco
+- [SE] "ett fönster av möjligheter" är väl inte ett svenskt begrepp?
+- [IN] "even if she survives, who will marry her?" father of bride shot at on stage
+- [PH] "general" manager torre mocks dds who says he took a demotion: "mas mataas sweldo ko ngayon"
+- [BE] "il est pratiquement inintelligible" : un politicien flamand demande la démission de bertin mampaka en tant que président du parlement bruxellois
+- [FR] "ils sont autour de 50 000" : le nombre de foyers très aisés qui ne paient pas d’impôts largement revu à la hausse par éric lombard ( contre 13 000 dans la 1ere news )
+- [CL] "improvisador, poco efectivo y poco transparente": crudo balance de provoste sobre gobierno de boric
+- [PT] "ironia do destino. deus escreve direito por linhas direitas e tortas"
+- [PL] "kaczyński na pewno jest poirytowany". odwilż na linii nawrocki - sikorski
+- [FR] "l’impression de trahir les lecteurs" : comment le groupe bolloré remplace les journalistes par l’ia
+- [BE] "mamie jeaninne a suivi un homme en belgique et disparu des radars": l'appel de samantha, à la recherche d'infos sur sa grand-mère
+- [PL] "moim zdaniem nie będzie dwóch krs-ów". żurek mówi o planie "c"
+- [PL] "nawrocki jest w stanie wyeliminować kaczyńskiego". leszek miller o napięciach w pis w sprawie safe - wiadomości z kraju i ze świata
+- [PL] "nie chcemy umierać na kolanach". szpitale idą protestować. dziura w budżecie na zdrowie to 25 zł mld zł
+- [FR] "nous ne partageons pas leur vision sur le vivre-ensemble, sur la république, sur la laïcité...": carole delga estime que toute alliance avec lfi aux municipales serait un "déshonneur" pour le ps
+- [BR] "o que o trump está fazendo lá, referente à venezuela e ao irã, que ele fez ontem, representa o que a direita tá querendo aqui no brasil."
+- [DE] "ort der stillen dankbarkeit": erinnerung an laura dahlmeier - garmisch benennt park um
+- [PT] "os norte-americanos usam a base das lajes como entendem e quando entendem"
+- [DE] "photovoltaik rechnet sich auch ohne zuschüsse": förder-aus sorgt für diskussionen
+- [PL] "rz": zapadł wyrok ws. prezentów od brzoski dla nawrockiego. "sąd przyznał nam rację"
+- [AT] "science communication center" in wien wird zu "q"
+- [PT] "serei sempre polícia". mai deixa aviso sobre "desvios"
+- [PL] "stan wyjątkowy". morawiecki stawia się kaczyńskiemu. nawrocki pod presją tuska. macierewicz wraca do łask
+- [BR] "vamos libertar as meninas iranianas... bombardeando elas!"
+- [UA] "ми не можемо пересувати ноги меру": зеленський розкритикував кличка за підготовку до зими
+  ...and 10954 more
+
+### False Positives by Country
+- US: 493 FP
+- GB: 414 FP
+- JP: 405 FP
+- BR: 370 FP
+- FR: 361 FP
+- KR: 317 FP
+- ID: 304 FP
+- DE: 303 FP
+- IN: 298 FP
+- CA: 293 FP
+- TW: 273 FP
+- TR: 271 FP
+- PL: 266 FP
+- AR: 258 FP
+- MX: 258 FP
+
+### Golden Opportunities by Country
+- US: 0 golden / 6 total
+
+### Signal Weights (golden_rate per country, 0.0–1.0)
+- US: 0.00
+
+---
+
+## Reflection — 2026-03-22T01:37:33
+
+### False Positives (trends >48h old, never reached validation)
+Total: 10984
+- [PL] "200 tys. zł na każde dziecko" zamiast 800 plus? minister "otwarta na debatę"
+- [AR] "aumento del 11%": estos son los gremios docentes de tucumán que alcanzaron un acuerdo con la provincia
+- [PL] "bałam się go. wyzywał i groził nożem”. przerażająca relacja na procesie łukasza żaka
+- [US] "cancel chatgpt" movement goes big after openai's latest move
+- [FR] "c’est une course contre la montre" : comment lucie, 12 ans, a été retrouvée 3h11 après le déclenchement de l'alerte enlèvement
+- [PE] "esta es mi segunda oportunidad": laura spoya descarta victimizarse y reflexiona sobre accidente en surco
+- [SE] "ett fönster av möjligheter" är väl inte ett svenskt begrepp?
+- [IN] "even if she survives, who will marry her?" father of bride shot at on stage
+- [PH] "general" manager torre mocks dds who says he took a demotion: "mas mataas sweldo ko ngayon"
+- [BE] "il est pratiquement inintelligible" : un politicien flamand demande la démission de bertin mampaka en tant que président du parlement bruxellois
+- [FR] "ils sont autour de 50 000" : le nombre de foyers très aisés qui ne paient pas d’impôts largement revu à la hausse par éric lombard ( contre 13 000 dans la 1ere news )
+- [CL] "improvisador, poco efectivo y poco transparente": crudo balance de provoste sobre gobierno de boric
+- [PT] "ironia do destino. deus escreve direito por linhas direitas e tortas"
+- [PL] "kaczyński na pewno jest poirytowany". odwilż na linii nawrocki - sikorski
+- [FR] "l’impression de trahir les lecteurs" : comment le groupe bolloré remplace les journalistes par l’ia
+- [BE] "mamie jeaninne a suivi un homme en belgique et disparu des radars": l'appel de samantha, à la recherche d'infos sur sa grand-mère
+- [PL] "moim zdaniem nie będzie dwóch krs-ów". żurek mówi o planie "c"
+- [PL] "nawrocki jest w stanie wyeliminować kaczyńskiego". leszek miller o napięciach w pis w sprawie safe - wiadomości z kraju i ze świata
+- [PL] "nie chcemy umierać na kolanach". szpitale idą protestować. dziura w budżecie na zdrowie to 25 zł mld zł
+- [FR] "nous ne partageons pas leur vision sur le vivre-ensemble, sur la république, sur la laïcité...": carole delga estime que toute alliance avec lfi aux municipales serait un "déshonneur" pour le ps
+- [BR] "o que o trump está fazendo lá, referente à venezuela e ao irã, que ele fez ontem, representa o que a direita tá querendo aqui no brasil."
+- [DE] "ort der stillen dankbarkeit": erinnerung an laura dahlmeier - garmisch benennt park um
+- [PT] "os norte-americanos usam a base das lajes como entendem e quando entendem"
+- [DE] "photovoltaik rechnet sich auch ohne zuschüsse": förder-aus sorgt für diskussionen
+- [PL] "rz": zapadł wyrok ws. prezentów od brzoski dla nawrockiego. "sąd przyznał nam rację"
+- [AT] "science communication center" in wien wird zu "q"
+- [PT] "serei sempre polícia". mai deixa aviso sobre "desvios"
+- [PL] "stan wyjątkowy". morawiecki stawia się kaczyńskiemu. nawrocki pod presją tuska. macierewicz wraca do łask
+- [BR] "vamos libertar as meninas iranianas... bombardeando elas!"
+- [UA] "ми не можемо пересувати ноги меру": зеленський розкритикував кличка за підготовку до зими
+  ...and 10954 more
+
+### False Positives by Country
+- US: 493 FP
+- GB: 414 FP
+- JP: 405 FP
+- BR: 370 FP
+- FR: 361 FP
+- KR: 317 FP
+- ID: 304 FP
+- DE: 303 FP
+- IN: 298 FP
+- CA: 293 FP
+- TW: 273 FP
+- TR: 271 FP
+- PL: 266 FP
+- AR: 258 FP
+- MX: 258 FP
+
+### Golden Opportunities by Country
+- AR: 0 golden / 1 total
+- AU: 0 golden / 1 total
+- AT: 0 golden / 1 total
+- BE: 0 golden / 1 total
+- BR: 0 golden / 4 total
+- CA: 0 golden / 8 total
+- CL: 0 golden / 3 total
+- CO: 0 golden / 2 total
+- CZ: 0 golden / 4 total
+- DK: 0 golden / 3 total
+- EG: 0 golden / 5 total
+- FI: 0 golden / 1 total
+- FR: 0 golden / 9 total
+- DE: 0 golden / 8 total
+- GR: 0 golden / 4 total
+
+### Signal Weights (golden_rate per country, 0.0–1.0)
+- AR: 0.00
+- AU: 0.00
+- AT: 0.00
+- BE: 0.00
+- BR: 0.00
+- CA: 0.00
+- CL: 0.00
+- CO: 0.00
+- CZ: 0.00
+- DK: 0.00
+- EG: 0.00
+- FI: 0.00
+- FR: 0.00
+- DE: 0.00
+- GR: 0.00
+- IN: 0.00
+- ID: 0.00
+- IE: 0.00
+- IL: 0.00
+- JP: 0.00
+
+---
+
+## Reflection — 2026-03-22T09:38:35
+
+### False Positives (trends >48h old, never reached validation)
+Total: 10984
+- [PL] "200 tys. zł na każde dziecko" zamiast 800 plus? minister "otwarta na debatę"
+- [AR] "aumento del 11%": estos son los gremios docentes de tucumán que alcanzaron un acuerdo con la provincia
+- [PL] "bałam się go. wyzywał i groził nożem”. przerażająca relacja na procesie łukasza żaka
+- [US] "cancel chatgpt" movement goes big after openai's latest move
+- [FR] "c’est une course contre la montre" : comment lucie, 12 ans, a été retrouvée 3h11 après le déclenchement de l'alerte enlèvement
+- [PE] "esta es mi segunda oportunidad": laura spoya descarta victimizarse y reflexiona sobre accidente en surco
+- [SE] "ett fönster av möjligheter" är väl inte ett svenskt begrepp?
+- [IN] "even if she survives, who will marry her?" father of bride shot at on stage
+- [PH] "general" manager torre mocks dds who says he took a demotion: "mas mataas sweldo ko ngayon"
+- [BE] "il est pratiquement inintelligible" : un politicien flamand demande la démission de bertin mampaka en tant que président du parlement bruxellois
+- [FR] "ils sont autour de 50 000" : le nombre de foyers très aisés qui ne paient pas d’impôts largement revu à la hausse par éric lombard ( contre 13 000 dans la 1ere news )
+- [CL] "improvisador, poco efectivo y poco transparente": crudo balance de provoste sobre gobierno de boric
+- [PT] "ironia do destino. deus escreve direito por linhas direitas e tortas"
+- [PL] "kaczyński na pewno jest poirytowany". odwilż na linii nawrocki - sikorski
+- [FR] "l’impression de trahir les lecteurs" : comment le groupe bolloré remplace les journalistes par l’ia
+- [BE] "mamie jeaninne a suivi un homme en belgique et disparu des radars": l'appel de samantha, à la recherche d'infos sur sa grand-mère
+- [PL] "moim zdaniem nie będzie dwóch krs-ów". żurek mówi o planie "c"
+- [PL] "nawrocki jest w stanie wyeliminować kaczyńskiego". leszek miller o napięciach w pis w sprawie safe - wiadomości z kraju i ze świata
+- [PL] "nie chcemy umierać na kolanach". szpitale idą protestować. dziura w budżecie na zdrowie to 25 zł mld zł
+- [FR] "nous ne partageons pas leur vision sur le vivre-ensemble, sur la république, sur la laïcité...": carole delga estime que toute alliance avec lfi aux municipales serait un "déshonneur" pour le ps
+- [BR] "o que o trump está fazendo lá, referente à venezuela e ao irã, que ele fez ontem, representa o que a direita tá querendo aqui no brasil."
+- [DE] "ort der stillen dankbarkeit": erinnerung an laura dahlmeier - garmisch benennt park um
+- [PT] "os norte-americanos usam a base das lajes como entendem e quando entendem"
+- [DE] "photovoltaik rechnet sich auch ohne zuschüsse": förder-aus sorgt für diskussionen
+- [PL] "rz": zapadł wyrok ws. prezentów od brzoski dla nawrockiego. "sąd przyznał nam rację"
+- [AT] "science communication center" in wien wird zu "q"
+- [PT] "serei sempre polícia". mai deixa aviso sobre "desvios"
+- [PL] "stan wyjątkowy". morawiecki stawia się kaczyńskiemu. nawrocki pod presją tuska. macierewicz wraca do łask
+- [BR] "vamos libertar as meninas iranianas... bombardeando elas!"
+- [UA] "ми не можемо пересувати ноги меру": зеленський розкритикував кличка за підготовку до зими
+  ...and 10954 more
+
+### False Positives by Country
+- US: 493 FP
+- GB: 414 FP
+- JP: 405 FP
+- BR: 370 FP
+- FR: 361 FP
+- KR: 317 FP
+- ID: 304 FP
+- DE: 303 FP
+- IN: 298 FP
+- CA: 293 FP
+- TW: 273 FP
+- TR: 271 FP
+- PL: 266 FP
+- AR: 258 FP
+- MX: 258 FP
+
+### Golden Opportunities by Country
+- AR: 0 golden / 1 total
+- AU: 0 golden / 1 total
+- AT: 0 golden / 1 total
+- BE: 0 golden / 1 total
+- BR: 0 golden / 4 total
+- CA: 0 golden / 8 total
+- CL: 0 golden / 3 total
+- CO: 0 golden / 2 total
+- CZ: 0 golden / 4 total
+- DK: 0 golden / 3 total
+- EG: 0 golden / 5 total
+- FI: 0 golden / 1 total
+- FR: 0 golden / 9 total
+- DE: 0 golden / 8 total
+- GR: 0 golden / 4 total
+
+### Signal Weights (golden_rate per country, 0.0–1.0)
+- AR: 0.00
+- AU: 0.00
+- AT: 0.00
+- BE: 0.00
+- BR: 0.00
+- CA: 0.00
+- CL: 0.00
+- CO: 0.00
+- CZ: 0.00
+- DK: 0.00
+- EG: 0.00
+- FI: 0.00
+- FR: 0.00
+- DE: 0.00
+- GR: 0.00
+- IN: 0.00
+- ID: 0.00
+- IE: 0.00
+- IL: 0.00
+- JP: 0.00
 
 ---

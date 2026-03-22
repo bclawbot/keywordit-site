@@ -1,0 +1,133 @@
+{
+  "_description": "Track A evergreen seed keywords backed by real campaign performance data (TRZ). These should always be included in pipeline runs regardless of trending topics.",
+  "_source": "TRZ-US-LAST30 Facebook campaign data",
+  "_last_updated": "2026-03-12",
+  "seeds": [
+    {
+      "pattern": "brand + auto insurance cost",
+      "examples": ["Sam's Club Auto Insurance Cost", "Costco Auto Insurance Cost", "AAA Auto Insurance Cost", "USAA Auto Insurance Cost"],
+      "vertical": "insurance",
+      "proven_rpc_usd": 2.44,
+      "proven_cpm": 16332,
+      "country": "US",
+      "notes": "Brand + insurance comparison. High RPC, moderate volume. Sam's Club example: 16,332 CPM, $39,780 revenue."
+    },
+    {
+      "pattern": "brand + car insurance",
+      "examples": ["Sam's Car Insurance", "Costco Car Insurance", "Walmart Car Insurance", "Target Car Insurance"],
+      "vertical": "insurance",
+      "proven_rpc_usd": 3.18,
+      "proven_cpm": 5376,
+      "country": "US",
+      "notes": "Shorter brand+product query, highest RPC in dataset. Sam's Car Insurance: 5,376 CPM, $17,106 revenue."
+    },
+    {
+      "pattern": "multi insurance [types]",
+      "examples": ["Multi Insurance Car and Home", "Multi Insurance Home and Auto", "Bundle Car and Home Insurance"],
+      "vertical": "insurance",
+      "proven_rpc_usd": 2.59,
+      "proven_cpm": 3280,
+      "country": "US",
+      "notes": "Cross-sell insurance bundles. Lower volume but strong RPC. Multi Insurance Car and Home: 3,280 CPM, $8,500 revenue."
+    },
+    {
+      "pattern": "military/veteran insurance discounts",
+      "examples": ["Military Insurance Discounts", "VA Veterans Discounts", "Veteran Car Insurance Discount", "Military Auto Insurance Savings"],
+      "vertical": "insurance",
+      "proven_rpc_usd": 3.01,
+      "proven_cpm": 1409,
+      "country": "US",
+      "notes": "Military/veteran audience targets. Very high RPC despite lower volume. Military Insurance Discounts: 1,409 CPM, $4,245 revenue."
+    },
+    {
+      "pattern": "AARP + insurance for seniors",
+      "examples": ["Aarp Homeowners Insurance for Seniors", "AARP Auto Insurance for Seniors", "AARP Life Insurance for Seniors", "Senior Citizens Home Insurance"],
+      "vertical": "insurance",
+      "proven_rpc_usd": 2.60,
+      "proven_cpm": 1535,
+      "country": "US",
+      "notes": "Senior-targeted insurance queries. Low volume but high RPC. AARP Homeowners Insurance for Seniors: 1,535 CPM, $3,987 revenue."
+    },
+    {
+      "pattern": "SSI apartments [near me/for rent]",
+      "examples": ["Ssi Apartments for Rent Near Me", "Ssi Apartments Near Me", "Ssi Apartments for Rent", "SSI Approved Apartments Near Me"],
+      "vertical": "government_benefits",
+      "proven_rpc_usd": 0.59,
+      "proven_cpm": 58596,
+      "country": "US",
+      "notes": "Highest volume keyword in dataset: 58,596 CPM. Low RPC but massive scale. SSI Apartments for Rent Near Me: $34,487 revenue. This vertical is volume-driven, not RPC-driven."
+    },
+    {
+      "pattern": "apartments that accept disability near me",
+      "examples": ["Apartments that Accept Disability Near Me", "Disability Friendly Apartments Near Me", "Apartments that Accept SSI Near Me", "Housing for Disabled Adults Near Me"],
+      "vertical": "government_benefits",
+      "proven_rpc_usd": 0.61,
+      "proven_cpm": 9622,
+      "country": "US",
+      "notes": "Disability housing intent, peak RPC in government_benefits vertical. Apartments that Accept Disability Near Me: 9,622 CPM, $5,880 revenue."
+    },
+    {
+      "pattern": "how to get housing voucher",
+      "examples": ["How to Get a Housing Voucher Immediately", "How to Apply for Section 8 Housing Voucher", "How to Get a HUD Voucher", "Emergency Housing Voucher Application"],
+      "vertical": "government_benefits",
+      "proven_rpc_usd": 0.60,
+      "proven_cpm": 8594,
+      "country": "US",
+      "notes": "High-intent government housing assistance queries. How to Get a Housing Voucher Immediately: 8,594 CPM, $5,194 revenue."
+    },
+    {
+      "pattern": "income based apartments near me",
+      "examples": ["Income Based Apartments Near Me", "Low Income Apartments Near Me", "Affordable Housing Near Me Income Based", "Subsidized Apartments Near Me"],
+      "vertical": "government_benefits",
+      "proven_rpc_usd": 0.37,
+      "proven_cpm": 11667,
+      "country": "US",
+      "notes": "Broad low-income housing queries. Lower RPC but substantial volume. Income Based Apartments Near Me: 11,667 CPM, $4,340 revenue."
+    },
+    {
+      "pattern": "free [medical device]",
+      "examples": ["Free Ostomy Covers", "Free Diabetic Supplies", "Free CPAP Supplies", "Free Hearing Aids for Seniors"],
+      "vertical": "health",
+      "proven_rpc_usd": 2.28,
+      "proven_cpm": 2895,
+      "country": "US",
+      "notes": "Free medical supply queries get strong RPC — insurance-funded fulfillment. Free Ostomy Covers: 2,895 CPM, $6,602 revenue."
+    },
+    {
+      "pattern": "[cosmetic/medical procedure] near me",
+      "examples": ["Laser Eye Bag Removal Near Me", "Botox Near Me", "Laser Hair Removal Near Me", "Invisalign Near Me"],
+      "vertical": "health",
+      "proven_rpc_usd": 0.70,
+      "proven_cpm": 6008,
+      "country": "US",
+      "notes": "Local medical/cosmetic procedure intent. Laser Eye Bag Removal Near Me: 6,008 CPM, $4,187 revenue. Strong local commercial signal."
+    },
+    {
+      "pattern": "whole house [service] cost with installation",
+      "examples": ["Whole House Generator Cost with Installation", "Whole House Air Purifier Cost with Installation", "Whole House Water Filter Cost with Installation", "Whole House Solar Cost with Installation"],
+      "vertical": "real_estate",
+      "proven_rpc_usd": 0.57,
+      "proven_cpm": 8296,
+      "country": "US",
+      "notes": "High-ticket home service cost research queries. Whole House Generator Cost with Installation: 8,296 CPM, $4,723 revenue."
+    },
+    {
+      "pattern": "[product/service] deals [year]",
+      "examples": ["2 for 1 River Cruise Deals 2026", "Cruise Deals 2026", "Holiday Package Deals 2026", "European Tour Deals 2026"],
+      "vertical": "travel",
+      "proven_rpc_usd": 0.66,
+      "proven_cpm": 6743,
+      "country": "AU",
+      "notes": "Year-anchored deal queries work well in AU. 2 for 1 River Cruise Deals 2026: 6,743 CPM, $4,425 revenue. Strong for AU travel vertical."
+    },
+    {
+      "pattern": "laurea/degree [field] per lavoratori",
+      "examples": ["Laurea in Medicina Per Lavoratori", "Laurea in Ingegneria Per Lavoratori", "Laurea in Psicologia Per Lavoratori", "Laurea Online Per Lavoratori"],
+      "vertical": "education",
+      "proven_rpc_usd": 1.01,
+      "proven_cpm": 4517,
+      "country": "IT",
+      "notes": "Italian adult education queries (degree programs for working professionals). Laurea in Medicina Per Lavoratori: 4,517 CPM, $4,563 revenue. Strong IT education vertical."
+    }
+  ]
+}

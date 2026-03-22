@@ -150,3 +150,139 @@
 {"timestamp": "2026-03-04T06:52:35.358333", "stage": "trends_postprocess", "reason": "semantic_duplicate", "keyword": "Court upholds jail terms for doctors over death of pregnant woman that sparked mass protests in Poland", "country": "PL"}
 {"timestamp": "2026-03-04T06:52:35.560719", "stage": "trends_postprocess", "reason": "semantic_duplicate", "keyword": "Polish president\u2019s office casts doubt on joining French nuclear deterrent programme", "country": "PL"}
 {"timestamp": "2026-03-04T06:52:35.760140", "stage": "trends_postprocess", "reason": "semantic_duplicate", "keyword": "Poland 'logistically ready' to evacuate citizens, PM says", "country": "PL"}
+{"timestamp": "2026-03-21T10:54:17.203209", "stage": "2", "error": "Traceback (most recent call last):\n  File \"/Users/newmac/.openclaw/workspace/keyword_extractor.py\", line 41, in <module>\n    from country_config import (\n    ...<3 lines>...\n    )\nImportError: cannot import name 'NON_ENGLISH_MIN_VOLUME' from 'country_config' (/Users/newmac/.openclaw/workspace/country_config.py)"}
+{"timestamp": "2026-03-21T12:06:00.672405", "stage": "3", "error": "validation.py timed out after 1800s"}
+{"timestamp": "2026-03-21T14:06:08.227412", "stage": "1b", "error": "non-zero exit"}
+{"timestamp": "2026-03-21T18:49:22.261294", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Municipales 2026 : \u00e0 Paris, Rachida Dati veut mettre fin \u00e0 un quart de si\u00e8cle de r\u00e8gne de la gauche' [FR]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:22.428773", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Elon Musk reconnu coupable d\u2019avoir tromp\u00e9 des actionnaires lors du rachat de Twitter' [FR]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:22.604891", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Elon Musk reconnu coupable d\u2019avoir tromp\u00e9 des actionnaires lors du rachat de Twitter' [FR]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:22.775623", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:22.957285", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:23.126105", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:23.293692", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:23.443820", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Really looking forward to seeing Hamnet starring in Jessie Buckley' [IE]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:23.589884", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Really looking forward to seeing Hamnet starring in Jessie Buckley' [IE]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:23.742802", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:23.896944", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:24.048179", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:24.213541", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:24.361385", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Salaries for tech roles in Malaysia overtake Japan's' [JP]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:24.509493", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Salaries for tech roles in Malaysia overtake Japan's' [JP]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:24.662241", "stage": "validation_hard_gate", "error": "Hard gate rejected 'De groei van de FvD, de normalisering van extreemrechts en een oproep aan de journalistiek' [NL]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:24.811294", "stage": "validation_hard_gate", "error": "Hard gate rejected 'De groei van de FvD, de normalisering van extreemrechts en een oproep aan de journalistiek' [NL]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:24.962564", "stage": "validation_hard_gate", "error": "Hard gate rejected 'IEA waarschuwt voor grootste energiecrisis ooit: werk thuis en reis met ov' [NL]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:25.112293", "stage": "validation_hard_gate", "error": "Hard gate rejected 'IEA waarschuwt voor grootste energiecrisis ooit: werk thuis en reis met ov' [NL]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:25.260130", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kabinet neemt adviezen IEA niet over: 'Geen tekorten in Nederland'' [NL]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:25.409451", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kabinet neemt adviezen IEA niet over: 'Geen tekorten in Nederland'' [NL]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:25.559617", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:25.707748", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:25.858943", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:26.007934", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:26.157982", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:26.309438", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Who should pay for Polyfest? Growth puts pressure on funding' [NZ]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:26.456810", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kiwi woman drowns while snorkelling in Cook Islands' [NZ]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:26.617556", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kiwi woman drowns while snorkelling in Cook Islands' [NZ]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T18:49:26.766581", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kiwi woman drowns while snorkelling in Cook Islands' [NZ]: kd_below_40 (kd=0)"}
+{"timestamp": "2026-03-21T22:53:27.874208", "stage": "2", "error": "Impersonate 'edge_122' does not exist, using 'random'"}
+{"timestamp": "2026-03-22T01:13:52.173790", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:14:39.910071", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:15:30.917094", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:16:16.488252", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:18:29.825029", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:20:36.676269", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:21:29.609335", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:24:49.382166", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:25:38.618877", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:27:20.031011", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:28:13.032442", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:29:44.620444", "stage": "keyword_extractor/llm", "error": "JSON parse failed after retry"}
+{"timestamp": "2026-03-22T01:30:32.231060", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:32:03.108866", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:32:52.916387", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:33:44.542060", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:35:13.440959", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:36:01.407227", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:36:44.842104", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:37:25.131882", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T01:37:25.777183", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Municipales 2026 : \u00e0 Paris, Rachida Dati veut mettre fin \u00e0 un quart de si\u00e8cle de r\u00e8gne de la gauche' [FR]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:25.946181", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Elon Musk reconnu coupable d\u2019avoir tromp\u00e9 des actionnaires lors du rachat de Twitter' [FR]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:26.114214", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Elon Musk reconnu coupable d\u2019avoir tromp\u00e9 des actionnaires lors du rachat de Twitter' [FR]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:26.282503", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:26.455210", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:26.623411", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:26.790928", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:26.940569", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Really looking forward to seeing Hamnet starring in Jessie Buckley' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:27.090051", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Really looking forward to seeing Hamnet starring in Jessie Buckley' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:27.246937", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:27.401997", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:27.556712", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:27.711398", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:27.863243", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Salaries for tech roles in Malaysia overtake Japan's' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:28.017647", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Salaries for tech roles in Malaysia overtake Japan's' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:28.171861", "stage": "validation_hard_gate", "error": "Hard gate rejected 'De groei van de FvD, de normalisering van extreemrechts en een oproep aan de journalistiek' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:28.324739", "stage": "validation_hard_gate", "error": "Hard gate rejected 'De groei van de FvD, de normalisering van extreemrechts en een oproep aan de journalistiek' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:28.474655", "stage": "validation_hard_gate", "error": "Hard gate rejected 'IEA waarschuwt voor grootste energiecrisis ooit: werk thuis en reis met ov' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:28.625093", "stage": "validation_hard_gate", "error": "Hard gate rejected 'IEA waarschuwt voor grootste energiecrisis ooit: werk thuis en reis met ov' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:28.781144", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kabinet neemt adviezen IEA niet over: 'Geen tekorten in Nederland'' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:28.934028", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kabinet neemt adviezen IEA niet over: 'Geen tekorten in Nederland'' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:29.091994", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:29.248799", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:29.403970", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:29.561870", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:29.717666", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:29.873393", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Who should pay for Polyfest? Growth puts pressure on funding' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:30.027605", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kiwi woman drowns while snorkelling in Cook Islands' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:30.181287", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kiwi woman drowns while snorkelling in Cook Islands' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:37:30.334019", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kiwi woman drowns while snorkelling in Cook Islands' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T01:13:04.615672", "stage": "1b", "error": "trends_postprocess.py timed out after 600s"}
+{"timestamp": "2026-03-22T01:37:25.492395", "stage": "2b", "error": "\u274c  commercial_keywords.json is empty \u2014 keyword_extractor.py must have failed."}
+{"timestamp": "2026-03-22T09:13:55.408499", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:14:45.053402", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:15:31.542898", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:16:17.073921", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:17:36.870959", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:18:29.098988", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:25:37.276807", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:26:30.387529", "stage": "keyword_extractor/llm", "error": "JSON parse failed after retry"}
+{"timestamp": "2026-03-22T09:27:30.775473", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:28:29.348772", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:29:22.258556", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:30:18.476373", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:31:12.850052", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:32:55.550015", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:33:49.106133", "stage": "keyword_extractor/llm", "error": "JSON parse failed after retry"}
+{"timestamp": "2026-03-22T09:34:51.965508", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:37:27.953175", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:38:24.829317", "stage": "keyword_extractor/llm", "error": "'NoneType' object has no attribute 'strip'"}
+{"timestamp": "2026-03-22T09:38:25.501102", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Municipales 2026 : \u00e0 Paris, Rachida Dati veut mettre fin \u00e0 un quart de si\u00e8cle de r\u00e8gne de la gauche' [FR]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:25.732605", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Elon Musk reconnu coupable d\u2019avoir tromp\u00e9 des actionnaires lors du rachat de Twitter' [FR]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:25.915544", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Elon Musk reconnu coupable d\u2019avoir tromp\u00e9 des actionnaires lors du rachat de Twitter' [FR]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:26.097650", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:26.280379", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:26.459514", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:26.639181", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Postponing parenthood: How Ireland\u2019s housing crisis is forcing people to delay having children' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:26.797704", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Really looking forward to seeing Hamnet starring in Jessie Buckley' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:26.958677", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Really looking forward to seeing Hamnet starring in Jessie Buckley' [IE]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:28.859580", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:29.574418", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:29.748248", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:29.923895", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Joint statement from the leaders of the United Kingdom, France, Germany, Italy, the Netherlands, Japan and Canada on the Strait of Hormuz: 19 March 2026' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:30.095241", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Salaries for tech roles in Malaysia overtake Japan's' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:30.262199", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Salaries for tech roles in Malaysia overtake Japan's' [JP]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:30.428223", "stage": "validation_hard_gate", "error": "Hard gate rejected 'De groei van de FvD, de normalisering van extreemrechts en een oproep aan de journalistiek' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:30.591520", "stage": "validation_hard_gate", "error": "Hard gate rejected 'De groei van de FvD, de normalisering van extreemrechts en een oproep aan de journalistiek' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:30.756766", "stage": "validation_hard_gate", "error": "Hard gate rejected 'IEA waarschuwt voor grootste energiecrisis ooit: werk thuis en reis met ov' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:30.921894", "stage": "validation_hard_gate", "error": "Hard gate rejected 'IEA waarschuwt voor grootste energiecrisis ooit: werk thuis en reis met ov' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:31.086782", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kabinet neemt adviezen IEA niet over: 'Geen tekorten in Nederland'' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:31.249895", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kabinet neemt adviezen IEA niet over: 'Geen tekorten in Nederland'' [NL]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:31.414468", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:31.577033", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:31.744099", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:31.907337", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:32.072941", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Government orders complete review of Dog Control Act after spate of attacks' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:32.237390", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Who should pay for Polyfest? Growth puts pressure on funding' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:32.399760", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kiwi woman drowns while snorkelling in Cook Islands' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:32.563624", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kiwi woman drowns while snorkelling in Cook Islands' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:38:32.728169", "stage": "validation_hard_gate", "error": "Hard gate rejected 'Kiwi woman drowns while snorkelling in Cook Islands' [NZ]: kd_below_15 (kd=0)"}
+{"timestamp": "2026-03-22T09:13:02.283146", "stage": "1b", "error": "trends_postprocess.py timed out after 600s"}
+{"timestamp": "2026-03-22T09:38:25.201391", "stage": "2b", "error": "\u274c  commercial_keywords.json is empty \u2014 keyword_extractor.py must have failed."}

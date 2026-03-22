@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keywordit · Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+[data-theme="dark"] {
+  --bg: #020203;
+  --surface: #0a0a0c;
+  --border: #141418;
+  --border-light: #1c1c22;
+  --text: #e8e8f0;
+  --text-dim: #6a6a7a;
+  --text-muted: #3a3a48;
+  --teal: #2dd4bf;
+  --teal-glow: rgba(45,212,191,0.15);
+  --red: #ef4444;
+  --red-dim: rgba(239,68,68,0.10);
+  --green: #22c55e;
+  --green-dim: rgba(34,197,94,0.10);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245,158,11,0.10);
+}
+[data-theme="light"] {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --border: #dcdce4;
+  --border-light: #e8e8f0;
+  --text: #1a1a2e;
+  --text-dim: #5a5a70;
+  --text-muted: #9a9ab0;
+  --teal: #0d9488;
+  --teal-glow: rgba(13,148,136,0.10);
+  --red: #dc2626;
+  --red-dim: rgba(220,38,38,0.08);
+  --green: #16a34a;
+  --green-dim: rgba(22,163,74,0.08);
+  --amber: #d97706;
+  --amber-dim: rgba(217,119,6,0.08);
+}
+:root {
+  --font: 'Space Grotesk', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+html { font-size: 14px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+}
+.theme-toggle:hover { border-color: var(--text-muted); color: var(--text); }
+.theme-toggle svg { width: 15px; height: 15px; }
+[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+[data-theme="light"] .theme-toggle .icon-moon { display: block; }
+}
+
+/* ═══ NAV ═══ */
+.admin-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.nav-left { display: flex; align-items: center; gap: 12px; }
+.nav-logo {
+  display: flex; align-items: center; gap: 6px;
+  font-weight: 700; font-size: 14px; letter-spacing: -0.02em;
+}
+.nav-logo-icon {
+  width: 24px; height: 24px;
+  background: var(--teal);
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  color: #000; font-weight: 800; font-size: 12px;
+}
+.nav-logo-dot { color: var(--teal); }
+
+.nav-divider { width: 1px; height: 20px; background: var(--border); }
+.nav-section-label {
+  font-size: 11px; color: var(--text-muted);
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-user {
+  font-size: 12px; color: var(--text-dim);
+  font-family: var(--mono);
+}
+.btn-nav {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font);
+}
+.btn-nav:hover { border-color: var(--text-muted); color: var(--text); }
+
+/* ═══ STATS ═══ */
+.stats-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.stat-card {
+  flex: 1;
+  padding: 20px 24px;
+  border-right: 1px solid var(--border);
+}
+.stat-card:last-child { border-right: none; }
+.stat-num {
+  font-size: 28px; font-weight: 700;
+  font-family: var(--mono);
+  letter-spacing: -0.02em;
+}
+.stat-num.teal { color: var(--teal); }
+.stat-num.amber { color: var(--amber); }
+.stat-num.green { color: var(--green); }
+.stat-num.red { color: var(--red); }
+.stat-label {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--mono);
+  margin-top: 4px;
+}
+
+/* ═══ CONTENT ═══ */
+.admin-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+/* Section header */
+.sec-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.sec-title {
+  font-size: 16px; font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.sec-badge {
+  display: inline-flex; align-items: center;
+  background: var(--amber-dim);
+  border: 1px solid rgba(245,158,11,0.2);
+  color: var(--amber);
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 11px; font-weight: 600;
+  font-family: var(--mono);
+}
+
+/* Table */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+.admin-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--mono);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+.admin-table td {
+  padding: 10px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.admin-table tbody tr:hover { background: rgba(45,212,191,0.03); }
+.admin-table .mono { font-family: var(--mono); font-size: 12px; }
+.admin-table .dim { color: var(--text-dim); }
+.admin-table .muted { color: var(--text-muted); font-size: 11px; }
+
+/* Status badges */
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--mono);
+  letter-spacing: 0.05em;
+}
+.status-pending { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+.status-approved { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+.status-declined { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.role-admin { background: var(--teal-glow); color: var(--teal); border: 1px solid rgba(45,212,191,0.2); }
+.role-user { background: rgba(107,114,128,0.1); color: var(--text-dim); border: 1px solid rgba(107,114,128,0.2); }
+
+/* Action buttons */
+.btn-approve {
+  background: var(--green-dim);
+  border: 1px solid rgba(34,197,94,0.3);
+  color: var(--green);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 11px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font);
+}
+.btn-approve:hover { background: rgba(34,197,94,0.2); }
+.btn-decline {
+  background: var(--red-dim);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: var(--red);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 11px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font);
+}
+.btn-decline:hover { background: rgba(239,68,68,0.2); }
+.btn-delete {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font);
+}
+.btn-delete:hover { border-color: var(--red); color: var(--red); }
+.action-group { display: flex; gap: 6px; }
+
+/* Empty state */
+.empty-row td {
+  text-align: center;
+  padding: 32px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Add user form */
+.add-user-form {
+  display: flex; gap: 8px; align-items: end;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.add-user-form .form-group { flex: 1; min-width: 120px; }
+.add-user-form label {
+  display: block;
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: var(--mono);
+  margin-bottom: 4px;
+}
+.add-user-form input, .add-user-form select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--font);
+  outline: none;
+}
+.add-user-form input:focus, .add-user-form select:focus { border-color: var(--teal); }
+.add-user-form select { cursor: pointer; }
+.add-user-form select option { background: var(--surface); }
+.btn-add {
+  background: var(--teal);
+  border: none;
+  color: #000;
+  padding: 8px 18px;
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font);
+  transition: all 0.2s;
+}
+.btn-add:hover { box-shadow: 0 0 16px var(--teal-glow); }
+
+/* Auth gate */
+#auth-gate {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; flex-direction: column; gap: 16px;
+}
+#auth-gate .msg {
+  font-size: 14px; color: var(--text-dim);
+}
+#admin-main { display: none; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  z-index: 1000;
+  opacity: 0; transform: translateY(10px);
+  transition: all 0.3s;
+}
+.toast.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 768px) {
+  .admin-nav { padding: 0 16px; }
+  .admin-content { padding: 20px 16px; }
+  .stats-bar { flex-direction: column; }
+  .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
+  .add-user-form { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div id="auth-gate">
+  <div class="nav-logo" style="margin-bottom:8px">
+    <div class="nav-logo-icon">K</div>
+    <span>keywordit<span class="nav-logo-dot">.xyz</span></span>
+  </div>
+  <div class="msg">Verifying admin access...</div>
+</div>
+
+<div id="admin-main">
+  <!-- NAV -->
+  <div class="admin-nav">
+    <div class="nav-left">
+      <div class="nav-logo">
+        <div class="nav-logo-icon">K</div>
+        <span>keywordit<span class="nav-logo-dot">.xyz</span></span>
+      </div>
+      <div class="nav-divider"></div>
+      <span class="nav-section-label">Admin Panel</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-user" id="admin-user-label"></span>
+      <button class="btn-nav" onclick="window.location.href='dashboard.html'">Dashboard</button>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+        <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
+        <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+      </button>
+      <button class="btn-nav" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-num teal" id="stat-total">0</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num amber" id="stat-pending">0</div>
+      <div class="stat-label">Pending Requests</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num green" id="stat-approved">0</div>
+      <div class="stat-label">Approved</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num red" id="stat-declined">0</div>
+      <div class="stat-label">Declined</div>
+    </div>
+  </div>
+
+  <div class="admin-content">
+    <!-- PENDING REQUESTS -->
+    <div class="sec-header">
+      <h2 class="sec-title">Pending Access Requests</h2>
+      <span class="sec-badge" id="pending-badge">0 pending</span>
+    </div>
+    <table class="admin-table" id="requests-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Company</th>
+          <th>Username</th>
+          <th>Reason</th>
+          <th>Requested</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="requests-body"></tbody>
+    </table>
+
+    <!-- ALL USERS -->
+    <div class="sec-header">
+      <h2 class="sec-title">User Management</h2>
+    </div>
+
+    <div class="add-user-form" id="add-user-form">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="add-username" placeholder="username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="add-password" placeholder="password">
+      </div>
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="add-name" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="add-email" placeholder="email">
+      </div>
+      <div class="form-group" style="min-width:90px;flex:0.5">
+        <label>Role</label>
+        <select id="add-role">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button class="btn-add" onclick="addUser()">Add User</button>
+    </div>
+
+    <table class="admin-table" id="users-table">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="users-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+async function hashStr(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 2500);
+}
+
+function getUsers() { return JSON.parse(localStorage.getItem('keywordit_users') || '[]'); }
+function setUsers(u) { localStorage.setItem('keywordit_users', JSON.stringify(u)); }
+function getRequests() { return JSON.parse(localStorage.getItem('keywordit_requests') || '[]'); }
+function setRequests(r) { localStorage.setItem('keywordit_requests', JSON.stringify(r)); }
+
+// ═══ AUTH CHECK ═══
+(function() {
+  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
+  if (!session || !session.token) {
+    document.getElementById('auth-gate').querySelector('.msg').textContent = 'Not authenticated. Redirecting...';
+    setTimeout(() => window.location.href = 'login.html', 1000);
+    return;
+  }
+  const users = getUsers();
+  const user = users.find(u => u.username === session.user && u.status === 'approved');
+  if (!user || user.role !== 'admin') {
+    document.getElementById('auth-gate').querySelector('.msg').textContent = 'Admin access required. Redirecting...';
+    setTimeout(() => window.location.href = 'dashboard.html', 1500);
+    return;
+  }
+  document.getElementById('auth-gate').style.display = 'none';
+  document.getElementById('admin-main').style.display = 'block';
+  document.getElementById('admin-user-label').textContent = session.user + ' (admin)';
+  renderAll();
+})();
+
+function renderAll() {
+  renderRequests();
+  renderUsers();
+  renderStats();
+}
+
+function renderStats() {
+  const users = getUsers();
+  const requests = getRequests();
+  const pending = requests.filter(r => r.status === 'pending');
+  document.getElementById('stat-total').textContent = users.length;
+  document.getElementById('stat-pending').textContent = pending.length;
+  document.getElementById('stat-approved').textContent = users.filter(u => u.status === 'approved').length;
+  document.getElementById('stat-declined').textContent = requests.filter(r => r.status === 'declined').length;
+  document.getElementById('pending-badge').textContent = pending.length + ' pending';
+}
+
+function renderRequests() {
+  const requests = getRequests().filter(r => r.status === 'pending');
+  const tbody = document.getElementById('requests-body');
+  if (requests.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No pending requests</td></tr>';
+    return;
+  }
+  tbody.innerHTML = requests.map((r, i) => `
+    <tr>
+      <td>${esc(r.name)}</td>
+      <td class="mono dim">${esc(r.email)}</td>
+      <td class="dim">${esc(r.company || '—')}</td>
+      <td class="mono">${esc(r.username)}</td>
+      <td class="dim" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.reason)}">${esc(r.reason || '—')}</td>
+      <td class="muted">${r.requestedAt ? new Date(r.requestedAt).toLocaleDateString() : '—'}</td>
+      <td>
+        <div class="action-group">
+          <button class="btn-approve" onclick="approveRequest(${i})">Approve</button>
+          <button class="btn-decline" onclick="declineRequest(${i})">Decline</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function approveRequest(idx) {
+  const requests = getRequests();
+  const pending = requests.filter(r => r.status === 'pending');
+  const req = pending[idx];
+  if (!req) return;
+
+  // Prompt for a password
+  const pass = prompt(`Set password for "${req.username}":`);
+  if (!pass) return;
+
+  const users = getUsers();
+  const passHash = await hashStr(pass);
+  users.push({
+    username: req.username,
+    passwordHash: passHash,
+    role: 'user',
+    status: 'approved',
+    name: req.name,
+    email: req.email,
+    createdAt: new Date().toISOString()
+  });
+  setUsers(users);
+
+  // Update request status
+  const fullIdx = requests.findIndex(r => r.username === req.username && r.status === 'pending');
+  if (fullIdx >= 0) requests[fullIdx].status = 'approved';
+  setRequests(requests);
+
+  toast(`Approved: ${req.username}`);
+  renderAll();
+}
+
+function declineRequest(idx) {
+  const requests = getRequests();
+  const pending = requests.filter(r => r.status === 'pending');
+  const req = pending[idx];
+  if (!req) return;
+  if (!confirm(`Decline access for "${req.username}"?`)) return;
+
+  const fullIdx = requests.findIndex(r => r.username === req.username && r.status === 'pending');
+  if (fullIdx >= 0) requests[fullIdx].status = 'declined';
+  setRequests(requests);
+
+  toast(`Declined: ${req.username}`);
+  renderAll();
+}
+
+function renderUsers() {
+  const users = getUsers();
+  const tbody = document.getElementById('users-body');
+  tbody.innerHTML = users.map((u, i) => `
+    <tr>
+      <td class="mono">${esc(u.username)}</td>
+      <td>${esc(u.name || '—')}</td>
+      <td class="mono dim">${esc(u.email || '—')}</td>
+      <td><span class="status-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${u.role.toUpperCase()}</span></td>
+      <td><span class="status-badge status-${u.status}">${u.status.toUpperCase()}</span></td>
+      <td class="muted">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
+      <td>
+        ${u.username !== 'admin' ? `<button class="btn-delete" onclick="deleteUser(${i})">Remove</button>` : '<span class="muted">protected</span>'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function addUser() {
+  const username = document.getElementById('add-username').value.trim().toLowerCase();
+  const password = document.getElementById('add-password').value;
+  const name = document.getElementById('add-name').value.trim();
+  const email = document.getElementById('add-email').value.trim();
+  const role = document.getElementById('add-role').value;
+
+  if (!username || !password) { toast('Username and password required'); return; }
+  if (username.length < 3) { toast('Username too short'); return; }
+
+  const users = getUsers();
+  if (users.find(u => u.username === username)) { toast('Username already exists'); return; }
+
+  const passHash = await hashStr(password);
+  users.push({
+    username, passwordHash: passHash, role, status: 'approved',
+    name, email, createdAt: new Date().toISOString()
+  });
+  setUsers(users);
+
+  // Clear form
+  document.getElementById('add-username').value = '';
+  document.getElementById('add-password').value = '';
+  document.getElementById('add-name').value = '';
+  document.getElementById('add-email').value = '';
+  document.getElementById('add-role').value = 'user';
+
+  toast(`User "${username}" created`);
+  renderAll();
+}
+
+function deleteUser(idx) {
+  const users = getUsers();
+  const u = users[idx];
+  if (!u || u.username === 'admin') return;
+  if (!confirm(`Remove user "${u.username}"? This cannot be undone.`)) return;
+  users.splice(idx, 1);
+  setUsers(users);
+  toast(`Removed: ${u.username}`);
+  renderAll();
+}
+
+function logout() {
+  localStorage.removeItem('keywordit_session');
+  window.location.href = 'login.html';
+}
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Theme toggle
+(function() {
+  const saved = localStorage.getItem('keywordit-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('theme-toggle').addEventListener('click', function() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('keywordit-theme', next);
+  });
+})();
+</script>
+</body>
+</html>
