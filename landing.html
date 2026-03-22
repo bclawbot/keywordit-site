@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keywordit — Search Arbitrage Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+[data-theme="dark"] {
+  --bg: #020203;
+  --surface: #0a0a0c;
+  --border: #141418;
+  --border-light: #1c1c22;
+  --text: #e8e8f0;
+  --text-dim: #6a6a7a;
+  --text-muted: #3a3a48;
+  --teal: #2dd4bf;
+  --teal-glow: rgba(45,212,191,0.15);
+  --teal-glow-strong: rgba(45,212,191,0.25);
+  --nav-bg: rgba(2,2,3,0.85);
+  --shadow-dropdown: 0 12px 40px rgba(0,0,0,0.7);
+}
+[data-theme="light"] {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --border: #dcdce4;
+  --border-light: #e8e8f0;
+  --text: #1a1a2e;
+  --text-dim: #5a5a70;
+  --text-muted: #9a9ab0;
+  --teal: #0d9488;
+  --teal-glow: rgba(13,148,136,0.10);
+  --teal-glow-strong: rgba(13,148,136,0.18);
+  --nav-bg: rgba(245,245,247,0.88);
+  --shadow-dropdown: 0 8px 32px rgba(0,0,0,0.10);
+}
+:root {
+  --font: 'Space Grotesk', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.3s, color 0.3s;
+}
+a { color: var(--teal); text-decoration: none; }
+
+/* Theme toggle */
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  width: 34px; height: 34px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+  flex-shrink: 0; margin-left: 8px;
+}
+.theme-toggle:hover { border-color: var(--text-muted); color: var(--text); }
+.theme-toggle svg { width: 16px; height: 16px; }
+[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+[data-theme="light"] .theme-toggle .icon-moon { display: block; }
+
+/* ═══ NAV ═══ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 48px; height: 64px;
+  background: var(--nav-bg);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 16px; letter-spacing: -0.02em;
+}
+.nav-logo-icon {
+  width: 28px; height: 28px;
+  background: var(--teal);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: #000; font-weight: 800; font-size: 14px;
+}
+.nav-logo-dot { color: var(--teal); }
+.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-links a {
+  font-size: 13px; color: var(--text-dim); font-weight: 500;
+  letter-spacing: 0.01em; transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+.btn-launch {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--teal); color: #000;
+  padding: 8px 20px; border-radius: 6px;
+  font-size: 13px; font-weight: 600;
+  border: none; cursor: pointer; transition: all 0.2s;
+}
+.btn-launch:hover { box-shadow: 0 0 24px var(--teal-glow-strong); transform: translateY(-1px); }
+.btn-launch svg { width: 14px; height: 14px; }
+
+/* ═══ HERO ═══ */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -200px; left: 50%; transform: translateX(-50%);
+  width: 800px; height: 800px;
+  background: radial-gradient(circle, var(--teal-glow) 0%, transparent 70%);
+  pointer-events: none; opacity: 0.4;
+}
+.hero-logo {
+  margin-bottom: 32px;
+  position: relative;
+  line-height: 0;
+}
+.hero-logo-img {
+  width: clamp(200px, 28vw, 300px);
+  height: auto;
+  max-height: 90px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+[data-theme="dark"] .hero-logo-img.for-light { display: none; }
+[data-theme="dark"] .hero-logo-img.for-dark { display: block; }
+[data-theme="light"] .hero-logo-img.for-light { display: block; }
+[data-theme="light"] .hero-logo-img.for-dark { display: none; }
+h1 {
+  font-size: clamp(36px, 6vw, 72px);
+  font-weight: 700; letter-spacing: -0.04em;
+  line-height: 0.95; margin-bottom: 20px; position: relative;
+}
+h1 .accent { color: var(--teal); }
+.hero-sub {
+  font-size: clamp(15px, 1.8vw, 18px);
+  color: var(--text-dim); max-width: 480px;
+  line-height: 1.6; font-weight: 300; margin-bottom: 40px;
+}
+.hero-ctas {
+  display: flex; gap: 12px; align-items: center; position: relative;
+}
+.btn-hero-primary {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--teal); color: #000;
+  padding: 12px 28px; border-radius: 8px;
+  font-size: 14px; font-weight: 600;
+  border: none; cursor: pointer; transition: all 0.25s;
+}
+.btn-hero-primary:hover { box-shadow: 0 0 40px var(--teal-glow-strong); transform: translateY(-2px); }
+.btn-hero-secondary {
+  display: inline-flex; align-items: center;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-dim);
+  padding: 11px 24px; border-radius: 8px;
+  font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-hero-secondary:hover { border-color: var(--text-dim); color: var(--text); }
+
+/* ═══ METRICS BAR — CSS Grid forces horizontal ═══ */
+.metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.metric-item {
+  padding: 28px 24px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+.metric-item:last-child { border-right: none; }
+.metric-number {
+  font-size: 36px; font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  font-family: var(--mono);
+  line-height: 1;
+}
+.metric-number .unit { font-size: 16px; color: var(--teal); font-weight: 500; }
+.metric-label {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  margin-top: 6px; font-family: var(--mono);
+}
+
+/* ═══ SECTIONS ═══ */
+.section {
+  padding: 100px 48px; max-width: 1200px; margin: 0 auto;
+}
+.section-label {
+  font-size: 11px; color: var(--teal);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  font-family: var(--mono); margin-bottom: 14px;
+}
+.section-title {
+  font-size: clamp(26px, 3.5vw, 42px);
+  font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 16px;
+}
+.section-desc {
+  font-size: 15px; color: var(--text-dim);
+  line-height: 1.7; max-width: 580px; font-weight: 300;
+}
+
+/* ═══ FEATURES GRID ═══ */
+.features-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); margin-top: 48px;
+}
+.feature-card {
+  background: var(--bg); padding: 32px 28px;
+  transition: background 0.3s;
+}
+.feature-card:hover { background: var(--surface); }
+.feature-icon {
+  width: 36px; height: 36px;
+  background: var(--teal-glow);
+  border: 1px solid rgba(45,212,191,0.2);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px; color: var(--teal); font-size: 16px;
+}
+.feature-title {
+  font-size: 14px; font-weight: 600;
+  margin-bottom: 8px; letter-spacing: -0.01em;
+}
+.feature-desc {
+  font-size: 12px; color: var(--text-dim);
+  line-height: 1.6; font-weight: 300;
+}
+
+/* ═══ STEPS ═══ */
+.steps-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 0; margin-top: 48px;
+}
+.step-card {
+  padding: 32px 24px;
+  border: 1px solid var(--border); border-right: none;
+  position: relative;
+}
+.step-card:last-child { border-right: 1px solid var(--border); }
+.step-number {
+  font-size: 40px; font-weight: 700;
+  color: var(--border-light); font-family: var(--mono);
+  margin-bottom: 12px; line-height: 1;
+}
+.step-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.step-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; font-weight: 300; }
+.step-connector {
+  position: absolute; top: 50%; right: -12px;
+  color: var(--teal); font-size: 14px; z-index: 2;
+}
+
+/* ═══ CTA ═══ */
+.cta-section {
+  text-align: center; padding: 100px 48px; position: relative;
+}
+.cta-section::before {
+  content: '';
+  position: absolute;
+  bottom: -100px; left: 50%; transform: translateX(-50%);
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, var(--teal-glow) 0%, transparent 70%);
+  pointer-events: none; opacity: 0.3;
+}
+.cta-title {
+  font-size: clamp(24px, 3.5vw, 36px);
+  font-weight: 700; letter-spacing: -0.03em; margin-bottom: 12px;
+}
+.cta-desc {
+  font-size: 15px; color: var(--text-dim);
+  margin-bottom: 32px; font-weight: 300;
+}
+
+/* ═══ FOOTER ═══ */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 40px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.footer-left { font-size: 12px; color: var(--text-muted); font-family: var(--mono); }
+.footer-right { display: flex; gap: 24px; }
+.footer-right a { font-size: 12px; color: var(--text-muted); transition: color 0.2s; }
+.footer-right a:hover { color: var(--text-dim); }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 900px) {
+  nav { padding: 0 20px; }
+  .nav-links { display: none; }
+  .section { padding: 80px 20px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .steps-grid { grid-template-columns: 1fr 1fr; }
+  .step-card { border-right: 1px solid var(--border) !important; }
+  .step-connector { display: none; }
+  .metrics-bar { grid-template-columns: repeat(2, 1fr); }
+  .metric-item:nth-child(2) { border-right: none; }
+  .metric-item:nth-child(1), .metric-item:nth-child(2) { border-bottom: 1px solid var(--border); }
+  footer { flex-direction: column; gap: 16px; text-align: center; }
+}
+@media (max-width: 500px) {
+  .steps-grid { grid-template-columns: 1fr; }
+  .hero-ctas { flex-direction: column; }
+}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hero-logo, h1, .hero-sub, .hero-ctas {
+  animation: fadeUp 0.8s ease-out forwards; opacity: 0;
+}
+h1 { animation-delay: 0.1s; }
+.hero-sub { animation-delay: 0.2s; }
+.hero-ctas { animation-delay: 0.3s; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">K</div>
+    <span>keywordit<span class="nav-logo-dot">.xyz</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="#value">Platform</a>
+    <a href="#how">How It Works</a>
+    <a href="#access">Access</a>
+  </div>
+  <a href="login.html" class="btn-launch">
+    Launch App
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+  </a>
+  <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+    <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
+    <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+  </button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-logo">
+    <img src="logo-dark.png" class="hero-logo-img for-dark" alt="keywordit">
+    <img src="logo-light.png" class="hero-logo-img for-light" alt="keywordit">
+  </div>
+  <h1>
+    Find keywords<br>
+    before the <span class="accent">market</span><br>
+    prices them in
+  </h1>
+  <p class="hero-sub">
+    Autonomous pipeline that discovers high-value keyword opportunities across 
+    40+ countries — before competition erodes the margins.
+  </p>
+  <div class="hero-ctas">
+    <a href="login.html" class="btn-hero-primary">
+      Request Access
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+    </a>
+    <a href="#how" class="btn-hero-secondary">See How It Works</a>
+  </div>
+</section>
+
+<!-- METRICS BAR -->
+<div class="metrics-bar">
+  <div class="metric-item">
+    <div class="metric-number">40<span class="unit">+</span></div>
+    <div class="metric-label">Countries Covered</div>
+  </div>
+  <div class="metric-item">
+    <div class="metric-number">24<span class="unit">/7</span></div>
+    <div class="metric-label">Fully Autonomous</div>
+  </div>
+  <div class="metric-item">
+    <div class="metric-number">50<span class="unit">K+</span></div>
+    <div class="metric-label">Keywords Processed</div>
+  </div>
+  <div class="metric-item">
+    <div class="metric-number">12<span class="unit">+</span></div>
+    <div class="metric-label">High-CPC Verticals</div>
+  </div>
+</div>
+
+<!-- VALUE SECTION -->
+<section class="section" id="value">
+  <div class="section-label">Platform</div>
+  <h2 class="section-title">Intelligence infrastructure<br>for search arbitrage</h2>
+  <p class="section-desc">
+    Keywordit monitors trending signals across multiple sources — social, search, 
+    and news — then cross-validates them against live advertiser bid data to surface 
+    genuine revenue opportunities.
+  </p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Multi-Source Signal Detection</div>
+      <div class="feature-desc">Social feeds, search trend data, and news aggregators are continuously monitored and cross-referenced to detect emerging patterns before they peak.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">◎</div>
+      <div class="feature-title">Live CPC Validation</div>
+      <div class="feature-desc">Every detected keyword is validated against real-time advertiser bid data — filtering out noise and surfacing only keywords with confirmed commercial value.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⬡</div>
+      <div class="feature-title">Keyword Expansion</div>
+      <div class="feature-desc">High-value seeds are automatically expanded into related long-tail clusters, uncovering hidden pockets of volume with favorable arbitrage conditions.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">◈</div>
+      <div class="feature-title">Global Coverage</div>
+      <div class="feature-desc">Tiered country system spans high-CPC Tier 1 markets down to emerging Tier 3 and 4 opportunities — each with localized signal and validation sources.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">▣</div>
+      <div class="feature-title">Opportunity Scoring</div>
+      <div class="feature-desc">Every keyword receives a composite score combining CPC, volume, competition, and arbitrage potential — automatically classified and ranked.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">◉</div>
+      <div class="feature-title">Operator Dashboard</div>
+      <div class="feature-desc">Real-time dashboard with inline filtering, system health monitoring, and full export capability — built for operators who need to act fast.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="section-label">Process</div>
+  <h2 class="section-title">How it works</h2>
+  <p class="section-desc">
+    Four autonomous stages run continuously — no manual intervention required.
+  </p>
+
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-number">01</div>
+      <div class="step-title">Detect</div>
+      <div class="step-desc">Monitor social, search, and news signals across 40+ countries to capture emerging keyword patterns in real time.</div>
+      <span class="step-connector">→</span>
+    </div>
+    <div class="step-card">
+      <div class="step-number">02</div>
+      <div class="step-title">Validate</div>
+      <div class="step-desc">Cross-reference detected keywords against multiple live CPC data sources — confirming real advertiser demand and commercial viability.</div>
+      <span class="step-connector">→</span>
+    </div>
+    <div class="step-card">
+      <div class="step-number">03</div>
+      <div class="step-title">Score</div>
+      <div class="step-desc">Apply proprietary opportunity scoring that weights CPC, volume, competition, and arbitrage potential to rank every keyword.</div>
+      <span class="step-connector">→</span>
+    </div>
+    <div class="step-card">
+      <div class="step-number">04</div>
+      <div class="step-title">Deploy</div>
+      <div class="step-desc">Validated opportunities surface in the intelligence dashboard — ready for immediate campaign deployment or further expansion.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="access">
+  <h2 class="cta-title">Access is invitation-only</h2>
+  <p class="cta-desc">
+    Keywordit is a closed platform for qualified operators.<br>
+    Submit your details and the team will review your application.
+  </p>
+  <a href="login.html" class="btn-hero-primary">
+    Request Access
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+  </a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">© 2026 keywordit.xyz</div>
+  <div class="footer-right">
+    <a href="login.html">Launch App</a>
+    <a href="#access">Request Access</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var saved = localStorage.getItem('keywordit-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('theme-toggle').addEventListener('click', function(){
+    var current = document.documentElement.getAttribute('data-theme');
+    var next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('keywordit-theme', next);
+  });
+})();
+</script>
+</body>
+</html>
