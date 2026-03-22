@@ -9,9 +9,6 @@
 __pycache__/
 *.pyc
 
-# Generated output (deployed via gh-pages)
-dashboard.html
-
 # OS
 .DS_Store
 .Thumbs.db
