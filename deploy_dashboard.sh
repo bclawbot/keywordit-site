@@ -67,6 +67,6 @@ fi
 
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M")
 git commit -m "deploy: dashboard update $TIMESTAMP" --quiet
-git push origin gh-pages --quiet
+git push -f origin gh-pages --quiet
 
 echo "[deploy] ✅ Deployed dashboard.html → gh-pages ($TIMESTAMP)"
