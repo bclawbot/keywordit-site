@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy_dashboard.sh — Push dashboard.html to the gh-pages branch for keywordit.xyz
+# deploy_dashboard.sh — Auto-deploy dashboard to main + gh-pages
 # Called as Stage 6 by heartbeat.py after dashboard_builder.py succeeds.
 # Safe to run standalone. Exits 0 (non-fatal) if no remote is configured.
 
@@ -14,8 +14,7 @@ cd "$WORKSPACE"
 
 # Bail gracefully if no git remote — won't block the pipeline
 if ! git remote get-url origin >/dev/null 2>&1; then
-    echo "[deploy] No git remote configured — skipping GitHub Pages deploy"
-    echo "[deploy] To enable: cd ~/.openclaw/workspace && git remote add origin https://github.com/<user>/<repo>.git"
+    echo "[deploy] No git remote configured — skipping deploy"
     exit 0
 fi
 
@@ -24,49 +23,64 @@ if [ ! -f "$DASHBOARD" ]; then
     exit 0
 fi
 
-# ── Worktree deploy (no branch switching in main tree) ────────────────────────
+# ── Deploy to main branch (for Netlify) ───────────────────────────────────────
 
+echo "[deploy] Committing dashboard to main branch..."
+git add dashboard.html
+cp dashboard.html index.html
+git add index.html
+
+if ! git diff --cached --quiet; then
+    TIMESTAMP=$(date +"%Y-%m-%d %H:%M")
+    git commit -m "auto: dashboard update $TIMESTAMP" --quiet
+    git push origin main --quiet
+    echo "[deploy] ✅ Pushed to main → Netlify will deploy"
+else
+    echo "[deploy] No changes to dashboard — skipping main push"
+fi
+
+# ── Deploy to gh-pages (GitHub Pages fallback) ───────────────────────────────
+
+echo "[deploy] Deploying to gh-pages branch..."
+
+# Use worktree to avoid switching branches in main workspace
 DEPLOY_DIR=$(mktemp -d)
 cleanup() { git worktree remove "$DEPLOY_DIR" --force 2>/dev/null || true; rm -rf "$DEPLOY_DIR"; }
 trap cleanup EXIT
 
-# Fetch latest gh-pages (or create orphan if it doesn't exist yet)
 git fetch origin gh-pages --quiet 2>/dev/null || true
 
 if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
     git worktree add "$DEPLOY_DIR" origin/gh-pages --quiet 2>/dev/null || \
       git worktree add "$DEPLOY_DIR" --detach --quiet
-    # Make sure local gh-pages branch tracks remote
     if ! git show-ref --verify --quiet refs/heads/gh-pages; then
         git branch gh-pages origin/gh-pages --quiet
     fi
     git -C "$DEPLOY_DIR" checkout gh-pages --quiet 2>/dev/null || true
 else
-    # First deploy — create orphan gh-pages
     echo "[deploy] Creating gh-pages branch for the first time"
     git worktree add "$DEPLOY_DIR" --orphan gh-pages --quiet
 fi
 
-# ── Copy files ────────────────────────────────────────────────────────────────
-
+# Copy files to gh-pages worktree
 cp "$DASHBOARD" "$DEPLOY_DIR/index.html"
 [ -f "$WORKSPACE/logo-dark.png" ]  && cp "$WORKSPACE/logo-dark.png"  "$DEPLOY_DIR/"
 [ -f "$WORKSPACE/logo-light.png" ] && cp "$WORKSPACE/logo-light.png" "$DEPLOY_DIR/"
 [ -f "$WORKSPACE/landing.html" ]   && cp "$WORKSPACE/landing.html"   "$DEPLOY_DIR/"
+[ -f "$WORKSPACE/login.html" ]     && cp "$WORKSPACE/login.html"     "$DEPLOY_DIR/"
+[ -f "$WORKSPACE/admin.html" ]     && cp "$WORKSPACE/admin.html"     "$DEPLOY_DIR/"
 echo "keywordit.xyz" > "$DEPLOY_DIR/CNAME"
-
-# ── Commit and push ───────────────────────────────────────────────────────────
 
 cd "$DEPLOY_DIR"
 git add -A
 
 if git diff --cached --quiet; then
-    echo "[deploy] No changes since last deploy — skipping push"
-    exit 0
+    echo "[deploy] No changes to gh-pages — skipping push"
+else
+    TIMESTAMP=$(date +"%Y-%m-%d %H:%M")
+    git commit -m "deploy: dashboard update $TIMESTAMP" --quiet
+    git push -f origin gh-pages --quiet
+    echo "[deploy] ✅ Pushed to gh-pages"
 fi
 
-TIMESTAMP=$(date +"%Y-%m-%d %H:%M")
-git commit -m "deploy: dashboard update $TIMESTAMP" --quiet
-git push -f origin gh-pages --quiet
-
-echo "[deploy] ✅ Deployed dashboard.html → gh-pages ($TIMESTAMP)"
+echo "[deploy] ✅ Deployment complete: main (Netlify) + gh-pages (GitHub Pages)"
