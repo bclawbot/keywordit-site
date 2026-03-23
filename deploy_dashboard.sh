@@ -23,23 +23,22 @@ if [ ! -f "$DASHBOARD" ]; then
     exit 0
 fi
 
-# ── Deploy to main branch (for Netlify) ───────────────────────────────────────
+# ── Skip deploy if source data unchanged ──────────────────────────────────────
 
-echo "[deploy] Committing dashboard to main branch..."
-git add dashboard.html
-cp dashboard.html index.html
-git add index.html
-
-if ! git diff --cached --quiet; then
-    TIMESTAMP=$(date +"%Y-%m-%d %H:%M")
-    git commit -m "auto: dashboard update $TIMESTAMP" --quiet
-    git push origin main --quiet
-    echo "[deploy] ✅ Pushed to main → Netlify will deploy"
+HASH_FILE="$WORKSPACE/.last_deploy_hash"
+OPPORTUNITIES="$WORKSPACE/golden_opportunities.json"
+if [ -f "$OPPORTUNITIES" ]; then
+    CURRENT_HASH=$(md5 -q "$OPPORTUNITIES" 2>/dev/null || md5sum "$OPPORTUNITIES" | cut -d' ' -f1)
+    LAST_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "")
+    if [ "$CURRENT_HASH" = "$LAST_HASH" ]; then
+        echo "[deploy] golden_opportunities.json unchanged — skipping deploy"
+        exit 0
+    fi
 else
-    echo "[deploy] No changes to dashboard — skipping main push"
+    CURRENT_HASH=""
 fi
 
-# ── Deploy to gh-pages (GitHub Pages fallback) ───────────────────────────────
+# ── Deploy to gh-pages (GitHub Pages) ────────────────────────────────────────
 
 echo "[deploy] Deploying to gh-pages branch..."
 
@@ -81,6 +80,7 @@ else
     git commit -m "deploy: dashboard update $TIMESTAMP" --quiet
     git push -f origin gh-pages --quiet
     echo "[deploy] ✅ Pushed to gh-pages"
+    [ -n "$CURRENT_HASH" ] && echo "$CURRENT_HASH" > "$HASH_FILE"
 fi
 
-echo "[deploy] ✅ Deployment complete: main (Netlify) + gh-pages (GitHub Pages)"
+echo "[deploy] ✅ Deployment complete: gh-pages (GitHub Pages / keywordit.xyz)"
