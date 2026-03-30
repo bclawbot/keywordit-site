@@ -117,6 +117,16 @@ def _init_cache_db():
             deferred_at TEXT NOT NULL,
             PRIMARY KEY (keyword, country)
         );
+
+        CREATE TABLE IF NOT EXISTS labs_enrichment_cache (
+            keyword     TEXT NOT NULL,
+            country     TEXT NOT NULL,
+            enrichment  TEXT NOT NULL,
+            fetched_at  TEXT NOT NULL,
+            PRIMARY KEY (keyword, country)
+        );
+        CREATE INDEX IF NOT EXISTS idx_labs_lookup
+            ON labs_enrichment_cache (keyword, country, fetched_at);
     """)
     # Migrate api_usage: add columns that may be missing from older schema
     cols = {row[1] for row in con.execute("PRAGMA table_info(api_usage)").fetchall()}
@@ -205,6 +215,56 @@ def _cache_cleanup():
     con.close()
     return deleted
 
+
+# ── Labs enrichment cache helpers ─────────────────────────────────────────────
+
+def _labs_cache_lookup_batch(pairs: list) -> tuple:
+    """
+    Batch-check (keyword, country) pairs against the labs_enrichment_cache.
+    Returns (hits_dict, misses_list).
+    hits_dict: {(keyword, country): enrichment_dict}
+    misses_list: pairs not found in cache or expired.
+    """
+    if not pairs:
+        return {}, []
+    cutoff = (datetime.now() - timedelta(hours=CACHE_TTL_HOURS)).isoformat()
+    con = sqlite3.connect(CACHE_DB)
+    con.execute("CREATE TEMPORARY TABLE _llookup (keyword TEXT, country TEXT)")
+    con.executemany("INSERT INTO _llookup VALUES (?, ?)", pairs)
+    rows = con.execute(
+        "SELECT c.keyword, c.country, c.enrichment "
+        "FROM labs_enrichment_cache c "
+        "JOIN _llookup l ON c.keyword = l.keyword AND c.country = l.country "
+        "WHERE c.fetched_at > ?",
+        (cutoff,)
+    ).fetchall()
+    con.close()
+    hits   = {(r[0], r[1]): json.loads(r[2]) for r in rows}
+    misses = [(kw, c) for kw, c in pairs if (kw, c) not in hits]
+    return hits, misses
+
+
+def _labs_cache_write_batch(fresh_results: dict) -> None:
+    """Upsert fresh Labs enrichment results into labs_enrichment_cache."""
+    if not fresh_results:
+        return
+    now = datetime.now().isoformat()
+    con = sqlite3.connect(CACHE_DB)
+    con.executemany(
+        "INSERT INTO labs_enrichment_cache (keyword, country, enrichment, fetched_at) "
+        "VALUES (?, ?, ?, ?) "
+        "ON CONFLICT(keyword, country) DO UPDATE SET "
+        "enrichment = excluded.enrichment, fetched_at = excluded.fetched_at",
+        [(kw, country, json.dumps(enrich), now)
+         for (kw, country), enrich in fresh_results.items()]
+    )
+    con.commit()
+    con.close()
+
+
+# Module-level counters set by _fetch_dataforseo_labs_batch for cost reporting
+_labs_cache_hit_count = 0
+_labs_api_call_count  = 0
 
 # ── Layer 3: Budget gate ───────────────────────────────────────────────────────
 
@@ -312,6 +372,23 @@ try:
 except Exception:
     pass
 
+# ── RPC Estimator (five-level empirical lookup) ───────────────────────────────
+_RPC_ESTIMATOR: dict = {}
+_RPC_PATTERNS:  dict = {}
+try:
+    sys.path.insert(0, str(BASE))
+    from modules.rpc_estimator import (
+        load_estimator  as _load_estimator,
+        load_patterns   as _load_rpc_patterns,
+        enrich_keyword_rpc as _enrich_keyword_rpc,
+    )
+    _RPC_ESTIMATOR = _load_estimator()
+    _RPC_PATTERNS  = _load_rpc_patterns()
+    _RPC_AVAILABLE = True
+except Exception as _rpc_load_err:
+    _RPC_AVAILABLE = False
+    print(f"  ⚠️  RPC estimator unavailable: {_rpc_load_err}")
+
 _EMERGING_THRESHOLD = 1.50  # minimum vertical CPC ceiling to qualify as EMERGING
 
 # SERP feature friction weights for SERP Saturation Risk (SSR) score.
@@ -332,20 +409,19 @@ _SERP_FRICTION = {
 # EVERGREEN = established verticals with stable high-CPC keywords (Track A in CPC router).
 # EMERGING  = trend-driven keywords in price-discovery phase (tagged EMERGING/EMERGING_HIGH).
 _RSOC_WEIGHTS = {
+    # Revenue-first formula: rpc_ceiling + auction_health + momentum + intent
+    # No volume or KD — soft modifiers handle those as penalties after composite.
     "EVERGREEN": {
-        "cpc":         0.35,
-        "intent":      0.25,
-        "competition": 0.10,
-        "kd":          0.10,
-        "volume":      0.10,
-        "trend":       0.10,
+        "cpc":            0.40,   # RPC ceiling proxy (htpb)
+        "auction_health": 0.25,   # Competition depth + bid spread
+        "trend":          0.20,   # Momentum — catching the wave
+        "intent":         0.15,   # Buyer behind the query
     },
     "EMERGING": {
-        "cpc":         0.25,
-        "intent":      0.25,
-        "trend":       0.30,
-        "competition": 0.15,
-        "volume":      0.05,
+        "cpc":            0.30,   # Lower weight — CPC still thin at price-discovery
+        "auction_health": 0.20,   # Auction may be shallow but growing
+        "trend":          0.35,   # Momentum is the primary signal for emerging
+        "intent":         0.15,
     },
 }
 
@@ -461,8 +537,6 @@ def fetch_google_ads(keyword, country="US"):
     Fetch CPC/volume metrics for a single keyword via the google-ads Python SDK.
     Uses generateKeywordIdeas and returns the result matching the seed keyword.
     """
-    from google.ads.googleads.errors import GoogleAdsException
-
     client = _build_gads_client()
     idea_svc = client.get_service("KeywordPlanIdeaService")
     request  = client.get_type("GenerateKeywordIdeasRequest")
@@ -481,10 +555,11 @@ def fetch_google_ads(keyword, country="US"):
 
     try:
         response = idea_svc.generate_keyword_ideas(request=request)
-    except GoogleAdsException as ex:
-        raise ValueError(f"Google Ads API error: {ex.error.code().name}") from ex
-
-    results = list(response)
+        results = list(response)   # iterate here so lazy-fetch exceptions are caught
+    except Exception as ex:
+        # Wrap all errors (GoogleAdsException, gRPC errors, etc.) so the caller
+        # can detect test-account / fatal errors without dealing with SDK internals.
+        raise ValueError(f"Google Ads API error: {str(ex)[:400]}") from ex
     if not results:
         raise ValueError("No results returned from Google Ads API")
 
@@ -526,6 +601,11 @@ def fetch_dataforseo(keyword, country="US"):
     if len(clean_kw.split()) < 2:
         raise ValueError(f"Keyword too short after cleaning: '{clean_kw}'")
 
+    # Budget gate — $0.01 per keyword on search_volume/live
+    call_cost = DFS_ENDPOINT_COSTS["search_volume_live"]
+    if not pre_flight_budget_check(call_cost, DFS_DAILY_BUDGET_USD):
+        raise ValueError(f"[Budget] Daily cap reached — skipping search_volume/live for '{keyword}'")
+
     _, _, dfs_location = _geo_params(country)
     creds   = base64.b64encode(f"{DFS_LOGIN}:{DFS_PASSWORD}".encode()).decode()
     headers = {"Authorization": f"Basic {creds}", "Content-Type": "application/json"}
@@ -536,6 +616,7 @@ def fetch_dataforseo(keyword, country="US"):
         "https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live",
         headers=headers, json=body, timeout=15
     )
+    increment_usd_spent(call_cost, "search_volume_live")
     r.raise_for_status()
     tasks = r.json().get("tasks", [])
     if not tasks or tasks[0].get("status_code") != 20000:
@@ -575,7 +656,7 @@ def _log_error(stage: str, message: str):
         pass   # never crash the pipeline over a logging failure
 
 
-def _bulk_kd_gate(keyword_country_pairs: list) -> list:
+def _bulk_kd_gate(keyword_country_pairs: list) -> tuple:
     """
     Cheap pre-filter: reject keywords with keyword_difficulty < 15 using the
     bulk_keyword_difficulty endpoint ($0.01 per 1,000 keywords).
@@ -584,18 +665,23 @@ def _bulk_kd_gate(keyword_country_pairs: list) -> list:
         keyword_country_pairs: list of (keyword_str, country_iso) tuples
 
     Returns:
-        List of (keyword_str, country_iso) tuples where KD >= 15.
-        On any API error, returns the input list unchanged (fail open).
+        Tuple of:
+          - List of (keyword_str, country_iso) tuples where KD >= 15.
+          - Dict mapping (keyword_str, country_iso) → kd_int for all keywords
+            where DFS returned a non-zero KD value (used downstream to populate
+            the kd field when Labs enrichment has no data).
+        On any API error, returns the input list unchanged (fail open), kd_dict={}.
     """
     if not DFS_READY or not keyword_country_pairs:
-        return keyword_country_pairs
+        return keyword_country_pairs, {}
 
     # Group by country because location_code differs per country
     by_country: dict = {}
     for kw, country in keyword_country_pairs:
         by_country.setdefault(country, []).append(kw)
 
-    passing = []
+    passing    = []
+    kd_dict: dict = {}   # (keyword, country) → kd_int for all DFS-known keywords
     creds   = base64.b64encode(f"{DFS_LOGIN}:{DFS_PASSWORD}".encode()).decode()
     headers = {"Authorization": f"Basic {creds}", "Content-Type": "application/json"}
 
@@ -625,14 +711,26 @@ def _bulk_kd_gate(keyword_country_pairs: list) -> list:
                     # API error — fail open, pass all keywords through
                     passing.extend((kw, country) for kw in batch)
                     continue
+                # Build a map from lowercased API response keyword → KD
+                # so we can match back to original input keywords
+                kd_map = {}
                 for item in tasks[0].get("result", []):
-                    kd = item.get("keyword_difficulty") or 0
-                    kw = item.get("keyword", "")
-                    if kd >= 15:
-                        passing.append((kw, country))
+                    kd_val  = item.get("keyword_difficulty") or 0
+                    kw_resp = item.get("keyword", "")
+                    if kw_resp:
+                        kd_map[kw_resp.lower()] = kd_val
+
+                for orig_kw in batch:
+                    kd = kd_map.get(orig_kw.lower())
+                    if kd is None:
+                        # DFS doesn't know this keyword — fail open, let GKP decide
+                        passing.append((orig_kw, country))
+                    elif kd >= 15:
+                        passing.append((orig_kw, country))
+                        kd_dict[(orig_kw, country)] = kd   # store for downstream use
                     else:
                         _log_error("validation_kd_gate",
-                                   f"KD gate rejected '{kw}' [{country}]: KD={kd} (<15)")
+                                   f"KD gate rejected '{orig_kw}' [{country}]: KD={kd} (<15)")
             except Exception as e:
                 # Fail open on any error — never block the pipeline
                 print(f"  ⚠️  KD gate error [{country}]: {e}")
@@ -642,7 +740,7 @@ def _bulk_kd_gate(keyword_country_pairs: list) -> list:
     total   = len(keyword_country_pairs)
     print(f"  KD gate:  {total} → {passed} passing (KD ≥ 15), "
           f"{total - passed} rejected")
-    return passing
+    return passing, kd_dict
 
 
 def _fetch_dataforseo_labs_batch(keyword_country_pairs: list) -> dict:
@@ -668,24 +766,41 @@ def _fetch_dataforseo_labs_batch(keyword_country_pairs: list) -> dict:
             competition_labs    float       paid competition 0-1 from Labs
             is_another_language bool        True if keyword is wrong language
     """
+    global _labs_cache_hit_count, _labs_api_call_count
+
     if not DFS_READY or not keyword_country_pairs:
         return {}
 
+    # ── Check Labs cache first ────────────────────────────────────────────────
+    cache_hits, pairs_to_fetch = _labs_cache_lookup_batch(keyword_country_pairs)
+    _labs_cache_hit_count = len(cache_hits)
+    results = dict(cache_hits)
+
+    if not pairs_to_fetch:
+        print(f"  Labs enrichment: {len(keyword_country_pairs)} from cache (0 API calls)")
+        _labs_api_call_count = 0
+        return results
+
+    print(f"  Labs enrichment: {len(cache_hits)} from cache, {len(pairs_to_fetch)} need API")
+
     creds   = base64.b64encode(f"{DFS_LOGIN}:{DFS_PASSWORD}".encode()).decode()
     headers = {"Authorization": f"Basic {creds}", "Content-Type": "application/json"}
-    results = {}
+    fresh_results = {}
 
     # Group by country; process in batches of 700
+    # Filter empty-string keywords before grouping — they produce useless "" cache entries
     by_country: dict = {}
-    for kw, country in keyword_country_pairs:
-        by_country.setdefault(country, []).append(kw)
+    for kw, country in pairs_to_fetch:
+        if kw.strip():
+            by_country.setdefault(country, []).append(kw)
 
     for country, keywords in by_country.items():
         _, _, location_code = _geo_params(country)
         for i in range(0, len(keywords), 700):
             batch = keywords[i : i + 700]
-            # Pre-flight budget check
-            estimated_cost = DFS_ENDPOINT_COSTS["keyword_overview"] * len(batch)
+            # Pre-flight budget check (task fee + per-keyword fee)
+            estimated_cost = (DFS_ENDPOINT_COSTS["keyword_overview_task_fee"]
+                             + DFS_ENDPOINT_COSTS["keyword_overview_per_kw"] * len(batch))
             if not pre_flight_budget_check(estimated_cost, DFS_DAILY_BUDGET_USD):
                 print(f"  [Budget] Skipping Labs enrichment batch — daily budget exhausted")
                 continue
@@ -699,26 +814,58 @@ def _fetch_dataforseo_labs_batch(keyword_country_pairs: list) -> dict:
             try:
                 r = requests.post(
                     f"{DFS_LABS_BASE}/keyword_overview/live",
-                    headers=headers, json=payload, timeout=30
+                    headers=headers, json=payload, timeout=60
                 )
                 r.raise_for_status()
                 # Record spend immediately after POST
                 increment_usd_spent(estimated_cost, "keyword_overview")
                 tasks = r.json().get("tasks", [])
                 if not tasks or tasks[0].get("status_code") != 20000:
-                    print(f"  ⚠️  Labs batch error [{country}]: "
-                          f"{tasks[0].get('status_message') if tasks else 'no tasks'}")
-                    continue
+                    status_msg = tasks[0].get("status_message", "") if tasks else "no tasks"
+                    # Some countries reject language_code (e.g. TW→zh, NO→no).
+                    # Retry without it — DFS will use the default language for the location.
+                    if "language_code" in status_msg.lower() and "invalid" in status_msg.lower():
+                        payload[0].pop("language_code", None)
+                        r2 = requests.post(
+                            f"{DFS_LABS_BASE}/keyword_overview/live",
+                            headers=headers, json=payload, timeout=60
+                        )
+                        r2.raise_for_status()
+                        increment_usd_spent(estimated_cost, "keyword_overview")
+                        tasks = r2.json().get("tasks", [])
+                        if not tasks or tasks[0].get("status_code") != 20000:
+                            print(f"  ⚠️  Labs batch error [{country}] (no lang retry): "
+                                  f"{tasks[0].get('status_message') if tasks else 'no tasks'}")
+                            continue
+                    else:
+                        print(f"  ⚠️  Labs batch error [{country}]: {status_msg}")
+                        continue
 
-                for item in (tasks[0].get("result") or []):
+                results_list = tasks[0].get("result") or []
+                for idx, item in enumerate(results_list):
                     kw_text = item.get("keyword", "")
+                    # Positional fallback: DFS keyword_overview/live preserves input order.
+                    # When kw_text="" (unrecognised keyword), recover from batch position.
+                    if not kw_text and idx < len(batch):
+                        kw_text = batch[idx]
+                    if not kw_text:
+                        continue  # skip if still unresolvable
                     ki      = item.get("keyword_info", {}) or {}
                     kp      = item.get("keyword_properties", {}) or {}
                     si      = item.get("search_intent_info", {}) or {}
                     sinfo   = item.get("serp_info", {}) or {}
                     trend   = ki.get("search_volume_trend", {}) or {}
 
-                    results[(kw_text, country)] = {
+                    # Primary metrics (replaces search_volume/live)
+                    cpc_val       = float(ki.get("cpc") or 0)
+                    sv_val        = int(ki.get("search_volume") or 0)
+                    comp_val      = float(ki.get("competition") or 0)
+                    comp_idx      = int(ki.get("competition_index") or 0) if ki.get("competition_index") is not None else None
+                    low_bid       = float(ki.get("low_top_of_page_bid") or 0)
+                    high_bid      = float(ki.get("high_top_of_page_bid") or 0)
+
+                    fresh_results[(kw_text, country)] = {
+                        # Enrichment fields (existing)
                         "kd":                   int(kp.get("keyword_difficulty") or 0),
                         "main_intent":          si.get("main_intent", ""),
                         "secondary_intents":    si.get("secondary_keyword_intents", []),
@@ -727,15 +874,30 @@ def _fetch_dataforseo_labs_batch(keyword_country_pairs: list) -> dict:
                         "trend_quarterly":      float(trend.get("quarterly") or 0),
                         "trend_yearly":         float(trend.get("yearly") or 0),
                         "monthly_searches":     ki.get("monthly_searches", []),
-                        "cpc_labs":             float(ki.get("cpc") or 0),
-                        "competition_labs":     float(ki.get("competition") or 0),
+                        "cpc_labs":             cpc_val,
+                        "competition_labs":     comp_val,
                         "is_another_language":  bool(kp.get("is_another_language")),
+                        # Primary metrics (replaces fetch_dataforseo / search_volume_live)
+                        "search_volume":        sv_val,
+                        "cpc_usd":              round(cpc_val, 2),
+                        "cpc_low_usd":          round(low_bid, 2),
+                        "cpc_high_usd":         round(high_bid, 2),
+                        "competition":          round(comp_val, 2),
+                        "competition_index":    comp_idx,
+                        "source":               "dataforseo_labs",
                     }
             except Exception as e:
                 print(f"  ⚠️  Labs enrichment error [{country}] batch {i // 700 + 1}: {e}")
 
-    print(f"  Labs enrichment: {len(keyword_country_pairs)} requested → "
-          f"{len(results)} enriched")
+    # Persist fresh API results to cache; merge into combined output
+    _labs_cache_write_batch(fresh_results)
+    _labs_api_call_count = len(fresh_results)
+    results.update(fresh_results)
+
+    _per_kw_cost = DFS_ENDPOINT_COSTS["keyword_overview_per_kw"]
+    saved = len(cache_hits) * _per_kw_cost
+    print(f"  Labs enrichment: {len(pairs_to_fetch)} API → {len(fresh_results)} enriched "
+          f"| cache saved ${saved:.4f}")
     return results
 
 
@@ -790,6 +952,22 @@ def _compute_kd_score(kd: int) -> float:
 def _compute_competition_score(competition: float) -> float:
     """Direct linear mapping: 1.0 paid competition index = 100 score."""
     return max(0.0, min(100.0, float(competition or 0) * 100.0))
+
+
+def _compute_auction_health(competition: float, cpc_high_usd: float, cpc_usd: float) -> float:
+    """
+    Auction depth (competition) + bid ceiling heating (bid_spread).
+    High competition = deep stable auction = stable RPC.
+    htpb / avg_cpc > 1.5 = auction heating (advertisers bidding up the ceiling).
+    Returns 0-100.
+    """
+    comp = float(competition or 0)
+    avg = max(float(cpc_usd or 0.01), 0.01)
+    bid_spread = float(cpc_high_usd or 0) / avg
+    # Spread score: 0 at ≤1.0×, linear to 1.0 at ≥2.0×
+    spread_score = max(0.0, min(1.0, bid_spread - 1.0))
+    # Competition is 75%, bid spread heating is 25%
+    return max(0.0, min(100.0, comp * 75.0 + spread_score * 25.0))
 
 
 def _compute_volume_score(search_volume: int) -> float:
@@ -890,87 +1068,84 @@ def _apply_hard_gates(keyword: str, country: str, cpc_usd: float,
                       cpc_high_usd: float, competition: float,
                       search_volume: int, enrichment: dict) -> tuple:
     """
-    Run all pre-scoring rejection checks.
-    Gate order matches master plan Section 4 (cheapest checks first).
+    Run pre-scoring rejection checks. Only 3 hard gates remain — all others
+    are soft modifiers applied after composite scoring.
     Returns (passes: bool, rejection_reason: str).
     """
-    kd                  = enrichment.get("kd", 0)
     main_intent         = enrichment.get("main_intent", "")
     serp_item_types     = enrichment.get("serp_item_types", [])
     is_another_language = enrichment.get("is_another_language", False)
 
-    # Gate 1 — Wrong language for location (free check from overview response)
+    # Gate 1 — Wrong language for location (zero audience value)
     if is_another_language:
         return False, "wrong_language"
 
-    # Gate 2 — Intent filtering with nuance
+    # Gate 2 — Navigational intent only (brand searches = zero arbitrage)
+    # Informational intent is allowed through — 0.6× soft modifier applied after scoring
     if main_intent == "navigational":
         return False, "navigational_intent"
-    # Allow informational IF it has commercial secondary intent (undervalued by competitors)
-    if main_intent == "informational":
-        secondary_intents = enrichment.get("secondary_intents", [])
-        has_commercial = any(s.get("intent") == "commercial" for s in secondary_intents)
-        if not has_commercial:
-            return False, "informational_without_commercial"
-        # Passes gate — 0.6x multiplier applied in compute_rsoc_score via intent_score
 
-    # Gate 3 — KD minimum (re-check in case enrichment ran on keywords that bypassed bulk gate)
-    if kd < 15:
-        return False, f"kd_below_15 (kd={kd})"
-
-    # Gate 4 — SERP Saturation Risk (computed locally, no API cost)
+    # Gate 3 — SERP Saturation Risk (raised to 2.0 — only extreme saturation rejected)
     ssr = _compute_ssr(serp_item_types)
-    if ssr > 1.5:
+    if ssr >= 2.0:
         return False, f"serp_saturation_risk (ssr={ssr:.2f})"
-
-    # Gate 5 — CPC floor: country-aware, uses high_top_of_page_bid against htpb floor
-    floor = get_cpc_floor(country, "htpb")
-    emerging_tag = enrichment.get("emerging_tag")
-
-    # EMERGING keywords can bypass strict CPC floor if they have volume + trend
-    if emerging_tag in ["EMERGING", "EMERGING_HIGH"]:
-        trend_monthly = enrichment.get("trend_monthly", 0)
-        if trend_monthly >= 30 and search_volume >= 200:
-            # Strong emerging trend — bypass CPC floor entirely
-            pass
-        elif (cpc_high_usd or 0) < floor * 0.5:
-            return False, f"emerging_cpc_too_low (htpb=${cpc_high_usd:.2f}, 50%_floor=${floor*0.5:.2f})"
-    else:
-        if (cpc_high_usd or 0) < floor:
-            return False, f"cpc_below_country_floor (htpb=${cpc_high_usd:.2f}, floor=${floor:.2f})"
-
-    # Gate 6 — Paid competition density
-    if (competition or 0) < 0.40:
-        return False, f"competition_too_low ({competition:.2f})"
-
-    # Gate 7 — Volume floor (track-aware and language-aware)
-    is_english = country in ["US", "GB", "AU", "CA", "NZ", "IE"]
-    if emerging_tag in ["EMERGING", "EMERGING_HIGH"]:
-        min_volume = 200 if is_english else 100
-    else:
-        min_volume = 500 if is_english else 200
-
-    if (search_volume or 0) < min_volume:
-        return False, f"volume_below_floor ({search_volume} < {min_volume})"
 
     return True, ""
 
 
+def _apply_soft_modifiers(rsoc_score: float, kd: int, competition: float,
+                          htpb: float, volume: int, country: str,
+                          intent: str) -> float:
+    """
+    Apply RSOC soft modifiers as full-score multipliers after composite scoring.
+    Replaces former hard gates 3, 5, 6, 7 with penalties that keep keywords visible.
+    """
+    score = rsoc_score
+
+    # Low KD: early-stage keyword, advertisers may not have arrived yet
+    if (kd or 0) > 0 and (kd or 0) < 15:
+        score *= 0.70
+
+    # Very thin auction: RPC will collapse quickly after small spend
+    if (competition or 0) > 0 and (competition or 0) < 0.20:
+        score *= 0.85
+
+    # Below country CPC floor: lower monetisation potential but not zero
+    floor = get_cpc_floor(country, "htpb")
+    if (htpb or 0) < floor:
+        score *= 0.75
+
+    # Very low volume: minor penalty — RSOC buys clicks, doesn't wait for them
+    if (volume or 0) < 200:
+        score *= 0.90
+
+    # Informational intent: underpriced by competitors but lower buyer signal
+    if intent == "informational":
+        score *= 0.60
+
+    return round(score, 2)
+
+
 def compute_rsoc_score(cpc_high_usd: float, competition: float,
                        search_volume: int, enrichment: dict,
-                       scoring_profile: str = "EVERGREEN") -> float:
+                       scoring_profile: str = "EVERGREEN",
+                       cpc_usd: float = 0.0) -> float:
     """
     Composite RSOC opportunity score 0-100.
 
-    Uses enrichment data from _fetch_dataforseo_labs_batch() for intent and
-    trend signals. Falls back gracefully when enrichment is empty.
+    Formula: rpc_ceiling(htpb) × 0.40 + auction_health(comp, bid_spread) × 0.25
+             + momentum(trends) × 0.20 + intent_quality × 0.15
+
+    No volume or KD components — those are soft modifiers applied after this score.
+    Informational intent 0.6× multiplier is applied externally in _apply_soft_modifiers().
 
     Args:
-        cpc_high_usd:      high_top_of_page_bid from existing metrics (RPC ceiling proxy)
-        competition:       paid competition float 0-1 from existing metrics
-        search_volume:     monthly search volume from existing metrics
-        enrichment:        dict from _fetch_dataforseo_labs_batch() (may be empty {})
-        scoring_profile:   "EVERGREEN" or "EMERGING"
+        cpc_high_usd:    high_top_of_page_bid (RPC ceiling proxy)
+        competition:     paid competition float 0-1
+        search_volume:   monthly search volume (unused in formula, kept for signature compat)
+        enrichment:      dict from _fetch_dataforseo_labs_batch() (may be empty {})
+        scoring_profile: "EVERGREEN" or "EMERGING"
+        cpc_usd:         average CPC for bid_spread calculation (htpb / avg_cpc)
 
     Returns:
         float 0-100
@@ -980,38 +1155,29 @@ def compute_rsoc_score(cpc_high_usd: float, competition: float,
 
     w = _RSOC_WEIGHTS[scoring_profile]
 
-    main_intent = enrichment.get("main_intent", "")
+    main_intent       = enrichment.get("main_intent", "")
     secondary_intents = enrichment.get("secondary_intents", [])
 
-    intent_raw = _compute_intent_score(main_intent, secondary_intents)
-    # Apply 0.6x multiplier for informational keywords with commercial secondary intent
-    if main_intent == "informational":
-        has_commercial = any(s.get("intent") == "commercial" for s in secondary_intents)
-        if has_commercial:
-            intent_raw *= 0.6
-
     component_scores = {
-        "cpc":         _compute_cpc_score(cpc_high_usd),
-        "intent":      intent_raw,
-        "competition": _compute_competition_score(competition),
-        "kd":          _compute_kd_score(enrichment.get("kd", 0)),
-        "volume":      _compute_volume_score(search_volume),
-        "trend":       _compute_trend_score(
-                           enrichment.get("trend_monthly", 0),
-                           enrichment.get("trend_quarterly", 0),
-                           enrichment.get("trend_yearly", 0),
-                       ),
+        "cpc":            _compute_cpc_score(cpc_high_usd),
+        "auction_health": _compute_auction_health(competition, cpc_high_usd, cpc_usd),
+        "trend":          _compute_trend_score(
+                              enrichment.get("trend_monthly", 0),
+                              enrichment.get("trend_quarterly", 0),
+                              enrichment.get("trend_yearly", 0),
+                          ),
+        "intent":         _compute_intent_score(main_intent, secondary_intents),
     }
 
     composite  = sum(component_scores.get(k, 0) * w[k] for k in w)
     serp_items = enrichment.get("serp_item_types", [])
     ssr        = _compute_ssr(serp_items)
 
-    # Apply SSR as a post-score multiplier (hard gate already ran at 1.5)
-    if ssr >= 1.5:
+    # Apply SSR as a post-score multiplier (hard gate rejects at ssr >= 2.0)
+    if ssr >= 2.0:
         composite *= 0.0
     elif ssr >= 1.0:
-        composite *= (1.5 - ssr) * 2.0   # linear 1.0→1.5 maps multiplier 1.0→0.0
+        composite *= (2.0 - ssr)   # linear 1.0→2.0 maps multiplier 1.0→0.0
 
     return round(composite, 2)
 
@@ -1036,22 +1202,22 @@ def _compute_kvsi(enrichment: dict) -> float:
     return round((yoy + qoq) / (stddev + 1), 4)
 
 
-def tag_opportunity_v2(ai_score: float, cpc_usd: float,
+def tag_opportunity_v2(rsoc_score: float, cpc_usd: float,
                        competition: float, enrichment: dict,
                        vertical: str, country: str) -> str:
     """
-    Extended opportunity tagger. Returns one of:
-        GOLDEN_OPPORTUNITY  — high arbitrage_index (backward compat threshold: > 0.8)
-        WATCH               — moderate arbitrage_index (> 0.5)
-        EMERGING_HIGH       — trending keyword with 4+ confidence signals
-        EMERGING            — trending keyword with 1-3 confidence signals
-        LOW                 — below scoring thresholds
-        UNSCORED            — no metrics available (unchanged from current code)
+    Extended opportunity tagger using rsoc_score (0-100 after soft modifiers).
+    Returns one of:
+        GOLDEN_OPPORTUNITY  — rsoc_score >= 65 (high CPC confirmed, deep auction)
+        WATCH               — rsoc_score >= 40 (decent metrics, worth monitoring)
+        EMERGING_HIGH       — classify_emerging() override (3+ trend signals)
+        EMERGING            — classify_emerging() override (1-2 trend signals)
+        LOW                 — rsoc_score < 40 and no emerging signals
+        UNSCORED            — no metrics available
     """
-    # —— Preserve existing GOLDEN/WATCH logic (backward compat) ————————————————
-    if ai_score > 0.8:
+    if rsoc_score >= 65:
         return "GOLDEN_OPPORTUNITY"
-    if ai_score > 0.5:
+    if rsoc_score >= 40:
         return "WATCH"
 
     # —— New EMERGING detection ————————————————————————————————————————————————
@@ -1095,18 +1261,17 @@ def tag_opportunity_v2(ai_score: float, cpc_usd: float,
 # ── Provider router ───────────────────────────────────────────────────────────
 
 def get_keyword_metrics(keyword, country="US"):
+    """Fetch metrics for a single keyword. Google Ads only (free).
+    DataForSEO keywords are handled in batch via _fetch_dataforseo_labs_batch().
+    """
     if GADS_READY:
         try:
             return fetch_google_ads(keyword, country)
         except Exception as e:
             print(f"  ⚠️  Google Ads error '{keyword}': {e}")
 
-    if DFS_READY:
-        try:
-            return fetch_dataforseo(keyword, country)
-        except Exception as e:
-            print(f"  ⚠️  DataForSEO error '{keyword}': {e}")
-
+    # NOTE: DFS per-keyword fetch_dataforseo() removed — all DFS lookups now
+    # go through _fetch_dataforseo_labs_batch() in the pipeline (88x cheaper).
     return None
 
 
@@ -1149,13 +1314,18 @@ vetted = json.loads(INPUT.read_text())
 _seen_norm: dict  = {}  # norm_key → representative original keyword
 _unique_pairs: list = []
 _pre_fetched_count  = 0
+# Collect pre-fetched pairs for Labs enrichment (they need kd/intent data even though CPC is known)
+_pre_fetched_pairs: list = []
 
 for opp in vetted:
     kw      = opp.get("keyword", "")
     country = opp.get("country", "US")
-    # Skip entries that already carry CPC data (pre-fetched upstream)
-    if opp.get("cpc_usd") is not None and opp.get("search_volume") is not None:
+    # Skip entries that already carry valid CPC data (pre-fetched upstream)
+    # cpc_usd=0 is NOT valid — it means DataForSEO returned nothing (budget exhausted, not in index, etc.)
+    if (opp.get("cpc_usd") is not None and float(opp.get("cpc_usd") or 0) > 0
+            and opp.get("search_volume") is not None):
         _pre_fetched_count += 1
+        _pre_fetched_pairs.append((kw, country))
         continue
     norm_key = _normalize_keyword(kw) + "|" + country
     if norm_key not in _seen_norm:
@@ -1204,42 +1374,128 @@ else:
 print(f"  Daily budget usage: {today_usage}/{DAILY_API_BUDGET} (before this run)\n")
 
 # ── API calls for approved misses ─────────────────────────────────────────────
-# KD pre-filter (cheap, runs before individual API calls)
-if DFS_READY:
-    approved_misses = _bulk_kd_gate(approved_misses)
+# Consolidated approach: use keyword_overview/live for ALL DataForSEO metrics
+# in a single batch call (replaces bulk_kd_gate + per-keyword search_volume/live).
+# Google Ads path is kept as primary when credentials are available (free tier).
 
 fresh_metrics: dict = {}  # (keyword, country) → metrics dict
 api_calls_made      = 0
 
-for kw, country in approved_misses:
-    metrics = get_keyword_metrics(kw, country)
-    if metrics:
-        fresh_metrics[(kw, country)] = metrics
-        _cache_write_back(kw, country, metrics)
-        api_calls_made += 1
+# Google Ads keywords: still use per-keyword SDK call (free)
+_gads_misses = []
+_dfs_misses  = []
+_gads_working = True   # set False on first non-recoverable error (e.g. test token)
+_gads_total_errors = 0  # total failures — never reset (unlike consecutive counter)
+if GADS_READY:
+    for kw, country in approved_misses:
+        if not _gads_working:
+            _dfs_misses.append((kw, country))
+            continue
+        try:
+            metrics = fetch_google_ads(kw, country)
+            if metrics:
+                fresh_metrics[(kw, country)] = metrics
+                _cache_write_back(kw, country, metrics)
+                api_calls_made += 1
+        except Exception as e:
+            _gads_total_errors += 1
+            # str(GoogleAdsException) is often empty — extract from the gRPC cause instead
+            _cause = getattr(e, '__cause__', None) or e
+            _cause_parts = []
+            if hasattr(_cause, 'code') and callable(_cause.code):
+                _cause_parts.append(str(_cause.code()))
+            if hasattr(_cause, 'details') and callable(_cause.details):
+                _cause_parts.append(str(_cause.details()))
+            err_str = (" ".join(_cause_parts) if _cause_parts else str(e)).lower()
+            # Disable GADS on known fatal errors OR after 3 total failures
+            if ("test account" in err_str or "not whitelisted" in err_str
+                    or "developer_token" in err_str or "developer token" in err_str
+                    or "permission" in err_str
+                    or _gads_total_errors >= 3):
+                print(f"  ⚠️  Google Ads: non-recoverable error ({err_str[:80]!r}) — "
+                      f"switching all remaining keywords to DataForSEO")
+                _gads_working = False
+            else:
+                print(f"  ⚠️  Google Ads error '{kw}': {e}")
+            _dfs_misses.append((kw, country))
+else:
+    _dfs_misses = list(approved_misses)
 
 _increment_usage(api_calls_made)
 
-# Remove successfully resolved deferred keywords
+# Remove successfully resolved deferred keywords (from Google Ads calls above)
 resolved_deferred = [(kw, c) for kw, c in deferred_recovered
                      if (kw, c) in cache_hits or (kw, c) in fresh_metrics]
 _remove_from_deferred(resolved_deferred)
 
-# ── Labs enrichment batch: fetch KD, intent, SERP, trends ────────────────────
-# Run on all keywords that have (or will have) metrics: cache hits + fresh calls
-_labs_enrichment_pairs = (
-    list(cache_hits.keys()) + list(fresh_metrics.keys())
-)
+# ── Consolidated Labs batch: metrics + KD + intent + SERP + trends ───────
+# Single keyword_overview/live call replaces 3 old calls:
+#   - bulk_keyword_difficulty ($0.01/1000 kw)  → KD now in keyword_overview
+#   - search_volume/live ($0.01/keyword)       → CPC/SV now in keyword_overview
+#   - keyword_overview ($0.08/700 kw)          → enrichment (intent, SERP, trends)
+# All keywords that need data go through this one batch endpoint.
+_labs_enrichment_pairs = list({
+    *cache_hits.keys(),         # cache hits still need enrichment (kd/intent)
+    *fresh_metrics.keys(),      # Google Ads results need enrichment
+    *_pre_fetched_pairs,        # pre-fetched CPC keywords need enrichment
+    *_dfs_misses,               # DFS-only keywords get BOTH metrics + enrichment here
+})
 _labs_enrichment: dict = {}
-if DFS_READY and _labs_enrichment_pairs:
-    _labs_enrichment = _fetch_dataforseo_labs_batch(_labs_enrichment_pairs)
+_bulk_kd_map: dict = {}  # populated from keyword_overview KD values
 
-# ── Build unified metrics map: norm_key → metrics ────────────────────────────
+if DFS_READY and _labs_enrichment_pairs:
+    _per_kw = DFS_ENDPOINT_COSTS["keyword_overview_per_kw"]
+    _task_fee = DFS_ENDPOINT_COSTS["keyword_overview_task_fee"]
+    _n_batches = max(1, -(-len(_labs_enrichment_pairs) // 700))  # ceil division
+    _est_api = _n_batches * _task_fee + len(_labs_enrichment_pairs) * _per_kw
+    print(f"  DataForSEO cost estimate — keyword_overview: {len(_labs_enrichment_pairs)} keywords "
+          f"in {_n_batches} batch(es) = ${_est_api:.4f} max (cache may reduce this)")
+    _labs_enrichment = _fetch_dataforseo_labs_batch(_labs_enrichment_pairs)
+    _hit_rate = (_labs_cache_hit_count / len(_labs_enrichment_pairs) * 100
+                 if _labs_enrichment_pairs else 0)
+    _actual_cost = (_labs_api_call_count * _per_kw
+                    + (1 if _labs_api_call_count > 0 else 0) * _task_fee)
+    print(f"  DataForSEO actual spend — keyword_overview: ${_actual_cost:.4f} "
+          f"(cache hit rate: {_hit_rate:.0f}%)")
+
+    # Extract primary metrics for DFS-only keywords from the enrichment response
+    for kw, country in _dfs_misses:
+        enrich = (_labs_enrichment.get((kw, country))
+                  or _labs_enrichment.get((_clean_keyword(kw), country)))
+        if enrich and enrich.get("source") == "dataforseo_labs":
+            fresh_metrics[(kw, country)] = {
+                "search_volume":  enrich["search_volume"],
+                "cpc_usd":        enrich["cpc_usd"],
+                "cpc_low_usd":    enrich.get("cpc_low_usd", 0),
+                "cpc_high_usd":   enrich.get("cpc_high_usd", 0),
+                "competition":    enrich["competition"],
+                "source":         "dataforseo_labs",
+            }
+            _cache_write_back(kw, country, fresh_metrics[(kw, country)])
+
+    # Build KD map from enrichment (replaces _bulk_kd_gate output)
+    for (kw, country), enrich in _labs_enrichment.items():
+        kd_val = enrich.get("kd", 0)
+        if kd_val:
+            _bulk_kd_map[(kw, country)] = kd_val
+
+    # Resolve any remaining deferred keywords that DFS batch resolved
+    extra_resolved = [(kw, c) for kw, c in deferred_recovered
+                      if (kw, c) in fresh_metrics and (kw, c) not in resolved_deferred]
+    _remove_from_deferred(extra_resolved)
+
+# ── Build unified metrics map: norm_key → metrics ────────────────────────
+# Only include entries with real CPC data (cpc_usd > 0). Zero-CPC entries
+# mean DataForSEO returned nothing (budget exhausted, keyword not in index, etc.).
+# Keeping cpc=0 entries causes every keyword to score LOW — they should instead
+# fall through to the EMERGING/UNSCORED classification path.
 _all_metrics: dict = {}
 for (kw, country), m in cache_hits.items():
-    _all_metrics[_normalize_keyword(kw) + "|" + country] = m
+    if float(m.get("cpc_usd") or 0) > 0:
+        _all_metrics[_normalize_keyword(kw) + "|" + country] = m
 for (kw, country), m in fresh_metrics.items():
-    _all_metrics[_normalize_keyword(kw) + "|" + country] = m
+    if float(m.get("cpc_usd") or 0) > 0:
+        _all_metrics[_normalize_keyword(kw) + "|" + country] = m
 
 # ── Score all vetted opportunities ────────────────────────────────────────────
 validated = []
@@ -1249,7 +1505,8 @@ for opp in vetted:
     country = opp.get("country", "US")
 
     # Pre-fetched data check (from keyword_extractor upstream — Bucket A)
-    if opp.get("cpc_usd") is not None and opp.get("search_volume") is not None:
+    if (opp.get("cpc_usd") is not None and float(opp.get("cpc_usd") or 0) > 0
+            and opp.get("search_volume") is not None):
         metrics = {
             "search_volume": opp["search_volume"],
             "cpc_usd":       opp["cpc_usd"],
@@ -1297,6 +1554,20 @@ for opp in vetted:
             or {}
         )
 
+        # Patch competition=0 with Labs data when pre-fetched value was zero.
+        # DFS keyword_overview/live returns competition_labs which may be non-zero
+        # even when the upstream keyword_extractor stored competition=0.
+        if competition == 0.0 and enrichment:
+            labs_comp = float(enrichment.get("competition_labs") or enrichment.get("competition") or 0.0)
+            if labs_comp > 0.0:
+                competition = labs_comp
+
+        # Patch cpc_high with Labs high_top_of_page_bid if it's a better signal
+        if enrichment:
+            labs_high = float(enrichment.get("cpc_high_usd") or 0)
+            if labs_high > cpc_high:
+                cpc_high = labs_high
+
         # Classify emerging BEFORE hard gates so emerging_tag is available for CPC bypass
         vertical  = opp.get("vertical_match") or opp.get("vertical") or "general"
         vertical_data  = _VERTICAL_CPC_REF.get(vertical) or _VERTICAL_CPC_REF.get("general") or {}
@@ -1337,15 +1608,31 @@ for opp in vetted:
             })
             continue
 
-        # Scoring profile: use EMERGING weights if classify_emerging found signals
-        tag       = tag_opportunity_v2(ai_score, cpc_usd, competition,
-                                       enrichment, vertical, country)
-        # Prefer classify_emerging result over tag_opportunity_v2 for track selection
-        if emerging_class:
-            tag = emerging_class
-        profile   = "EMERGING" if tag in ("EMERGING", "EMERGING_HIGH") else "EVERGREEN"
+        # Scoring profile: EMERGING weights for trend-driven keywords
+        profile    = "EMERGING" if emerging_class in ("EMERGING", "EMERGING_HIGH") else "EVERGREEN"
         rsoc_score = compute_rsoc_score(cpc_high, competition, search_vol,
-                                        enrichment, scoring_profile=profile)
+                                        enrichment, scoring_profile=profile,
+                                        cpc_usd=cpc_usd)
+
+        # Apply soft modifiers (replace former hard gates 3/5/6/7)
+        rsoc_score_modified = _apply_soft_modifiers(
+            rsoc_score,
+            kd          = enrichment.get("kd", 0),
+            competition = competition,
+            htpb        = cpc_high,
+            volume      = search_vol,
+            country     = country,
+            intent      = enrichment.get("main_intent", ""),
+        )
+
+        # Tier classification uses rsoc_score after soft modifiers
+        tag = tag_opportunity_v2(rsoc_score_modified, cpc_usd, competition,
+                                 enrichment, vertical, country)
+        # Emerging signals override tier from score — but NOT GOLDEN_OPPORTUNITY.
+        # A keyword that scores GOLDEN on rsoc should keep that tag even if it has
+        # trend signals; GOLDEN > EMERGING/EMERGING_HIGH by definition.
+        if emerging_class and tag != "GOLDEN_OPPORTUNITY":
+            tag = emerging_class
         kvsi_val  = _compute_kvsi(enrichment)
 
         validated.append({
@@ -1360,13 +1647,13 @@ for opp in vetted:
                                        or metrics.get("monthly_searches", []),
             "arbitrage_index":         ai_score,       # kept for backward compat
             "weighted_score":          weighted_score,
-            "rsoc_score":              rsoc_score,      # new composite score
+            "rsoc_score":              rsoc_score_modified,   # composite + soft modifiers
             "persistence_score":       persistence.get("persistence_probability"),
             "predicted_halflife_days": persistence.get("predicted_halflife_days"),
             "tag":                     tag,
             "metrics_source":          metrics["source"],
             # New enrichment fields
-            "kd":                      enrichment.get("kd"),
+            "kd":                      enrichment.get("kd") or _bulk_kd_map.get((keyword, country)),
             "main_intent":             enrichment.get("main_intent"),
             "serp_item_types":         enrichment.get("serp_item_types", []),
             "ssr":                     _compute_ssr(enrichment.get("serp_item_types", [])),
@@ -1409,6 +1696,21 @@ for entry in sorted(validated, key=lambda x: x.get("arbitrage_index") or 0, reve
         _seen_kw[key] = True
         _deduped.append(entry)
 validated = _deduped
+
+# ── RPC enrichment pass ───────────────────────────────────────────────────────
+# Attach rpc_expected, rpc_actual, rpc_display to every validated keyword.
+# Non-fatal: if estimator not built yet, fields are silently omitted.
+if _RPC_AVAILABLE:
+    _rpc_enriched = 0
+    for _entry in validated:
+        try:
+            _enrich_keyword_rpc(_entry, _RPC_ESTIMATOR, _RPC_PATTERNS)
+            _rpc_enriched += 1
+        except Exception:
+            pass
+    if _rpc_enriched:
+        print(f"  RPC enrichment: {_rpc_enriched} keywords annotated "
+              f"({'estimator ready' if _RPC_ESTIMATOR else 'patterns-only fallback'})")
 
 OUTPUT.write_text(json.dumps(validated, indent=2))
 

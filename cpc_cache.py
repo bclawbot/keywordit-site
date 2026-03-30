@@ -22,6 +22,7 @@
 import random
 import re
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -30,10 +31,19 @@ DB_PATH = Path("/Users/newmac/.openclaw/oracle.db")
 
 # ── DB bootstrap ──────────────────────────────────────────────────────────────
 
+@contextmanager
 def _conn():
+    """Context manager that opens a SQLite connection and guarantees close."""
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
-    return con
+    try:
+        yield con
+        con.commit()
+    except Exception:
+        con.rollback()
+        raise
+    finally:
+        con.close()
 
 
 def init_db():

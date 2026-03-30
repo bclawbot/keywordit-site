@@ -83,12 +83,12 @@ def _ddg_fetch_sync(keyword):
 
 
 async def search_ddg(keyword: str, executor: ThreadPoolExecutor) -> list:
-    """DDG search via thread executor with 15s wall-clock timeout."""
+    """DDG search via thread executor with 8s wall-clock timeout."""
     loop = asyncio.get_event_loop()
     try:
         raw = await asyncio.wait_for(
             loop.run_in_executor(executor, _ddg_fetch_sync, keyword),
-            timeout=15,
+            timeout=8,
         )
         return [{"url": r["href"], "title": r["title"], "snippet": r["body"]} for r in raw]
     except (asyncio.TimeoutError, FuturesTimeout, Exception) as e:
@@ -178,20 +178,18 @@ async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
             
             survivors.append(vetted_entry)
 
-        # Small polite delay between keywords
-        await asyncio.sleep(0.5)
         return survivors
 
 
 async def vet_all(trends: list) -> list:
-    semaphore = asyncio.Semaphore(5)  # max 5 concurrent SERP checks (rate limit respect)
-    executor  = ThreadPoolExecutor(max_workers=5)
+    semaphore = asyncio.Semaphore(15)  # 15 concurrent SERP checks (3× faster)
+    executor  = ThreadPoolExecutor(max_workers=15)
 
     async with aiohttp.ClientSession() as session:
         tasks = [vet_keyword(entry, session, executor, semaphore) for entry in trends]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    executor.shutdown(wait=False)
+    executor.shutdown(wait=True)
     all_vetted = []
     for r in results:
         if isinstance(r, list):
@@ -243,8 +241,9 @@ if __name__ == "__main__":
     commercial_keywords = json.loads(INPUT.read_text())
     
     if not commercial_keywords:
-        print(f"❌  {INPUT.name} is empty — keyword_extractor.py must have failed.")
-        raise SystemExit(1)
+        print(f"⚠️  {INPUT.name} is empty — skipping vetting (nothing to vet)")
+        OUTPUT.write_text("[]")
+        raise SystemExit(0)
     
     # Filter out news headlines before vetting
     original_count = len(commercial_keywords)
@@ -255,7 +254,45 @@ if __name__ == "__main__":
     filtered_count = original_count - len(commercial_keywords)
     if filtered_count > 0:
         print(f"  [News Filter] Removed {filtered_count} news headlines from {original_count} keywords")
-    
+
+    # When ALL keywords have CPC=0 (DFS expansion skipped this run), only vet
+    # keywords in high-value verticals with high LLM confidence — the rest have
+    # no price signal and produce only UNSCORED results, wasting Brave quota.
+    HIGH_VALUE_VERTICALS = {
+        "finance", "insurance", "legal", "health", "real_estate", "education",
+        "software", "saas", "tech", "travel", "automotive"
+    }
+    all_cpc_zero = all(float(kw.get("cpc_usd") or 0) == 0 for kw in commercial_keywords)
+    if all_cpc_zero:
+        before_zero_filter = len(commercial_keywords)
+        commercial_keywords = [
+            kw for kw in commercial_keywords
+            if (kw.get("vertical", "general") in HIGH_VALUE_VERTICALS
+                and kw.get("confidence", "") in ("high", "medium"))
+        ]
+        dropped_zero = before_zero_filter - len(commercial_keywords)
+        if dropped_zero > 0:
+            print(f"  [Zero-CPC Filter] All {before_zero_filter} keywords have CPC=0 "
+                  f"(DFS expansion skipped) — retained {len(commercial_keywords)} "
+                  f"high-value-vertical keywords, dropped {dropped_zero}")
+        if not commercial_keywords:
+            print("  [Zero-CPC Filter] No high-value keywords to vet — writing empty output")
+            OUTPUT.write_text("[]")
+            print(f"✅ Vetting complete: 0 opportunities (no actionable keywords) → {OUTPUT.name}")
+            raise SystemExit(0)
+
+    # Cap at 2000 keywords to keep vetting within the 3600s heartbeat timeout.
+    # At 8s DDG timeout × 2000 kw / 15 concurrent ≈ 1067s worst-case.
+    # Prioritise by CPC × volume (highest commercial value first).
+    VETTING_CAP = 2000
+    if len(commercial_keywords) > VETTING_CAP:
+        commercial_keywords = sorted(
+            commercial_keywords,
+            key=lambda k: (k.get("cpc_usd") or 0) * (k.get("search_volume") or 0),
+            reverse=True,
+        )[:VETTING_CAP]
+        print(f"  [Cap] Trimmed to top {VETTING_CAP} keywords by CPC×volume for vetting")
+
     all_vetted = asyncio.run(vet_all(commercial_keywords))
 
     OUTPUT.write_text(json.dumps(all_vetted, indent=2))

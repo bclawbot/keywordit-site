@@ -47,11 +47,11 @@ STAGE_TIMEOUTS = {
     "subreddit_discovery.py": 900,
     "reddit_intelligence.py": 300,
     "trends_scraper.py":      1800,
-    "trends_postprocess.py":  1800,
+    "trends_postprocess.py":  3600,
     "keyword_expander.py":    600,
     "keyword_extractor.py":   21600,
     "vetting.py":             3600,
-    "validation.py":          1800,
+    "validation.py":          900,
     "dashboard_builder.py":   120,
     "reflection.py":          300,
     "deploy_dashboard.sh":    120,
@@ -346,11 +346,124 @@ def check_services(state: dict, alerts: list, token: str, chat_id: str) -> None:
             print(f"[watchdog] {name} OK (PID {match.group(1)})")
 
 
+def check_new_entity_discoveries(state: dict, alerts: list, token: str, chat_id: str) -> None:
+    """Alert on newly discovered entities that haven't been sent via Telegram yet."""
+    key_prefix = "new_entity_"
+    disc_path = BASE / "data" / "discovered_entities.jsonl"
+    if not disc_path.exists():
+        return
+
+    entries = []
+    try:
+        for line in disc_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line:
+                entries.append(json.loads(line))
+    except Exception:
+        return
+
+    unsent = [e for e in entries if not e.get("telegram_sent", False)]
+    if not unsent:
+        return
+
+    sent_count = 0
+    for entry in unsent:
+        ent = entry.get("entity", "?")
+        etype = entry.get("entity_type", "?")
+        country = entry.get("country", "?")
+        src_kw = entry.get("discovered_in", "?")
+        key = f"{key_prefix}{ent}_{country}"
+
+        msg = (
+            f"⚡ New entity discovered: {ent} ({etype}) in {country}. "
+            f"Found in: \"{src_kw}\". Auto-added to test pool."
+        )
+        print(f"[watchdog] NEW_ENTITY — {msg}")
+        if _should_alert(state, key):
+            _send_telegram(token, chat_id, msg)
+            _mark_alerted(state, key)
+        alerts.append(key)
+        entry["telegram_sent"] = True
+        sent_count += 1
+
+    if sent_count > 0:
+        try:
+            with open(disc_path, "w", encoding="utf-8") as f:
+                for entry in entries:
+                    f.write(json.dumps(entry) + "\n")
+            print(f"[watchdog] Marked {sent_count} discovered entities as telegram_sent")
+        except Exception as e:
+            print(f"[watchdog] Failed to update discovered_entities.jsonl: {e}")
+
+
+def check_promotion_candidates(state: dict, alerts: list, token: str, chat_id: str) -> None:
+    """Alert on entity promotion candidates from performance_cache.json."""
+    perf_path = BASE / "data" / "performance_cache.json"
+    if not perf_path.exists():
+        return
+
+    try:
+        cache = json.loads(perf_path.read_text(encoding="utf-8"))
+    except Exception:
+        return
+
+    promo = cache.get("promotion_candidates", [])
+    ent_perf = cache.get("entity_performance", {})
+
+    for ent_name in promo:
+        key = f"promo_candidate_{ent_name}"
+        ep = ent_perf.get(ent_name, {})
+        rev = ep.get("revenue", 0)
+        msg = (
+            f"📈 Promotion candidate: {ent_name} crossed $50 threshold "
+            f"(${rev:.2f} revenue). Approve in Performance dashboard."
+        )
+        print(f"[watchdog] PROMOTION_CANDIDATE — {msg}")
+        if _should_alert(state, key):
+            _send_telegram(token, chat_id, msg)
+            _mark_alerted(state, key)
+        alerts.append(key)
+
+
+def check_pipeline_drift(state: dict, alerts: list, token: str, chat_id: str) -> None:
+    """Alert if pipeline drift is detected in performance_cache.json."""
+    perf_path = BASE / "data" / "performance_cache.json"
+    if not perf_path.exists():
+        return
+
+    try:
+        cache = json.loads(perf_path.read_text(encoding="utf-8"))
+    except Exception:
+        return
+
+    key = "pipeline_drift"
+    health = cache.get("pipeline_health", {})
+    drift_warnings = cache.get("drift_warnings", [])
+
+    if health.get("drift_detected", False) or drift_warnings:
+        tier_c_pct = health.get("tier_c_keyword_pct", 0)
+        tier_c_base = health.get("tier_c_baseline", 0.22)
+        msg = (
+            f"⚠️ Pipeline drift detected: {tier_c_pct:.0%} of keywords in "
+            f"Tier C countries (baseline {tier_c_base:.0%}). Review hard filter settings."
+        )
+        if drift_warnings:
+            msg += "\nWarnings:\n" + "\n".join(f"  - {w}" for w in drift_warnings)
+        print(f"[watchdog] PIPELINE_DRIFT — {msg}")
+        if _should_alert(state, key):
+            _send_telegram(token, chat_id, msg)
+            _mark_alerted(state, key)
+        alerts.append(key)
+    else:
+        _clear_alert(state, key)
+
+
 def check_http(state: dict, alerts: list, token: str, chat_id: str,
-               url: str, name: str, key: str) -> None:
+               url: str, name: str, key: str, headers: dict | None = None) -> None:
     """Alert if an HTTP endpoint is unresponsive."""
     try:
-        urllib.request.urlopen(url, timeout=5)
+        req = urllib.request.Request(url, headers=headers or {})
+        urllib.request.urlopen(req, timeout=5)
         _clear_alert(state, key)
         print(f"[watchdog] {name} OK")
     except Exception as e:
@@ -385,7 +498,13 @@ def main() -> None:
     check_http(state, alerts, token, chat_id,
                "http://127.0.0.1:11434/", "Ollama", "ollama_down")
     check_http(state, alerts, token, chat_id,
-               "http://localhost:4000/", "LiteLLM proxy", "litellm_down")
+               "http://localhost:4000/", "LiteLLM proxy", "litellm_down",
+               headers={"Authorization": "Bearer sk-dwight-local"})
+
+    # Experimental pipeline alerts (Phase 12)
+    check_new_entity_discoveries(state, alerts, token, chat_id)
+    check_promotion_candidates(state, alerts, token, chat_id)
+    check_pipeline_drift(state, alerts, token, chat_id)
 
     # Prune stale alert keys (issues that have been gone for >1h)
     cutoff = time.time() - 3600

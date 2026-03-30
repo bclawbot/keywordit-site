@@ -35,7 +35,9 @@ BASE      = Path("/Users/newmac/.openclaw/workspace")
 INPUT     = BASE / "explosive_trends.json"
 OUTPUT    = BASE / "commercial_keywords.json"
 ERROR_LOG = BASE / "error_log.jsonl"
-EXPANDED  = BASE / "expanded_keywords.json"   # output of keyword_expander.py (may not exist)
+EXPANDED_RAW = BASE / "expanded_keywords.json"   # output of keyword_expander.py
+EXPANDED_TRANSFORMED = BASE / "transformed_keywords.json"  # output of commercial_keyword_transformer.py
+EXPANDED  = EXPANDED_TRANSFORMED if EXPANDED_TRANSFORMED.exists() else EXPANDED_RAW
 
 sys.path.insert(0, str(BASE))
 from country_config import (
@@ -96,10 +98,16 @@ def _normalize_for_dfs(keyword: str) -> str:
 
 
 # ── LLM ────────────────────────────────────────────────────────────────────────
-LITELLM_URL    = "http://localhost:4000/v1/chat/completions"
-LITELLM_MODEL  = "pipeline-extractor"
-LITELLM_API_KEY = "sk-dwight-local"   # master key from litellm_config.yaml
-LLM_BATCH_SIZE = 8    # trends per LLM call — smaller batches prevent 180s timeout on 30B model
+LLM_BATCH_SIZE = 8    # trends per LLM call
+
+# Direct backends — bypass LiteLLM proxy (avoids 90s wasted on proxy restarts)
+OLLAMA_URL     = "http://localhost:11434/api/chat"
+OLLAMA_MODEL   = "qwen3:14b"
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_PIPELINE_MODEL = "deepseek/deepseek-v3.2"
+_OLLAMA_TIMEOUT = 180  # seconds — local model; allow for queue wait when bot uses Ollama concurrently
+_CLOUD_TIMEOUT  = 90   # seconds — cloud API
 
 # ── DataForSEO ─────────────────────────────────────────────────────────────────
 DFS_LOGIN    = os.environ.get("DATAFORSEO_LOGIN", "")
@@ -216,6 +224,60 @@ def _strip_code_fences(text: str) -> str:
 
 # ── Step 1: LLM keyword extraction ─────────────────────────────────────────────
 
+def _llm_post_direct(user_message: str) -> dict:
+    """
+    Call LLM directly: Ollama first, OpenRouter as fallback.
+    Returns OpenAI-compatible response dict.
+    Bypasses LiteLLM proxy — avoids 90s wasted per batch when proxy is killed by macOS.
+    """
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user",   "content": user_message},
+    ]
+
+    # ── Tier 1: Ollama (local, fastest) ─────────────────────────────────────
+    try:
+        r = requests.post(
+            OLLAMA_URL,
+            json={
+                "model":    OLLAMA_MODEL,
+                "messages": messages,
+                "stream":   False,
+                "think":    False,
+                "options":  {"num_ctx": 32768, "temperature": 0.3},
+            },
+            timeout=_OLLAMA_TIMEOUT,
+        )
+        r.raise_for_status()
+        content = r.json()["message"]["content"]
+        if content:
+            return {"choices": [{"message": {"content": content}}]}
+    except Exception as e:
+        print(f"  ⚠️  Ollama unavailable ({type(e).__name__}) — trying OpenRouter…")
+
+    # ── Tier 2: OpenRouter (cloud fallback) ─────────────────────────────────
+    if not OPENROUTER_KEY:
+        raise requests.exceptions.ConnectionError("Ollama failed and OPENROUTER_API_KEY not set")
+    r = requests.post(
+        OPENROUTER_URL,
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_KEY}",
+            "HTTP-Referer":  "https://github.com/openclaw",
+            "X-Title":       "OpenClaw-Pipeline",
+            "Content-Type":  "application/json",
+        },
+        json={
+            "model":       OPENROUTER_PIPELINE_MODEL,
+            "messages":    messages,
+            "temperature": 0.3,
+            "max_tokens":  4096,
+        },
+        timeout=_CLOUD_TIMEOUT,
+    )
+    r.raise_for_status()
+    return r.json()
+
+
 def llm_extract_keywords(batch: list, _retry: bool = True) -> list:
     """Send a batch of raw trends to the LLM, return list of commercial keyword dicts."""
     user_message = json.dumps([
@@ -231,22 +293,11 @@ def llm_extract_keywords(batch: list, _retry: bool = True) -> list:
 
     for attempt in range(2):
         try:
-            resp = requests.post(
-                LITELLM_URL,
-                headers={"Authorization": f"Bearer {LITELLM_API_KEY}"},
-                json={
-                    "model": LITELLM_MODEL,
-                    "messages": [
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user",   "content": user_message},
-                    ],
-                    "temperature": 0.3,
-                    "max_tokens":  4096,
-                },
-                timeout=180,
-            )
-            resp.raise_for_status()
-            raw_content = resp.json()["choices"][0]["message"]["content"]
+            resp_data = _llm_post_direct(user_message)
+            raw_content = resp_data["choices"][0]["message"]["content"]
+            if raw_content is None:
+                # Reasoning-only model returned null content (e.g. stepfun thinking model)
+                raise ValueError("LLM returned null content — check pipeline-extractor model config")
             clean       = _strip_code_fences(raw_content)
             keywords    = json.loads(clean)
             if not isinstance(keywords, list):
@@ -293,19 +344,98 @@ def llm_extract_keywords(batch: list, _retry: bool = True) -> list:
     return []
 
 
-# ── Step 2: DataForSEO batch CPC lookup (standard async queue, 33% cheaper) ───
+# ── Step 2: DataForSEO batch CPC lookup via keyword_overview/live ─────────
 #
-# Standard queue costs $0.05/request vs $0.075/request for /live.
-# We submit all tasks first, then poll tasks_ready until all results arrive.
-# Typical turnaround: 1-10 minutes. We wait up to 45 minutes.
+# Uses Labs keyword_overview/live endpoint (up to 700 keywords per batch).
+# Returns CPC, search volume, competition in a single synchronous call.
+# Cost: $0.01/task + $0.0001/keyword = $0.08 per 700 keywords.
+# Replaces the old async search_volume queue ($0.01/keyword = $7.00 per 700).
+
+DFS_LABS_BASE_URL = "https://api.dataforseo.com/v3/dataforseo_labs/google"
+DFS_OVERVIEW_BATCH_SIZE = 700  # keyword_overview/live limit per task
+DFS_BULK_KD_BATCH_SIZE = 1000  # bulk_keyword_difficulty/live limit per task
+
+def dfs_bulk_keyword_difficulty(keywords: list) -> dict:
+    """
+    Pre-filter keywords by KD using cheap bulk_keyword_difficulty endpoint.
+    Cost: $0.01 per 1000 keywords (vs $0.02 per 700 for keyword_overview).
+    
+    Returns: dict mapping (keyword_lower, country_upper) → kd_score (0-100)
+    """
+    if not DFS_LOGIN or not DFS_PASSWORD:
+        print("  ⚠️  DataForSEO credentials not set — skipping KD pre-filter")
+        return {}
+    
+    # Group by country
+    by_country: dict = {}
+    for kw in keywords:
+        country = kw.get("country", "US").upper()
+        by_country.setdefault(country, []).append(kw["keyword"])
+    
+    creds = base64.b64encode(f"{DFS_LOGIN}:{DFS_PASSWORD}".encode()).decode()
+    headers = {"Authorization": f"Basic {creds}", "Content-Type": "application/json"}
+    results = {}
+    
+    total_kws = sum(len(v) for v in by_country.values())
+    n_batches = sum(math.ceil(len(v) / DFS_BULK_KD_BATCH_SIZE) for v in by_country.values())
+    est_cost = n_batches * 0.01
+    print(f"  → DataForSEO bulk_keyword_difficulty: {total_kws} keywords in {n_batches} batch(es) ≈ ${est_cost:.4f}")
+    
+    for country, kw_list in by_country.items():
+        loc_code, lang_code = GEO_MAP.get(country, (2840, "en"))
+        
+        for chunk_start in range(0, len(kw_list), DFS_BULK_KD_BATCH_SIZE):
+            batch = kw_list[chunk_start : chunk_start + DFS_BULK_KD_BATCH_SIZE]
+            payload = [{
+                "keywords": batch,
+                "location_code": loc_code,
+                "language_code": lang_code,
+            }]
+            
+            # Budget check
+            batch_cost = 0.01
+            if not pre_flight_budget_check(batch_cost, DFS_DAILY_BUDGET_USD):
+                print(f"  [Budget] Skipping bulk_keyword_difficulty batch — daily budget exhausted")
+                continue
+            
+            try:
+                r = requests.post(
+                    f"{DFS_LABS_BASE_URL}/bulk_keyword_difficulty/live",
+                    headers=headers, json=payload, timeout=60
+                )
+                r.raise_for_status()
+                increment_usd_spent(batch_cost, "bulk_keyword_difficulty")
+                
+                tasks = r.json().get("tasks", [])
+                if not tasks or tasks[0].get("status_code") != 20000:
+                    print(f"  ⚠️  [{country}] bulk_keyword_difficulty error: "
+                          f"{tasks[0].get('status_message') if tasks else 'no tasks'}")
+                    continue
+                
+                for item in (tasks[0].get("result") or []):
+                    kw_text = item.get("keyword", "")
+                    kd = item.get("keyword_difficulty")
+                    if kw_text and kd is not None:
+                        key = (kw_text.lower(), country)
+                        results[key] = int(kd)
+                
+                print(f"  [{country}] batch {chunk_start // DFS_BULK_KD_BATCH_SIZE + 1}: "
+                      f"{len(batch)} sent, {sum(1 for k in batch if (k.lower(), country) in results)} with KD")
+            except Exception as e:
+                print(f"  ⚠️  [{country}] bulk_keyword_difficulty error: {e}")
+                _log_error("keyword_extractor/bulk_kd", str(e), {"country": country, "batch_size": len(batch)})
+            
+            time.sleep(DFS_INTER_REQUEST_DELAY)
+    
+    print(f"  → DataForSEO bulk_keyword_difficulty: {len(results)} keywords with KD scores")
+    return results
 
 def dfs_batch_lookup(keywords: list) -> dict:
     """
-    Submit keyword batches to DataForSEO standard queue, poll for results.
+    Fetch CPC/volume/competition for keywords using keyword_overview/live.
     keywords: list of dicts with {keyword, country, ...}
     Returns:  dict mapping (keyword_lower, country_upper) →
-              {cpc_usd, search_volume, competition}
-    Saves ~33% vs the /live endpoint.
+              {cpc_usd, search_volume, competition, source}
     """
     if not DFS_LOGIN or not DFS_PASSWORD:
         print("  ⚠️  DataForSEO credentials not set — skipping CPC lookup")
@@ -321,105 +451,77 @@ def dfs_batch_lookup(keywords: list) -> dict:
     headers = {"Authorization": f"Basic {creds}", "Content-Type": "application/json"}
     results = {}
 
-    # ── Step 2a: Submit all tasks ─────────────────────────────────────────────
-    pending_task_ids = []
+    total_kws = sum(len(v) for v in by_country.values())
+    import math
+    n_batches = sum(math.ceil(len(v) / DFS_OVERVIEW_BATCH_SIZE) for v in by_country.values())
+    est_cost  = n_batches * 0.01 + total_kws * 0.0001
+    print(f"  → DataForSEO keyword_overview: {total_kws} keywords in {n_batches} batch(es) "
+          f"≈ ${est_cost:.4f}")
 
     for country, kw_list in by_country.items():
         loc_code, lang_code = GEO_MAP.get(country, (2840, "en"))
 
-        for chunk_start in range(0, len(kw_list), DFS_BATCH_SIZE):
-            chunk = kw_list[chunk_start : chunk_start + DFS_BATCH_SIZE]
-            body  = [{
-                "keywords":      chunk,
-                "location_code": loc_code,
-                "language_code": lang_code,
-                "include_serp_info": False,
+        for chunk_start in range(0, len(kw_list), DFS_OVERVIEW_BATCH_SIZE):
+            batch = kw_list[chunk_start : chunk_start + DFS_OVERVIEW_BATCH_SIZE]
+            payload = [{
+                "keywords":                 batch,
+                "location_code":            loc_code,
+                "language_code":            lang_code,
+                "include_serp_info":        False,
+                "include_clickstream_data": False,
             }]
-            print(f"  → DataForSEO queue: {len(chunk)} keywords [{country}]")
 
-            for attempt in range(2):
-                try:
-                    r = requests.post(DFS_URL_POST, headers=headers, json=body, timeout=30)
-                    r.raise_for_status()
-                    tasks = r.json().get("tasks", [])
-                    if not tasks:
-                        raise ValueError("DataForSEO returned no tasks on submit")
-                    task_id = tasks[0].get("id")
-                    if task_id:
-                        pending_task_ids.append((task_id, country))
-                    break
-                except Exception as e:
-                    if attempt == 0:
-                        print(f"  ⚠️  DataForSEO submit error [{country}] — retrying in 5s…")
-                        time.sleep(5)
+            # Budget check
+            batch_cost = 0.01 + 0.0001 * len(batch)
+            if not pre_flight_budget_check(batch_cost, DFS_DAILY_BUDGET_USD):
+                print(f"  [Budget] Skipping keyword_overview batch — daily budget exhausted")
+                continue
+
+            try:
+                r = requests.post(
+                    f"{DFS_LABS_BASE_URL}/keyword_overview/live",
+                    headers=headers, json=payload, timeout=60
+                )
+                r.raise_for_status()
+                increment_usd_spent(batch_cost, "keyword_overview")
+
+                tasks = r.json().get("tasks", [])
+                if not tasks or tasks[0].get("status_code") != 20000:
+                    print(f"  ⚠️  [{country}] keyword_overview error: "
+                          f"{tasks[0].get('status_message') if tasks else 'no tasks'}")
+                    continue
+
+                for idx, item in enumerate(tasks[0].get("result") or []):
+                    kw_text = item.get("keyword", "")
+                    # Positional fallback: DFS keyword_overview/live preserves input order.
+                    # When kw_text="" (unrecognised keyword), recover from batch position.
+                    if not kw_text and idx < len(batch):
+                        kw_text = batch[idx]
+                    if not kw_text:
                         continue
-                    _log_error("keyword_extractor/dataforseo_submit", str(e),
-                               {"country": country, "chunk_size": len(chunk)})
-                    break
+                    ki      = item.get("keyword_info", {}) or {}
+                    cpc_val = float(ki.get("cpc") or 0)
+                    sv_val  = int(ki.get("search_volume") or 0)
+                    comp    = float(ki.get("competition") or 0)
+
+                    key = (kw_text.lower(), country)
+                    results[key] = {
+                        "cpc_usd":       round(cpc_val, 2),
+                        "search_volume": sv_val,
+                        "competition":   round(comp, 2),
+                        "source":        "dataforseo_labs",
+                    }
+
+                print(f"  [{country}] batch {chunk_start // DFS_OVERVIEW_BATCH_SIZE + 1}: "
+                      f"{len(batch)} sent, {sum(1 for k in batch if (k.lower(), country) in results)} matched")
+            except Exception as e:
+                print(f"  ⚠️  [{country}] keyword_overview error: {e}")
+                _log_error("keyword_extractor/keyword_overview", str(e),
+                           {"country": country, "batch_size": len(batch)})
 
             time.sleep(DFS_INTER_REQUEST_DELAY)
 
-    if not pending_task_ids:
-        return {}
-
-    print(f"  → Submitted {len(pending_task_ids)} task(s) to DataForSEO standard queue. Polling…")
-
-    # ── Step 2b: Poll tasks_ready until all results arrive ────────────────────
-    pending_ids = {task_id: country for task_id, country in pending_task_ids}
-    start_time  = time.time()
-
-    while pending_ids and (time.time() - start_time) < DFS_ASYNC_TIMEOUT:
-        try:
-            r = requests.get(DFS_URL_READY, headers=headers, timeout=15)
-            r.raise_for_status()
-            ready_tasks = r.json().get("tasks", [])
-            ready_results = (ready_tasks[0].get("result") or []) if ready_tasks else []
-        except Exception as e:
-            print(f"  ⚠️  tasks_ready poll failed: {e} — retrying in {DFS_ASYNC_POLL_INTERVAL}s")
-            time.sleep(DFS_ASYNC_POLL_INTERVAL)
-            continue
-
-        for task_info in ready_results:
-            task_id = task_info.get("id")
-            if task_id not in pending_ids:
-                continue
-
-            country = pending_ids.pop(task_id)
-
-            # Fetch the result for this task
-            try:
-                rg = requests.get(f"{DFS_URL_GET}/{task_id}", headers=headers, timeout=30)
-                rg.raise_for_status()
-                get_tasks = rg.json().get("tasks", [])
-                task_result = get_tasks[0].get("result") or [] if get_tasks else []
-                for item in task_result:
-                    key = (item.get("keyword", "").lower(), country)
-                    ci  = item.get("competition_index", 0) or 0
-                    results[key] = {
-                        "cpc_usd":       round(float(item.get("cpc", 0) or 0), 2),
-                        "search_volume": int(item.get("search_volume", 0) or 0),
-                        "competition":   round(ci / 100, 2),
-                        "source":        "dataforseo",
-                    }
-            except Exception as e:
-                _log_error("keyword_extractor/dataforseo_get", str(e), {"task_id": task_id})
-
-        if pending_ids:
-            elapsed = int(time.time() - start_time)
-            print(f"  → Waiting for {len(pending_ids)} task(s)… ({elapsed}s elapsed)")
-            time.sleep(DFS_ASYNC_POLL_INTERVAL)
-
-    if pending_ids:
-        print(f"  ⚠️  {len(pending_ids)} DataForSEO task(s) timed out after "
-              f"{DFS_ASYNC_TIMEOUT // 60} minutes — results will be partial")
-        _log_error("keyword_extractor/dataforseo_timeout",
-                   f"{len(pending_ids)} tasks timed out",
-                   {"timed_out_ids": list(pending_ids.keys())})
-
-    elapsed_total = round(time.time() - start_time)
-    print(f"  → DataForSEO results received in {elapsed_total}s "
-          f"({len(results)} keywords with data)")
-
+    print(f"  → DataForSEO keyword_overview: {len(results)} keywords with data")
     return results
 
 
@@ -486,20 +588,20 @@ def dfs_labs_keyword_ideas(seed_objects: list) -> list:
                     ["keyword_info.search_volume", ">", max(cfg["min_volume"] // 2, 50)],
                     "and",
                     ["keyword_info.cpc", ">", cfg["min_cpc"] * 0.5],
-                    "and",
-                    ["search_intent_info.main_intent", "in", ["commercial", "transactional"]],
                 ],
                 "order_by": ["keyword_info.cpc,desc"],
             }]
 
             try:
-                r = requests.post(DFS_LABS_IDEAS_URL, headers=headers, json=body, timeout=30)
+                r = requests.post(DFS_LABS_IDEAS_URL, headers=headers, json=body, timeout=60)
                 r.raise_for_status()
                 # Record spend immediately after POST (per master plan Section 6.3)
                 increment_usd_spent(DFS_ENDPOINT_COSTS["keyword_ideas"], "keyword_ideas")
                 tasks      = r.json().get("tasks", [])
                 result_wrap = (tasks[0].get("result") or []) if tasks else []
-                task_items  = result_wrap[0].get("items", []) if result_wrap else []
+                # Guard: result_wrap[0] may be None if API returned a null result entry
+                _rw0 = result_wrap[0] if result_wrap else None
+                task_items  = (_rw0.get("items") or []) if isinstance(_rw0, dict) else []
                 # Record per-result cost
                 if task_items:
                     result_cost = DFS_ENDPOINT_COSTS["keyword_ideas_per_result"] * len(task_items)
@@ -599,8 +701,15 @@ if __name__ == "__main__":
           f"{len(set(t.get('geo','US') for t in raw_trends))} countries")
 
     # ── Step 1: LLM extraction → seed concepts ────────────────────────────────
+    _LLM_PHASE_DEADLINE = time.time() + 7200  # 2h hard cap for LLM extraction phase
     seed_objects: list = []
     for i in range(0, len(raw_trends), LLM_BATCH_SIZE):
+        if time.time() > _LLM_PHASE_DEADLINE:
+            remaining = total_batches - (i // LLM_BATCH_SIZE)
+            print(f"  ⚠️  LLM deadline (2h) reached — skipping {remaining} remaining batches")
+            _log_error("keyword_extractor/llm_deadline",
+                       f"2h deadline at batch {i // LLM_BATCH_SIZE}/{total_batches}")
+            break
         batch     = raw_trends[i : i + LLM_BATCH_SIZE]
         batch_num = i // LLM_BATCH_SIZE + 1
         print(f"  → LLM batch {batch_num}/{total_batches} ({len(batch)} trends)…")
@@ -692,6 +801,19 @@ if __name__ == "__main__":
                     s.setdefault("keyword", s.get("seed_keyword", ""))
                 save_deferred(seed_objects)
                 print(f"  [Error Recovery] Deferred {len(seed_objects)} seeds to next run")
+
+    # ── Fallback: include unexpanded seeds as keywords for scoring ─────────
+    if not expanded_keywords and seed_objects:
+        for s in seed_objects:
+            s.setdefault("keyword", s.get("seed_keyword", ""))
+            s.setdefault("metrics_source", "llm_seed")
+            # Remove fake zero metrics so validation.py sends seeds to DataForSEO
+            s.pop("cpc_usd", None)
+            s.pop("search_volume", None)
+            s.pop("competition", None)
+        seed_as_keywords = [s for s in seed_objects if s.get("keyword")]
+        expanded_keywords.extend(seed_as_keywords)
+        print(f"[Pipeline] Including {len(seed_as_keywords)} unexpanded seeds as keywords for scoring")
 
     # ── Combine all keyword sources ────────────────────────────────────────────
     all_keywords = expanded_keywords + google_ads_keywords
@@ -829,7 +951,32 @@ if __name__ == "__main__":
     # ── DataForSEO lookup for Bucket B cache misses only ──────────────────────
     fresh_cpc_data: dict = {}
     if to_lookup:
-        fresh_cpc_data = dfs_batch_lookup(to_lookup)
+        # Step 1: KD pre-filter (cheap: $0.01 per 1000 keywords)
+        # Reject keywords with KD < 15 (no advertiser interest per dwight_dfs_master_plan.md)
+        print("[Pipeline] Running KD pre-filter to reject low-advertiser keywords...")
+        kd_scores = dfs_bulk_keyword_difficulty(to_lookup)
+        
+        # Filter: keep only KD >= 15
+        kd_filtered = []
+        kd_rejected = []
+        for kw in to_lookup:
+            key = (kw["keyword"].lower(), kw.get("country", "US").upper())
+            kd = kd_scores.get(key)
+            if kd is not None and kd < 15:
+                kd_rejected.append(kw)
+            else:
+                kd_filtered.append(kw)
+        
+        if kd_rejected:
+            print(f"[Pipeline] KD filter: {len(to_lookup)} → {len(kd_filtered)} passed "
+                  f"({len(kd_rejected)} rejected with KD < 15)")
+        
+        # Step 2: Full CPC lookup on KD-filtered keywords (expensive: $0.02 per 700 keywords)
+        if kd_filtered:
+            fresh_cpc_data = dfs_batch_lookup(kd_filtered)
+        else:
+            print("[Pipeline] All keywords rejected by KD filter — skipping keyword_overview")
+            fresh_cpc_data = {}
         have_data      = sum(1 for v in fresh_cpc_data.values() if v["cpc_usd"] > 0)
         print(f"[Pipeline] Bucket B DataForSEO: {len(to_lookup)} lookups → "
               f"{have_data} with CPC data")
@@ -953,13 +1100,14 @@ if __name__ == "__main__":
                   f"— score: {kw['opportunity_score']:,.0f}")
 
     # ── Cost summary ──────────────────────────────────────────────────────────
-    dfs_b_requests = (len(to_lookup) + DFS_BATCH_SIZE - 1) // DFS_BATCH_SIZE if to_lookup else 0
-    dfs_b_cost     = round(dfs_b_requests * 0.05, 2)
+    import math as _math
+    dfs_b_batches = _math.ceil(len(to_lookup) / DFS_OVERVIEW_BATCH_SIZE) if to_lookup else 0
+    dfs_b_cost    = round(dfs_b_batches * 0.01 + len(to_lookup) * 0.0001, 4)
     print(f"[Pipeline] Cost summary:")
     print(f"  DataForSEO expansion: {len(expanded_keywords)} keywords via seeds")
     print(f"  Google Ads API:       {expanded_a_count + expanded_b_count} keywords from free expansion")
-    print(f"  DataForSEO Bucket B:  {len(to_lookup)} lookups in {dfs_b_requests} request(s)"
-          f" ≈ ${dfs_b_cost:.2f} (standard queue)")
+    print(f"  DataForSEO Bucket B:  {len(to_lookup)} lookups in {dfs_b_batches} batch(es)"
+          f" ≈ ${dfs_b_cost:.4f} (keyword_overview/live)")
     print(f"  Bucket A (free):      {expanded_a_count} keywords used Google CPC directly")
     print(f"  Bucket B (paid):      {expanded_b_count} keywords sent to DataForSEO")
 
@@ -985,23 +1133,61 @@ if __name__ == "__main__":
         _registry    = _load_reg()
         _vert_ref    = _load_vref()
 
-        # Step 3a: Decompose PRIORITY keywords (any keyword with real CPC data)
-        _priority_kws = [kw for kw in passed if kw.get("opportunity_score", 0) > 0]
-        print(f"[Experimental] Decomposing {len(_priority_kws)} PRIORITY keywords…")
+        # Compute quality_score per spec: vertical_tier × intent_product × country_mult × linguistic_bonus
+        def _quality_score(kw):
+            _kw_lower = kw.get("keyword", "").lower()
+            _ctry = kw.get("country", "US").upper()
+            _vtier = "Unknown"
+            for _vn, _vd in _vert_ref.get("verticals", {}).items():
+                if any(tp.lower() in _kw_lower for tp in _vd.get("trigger_phrases", [])):
+                    _vtier = _vd.get("tier", "Unknown")
+                    break
+            _vs = {"S": 10, "A": 7, "B": 4, "Unknown": 1}.get(_vtier, 1)
+            _ip = 1.0
+            for _md in _vert_ref.get("intent_modifiers", {}).values():
+                if any(t.lower() in _kw_lower for t in _md.get("triggers", [])):
+                    _ip *= _md.get("multiplier", 1.0)
+            _ip = min(_ip, 3.0)
+            _cm = 0.3
+            for _td in _vert_ref.get("country_tiers", {}).values():
+                if _ctry in _td.get("countries", []):
+                    _cm = _td.get("base_multiplier", 1.0)
+                    break
+            _lb = kw.get("linguistic_score", {})
+            _lb = _lb.get("bonus_multiplier", 1.0) if isinstance(_lb, dict) else 1.0
+            return _vs * _ip * _cm * _lb
+
+        # Step 3a: Decompose PRIORITY keywords (lowered threshold to 4.0 for better coverage)
+        for _kw in passed:
+            _kw["_quality_score"] = _quality_score(_kw)
+        _priority_kws = [kw for kw in passed if kw.get("_quality_score", 0) >= 4.0]
+        print(f"[Experimental] {len(_priority_kws)} PRIORITY keywords (quality_score >= 4) "
+              f"out of {len(passed)} passed")
 
         if _priority_kws:
-            _decomposed = _decompose([kw["keyword"] for kw in _priority_kws],
-                                     country="US")
-            _exp_stats["decomposed"]  = len(_decomposed)
-            _exp_stats["expandable"]  = sum(1 for d in _decomposed if d.get("expandable"))
+            # Group by country for correct entity pool lookups
+            _by_country = {}
+            for _kw in _priority_kws:
+                _by_country.setdefault(_kw.get("country", "US").upper(), []).append(_kw)
 
-            # Build quality score lookup
-            _quality_map = {kw["keyword"]: kw.get("opportunity_score", 0) for kw in _priority_kws}
+            _all_decomposed = []
+            _raw_expansions = []
+            _quality_map = {}
 
-            # Step 3b: Expand
-            _raw_expansions = _expand(_decomposed, _registry, "US", _quality_map)
+            for _ctry, _ctry_kws in _by_country.items():
+                _decomposed = _decompose([kw["keyword"] for kw in _ctry_kws],
+                                         country=_ctry)
+                _all_decomposed.extend(_decomposed)
+                for _kw in _ctry_kws:
+                    _quality_map[_kw["keyword"]] = _kw.get("_quality_score", 0)
+                _expansions = _expand(_decomposed, _registry, _ctry, _quality_map)
+                _raw_expansions.extend(_expansions)
+
+            _exp_stats["decomposed"]  = len(_all_decomposed)
+            _exp_stats["expandable"]  = sum(1 for d in _all_decomposed if d.get("expandable"))
             _exp_stats["raw_expansions_generated"] = len(_raw_expansions)
-            print(f"[Experimental] {len(_raw_expansions)} raw expansions generated")
+            print(f"[Experimental] {len(_raw_expansions)} raw expansions generated "
+                  f"across {len(_by_country)} countries")
 
             # Step 3c: Plausibility check
             if _raw_expansions:
@@ -1088,17 +1274,17 @@ if __name__ == "__main__":
             "entities_in_registry": {
                 "proven": sum(
                     len(v.get(c, {}).get("proven", []))
-                    for k, v in _registry.items() if not k.startswith("_")
+                    for k, v in _registry.items() if not k.startswith("_") and isinstance(v, dict)
                     for c in v if isinstance(v.get(c), dict)
                 ),
                 "test": sum(
                     len(v.get(c, {}).get("test", []))
-                    for k, v in _registry.items() if not k.startswith("_")
+                    for k, v in _registry.items() if not k.startswith("_") and isinstance(v, dict)
                     for c in v if isinstance(v.get(c), dict)
                 ),
                 "blocked": sum(
                     len(v.get(c, {}).get("blocked", []))
-                    for k, v in _registry.items() if not k.startswith("_")
+                    for k, v in _registry.items() if not k.startswith("_") and isinstance(v, dict)
                     for c in v if isinstance(v.get(c), dict)
                 ),
             },
