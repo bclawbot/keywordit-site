@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keywordit · Competitive Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+<style>
+/* ============================================================
+   THEME VARIABLES (mirrored from dashboard.html)
+   ============================================================ */
+:root {
+  --font-sans: 'Space Grotesk', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --transition-fast: 0.15s ease;
+  --transition-med: 0.25s ease;
+}
+
+[data-theme="dark"] {
+  --bg-base: #020203;
+  --bg-surface: #080810;
+  --bg-raised: #0e0e14;
+  --bg-elevated: #14141c;
+  --bg-hover: #1a1a24;
+  --bg-input: #0e0e14;
+  --text-primary: #e8e8f0;
+  --text-secondary: #7a7a8c;
+  --text-tertiary: #4a4a58;
+  --text-muted: #2e2e3a;
+  --border: #141418;
+  --border-light: #1c1c24;
+  --border-focus: #2dd4bf;
+  --accent: #2dd4bf;
+  --accent-dim: rgba(45,212,191,0.12);
+  --accent-hover: rgba(45,212,191,0.18);
+  --accent-text: #2dd4bf;
+  --c-green: #22c55e;
+  --c-green-dim: rgba(34,197,94,0.12);
+  --c-amber: #f59e0b;
+  --c-amber-dim: rgba(245,158,11,0.12);
+  --c-red: #ef4444;
+  --c-red-dim: rgba(239,68,68,0.10);
+  --c-cyan: #06b6d4;
+  --c-cyan-dim: rgba(6,182,212,0.10);
+  --c-purple: #a78bfa;
+  --c-purple-dim: rgba(167,139,250,0.10);
+  --c-gray: #6b7280;
+  --c-gray-dim: rgba(107,114,128,0.10);
+  --status-ok: #22c55e;
+  --status-warn: #f59e0b;
+  --status-error: #ef4444;
+  --shadow-dropdown: 0 12px 40px rgba(0,0,0,0.7);
+  --chart-grid: #1a1a22;
+}
+
+[data-theme="light"] {
+  --bg-base: #f5f5f7;
+  --bg-surface: #ffffff;
+  --bg-raised: #f0f0f3;
+  --bg-elevated: #e8e8ec;
+  --bg-hover: #e0e0e6;
+  --bg-input: #ffffff;
+  --text-primary: #1a1a2e;
+  --text-secondary: #5a5a70;
+  --text-tertiary: #8a8a9a;
+  --text-muted: #b0b0c0;
+  --border: #dcdce4;
+  --border-light: #e8e8f0;
+  --border-focus: #0d9488;
+  --accent: #0d9488;
+  --accent-dim: rgba(13,148,136,0.08);
+  --accent-hover: rgba(13,148,136,0.14);
+  --accent-text: #0d9488;
+  --c-green: #16a34a;
+  --c-green-dim: rgba(22,163,74,0.10);
+  --c-amber: #d97706;
+  --c-amber-dim: rgba(217,119,6,0.10);
+  --c-red: #dc2626;
+  --c-red-dim: rgba(220,38,38,0.08);
+  --c-cyan: #0891b2;
+  --c-cyan-dim: rgba(8,145,178,0.08);
+  --c-purple: #7c3aed;
+  --c-purple-dim: rgba(124,58,237,0.08);
+  --c-gray: #6b7280;
+  --c-gray-dim: rgba(107,114,128,0.08);
+  --status-ok: #16a34a;
+  --status-warn: #d97706;
+  --status-error: #dc2626;
+  --shadow-dropdown: 0 8px 32px rgba(0,0,0,0.12);
+  --chart-grid: #e8e8ec;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 13px; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background var(--transition-med), color var(--transition-med);
+}
+a { color: var(--accent-text); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { cursor: pointer; font-family: var(--font-sans); }
+.hidden { display: none !important; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+/* ============================================================
+   COMMAND BAR
+   ============================================================ */
+#cmd-bar {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 48px;
+  position: sticky; top: 0; z-index: 50;
+}
+.cmd-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 14px; letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+.cmd-logo-icon {
+  width: 24px; height: 24px;
+  background: var(--accent);
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  color: #000; font-weight: 800; font-size: 12px;
+}
+.cmd-logo-dot { color: var(--accent); }
+.cmd-title {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  color: var(--accent-text); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.cmd-spacer { flex: 1; }
+.btn-cmd {
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg-raised); color: var(--text-secondary);
+  font-family: var(--font-mono); font-size: 11px; transition: all var(--transition-fast);
+}
+.btn-cmd:hover { border-color: var(--accent); color: var(--text-primary); }
+.btn-signout {
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-tertiary);
+  font-family: var(--font-mono); font-size: 11px; transition: all var(--transition-fast);
+}
+.btn-signout:hover { border-color: var(--c-red); color: var(--c-red); }
+.theme-toggle {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-tertiary); width: 32px; height: 32px;
+  border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition-fast);
+}
+.theme-toggle:hover { border-color: var(--text-muted); color: var(--text-primary); }
+.theme-toggle svg { width: 14px; height: 14px; }
+[data-theme="dark"] .icon-sun { display: block; }
+[data-theme="dark"] .icon-moon { display: none; }
+[data-theme="light"] .icon-sun { display: none; }
+[data-theme="light"] .icon-moon { display: block; }
+
+/* ============================================================
+   TAB NAV
+   ============================================================ */
+.tab-nav {
+  display: flex; gap: 0; padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  overflow-x: auto;
+}
+.tab-btn {
+  padding: 10px 18px; border: none; background: none;
+  color: var(--text-secondary); font-family: var(--font-mono);
+  font-size: 11px; font-weight: 500; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  transition: all var(--transition-fast); white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.tab-btn.active { color: var(--accent-text); border-bottom-color: var(--accent); }
+.tab-content { display: none; flex: 1; overflow-y: auto; }
+.tab-content.active { display: block; }
+
+/* ============================================================
+   SHARED COMPONENTS
+   ============================================================ */
+
+/* Section header */
+.section-hdr {
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+}
+.section-hdr h2 {
+  font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+  color: var(--accent-text); text-transform: uppercase; letter-spacing: 0.06em;
+  margin: 0 0 4px;
+}
+.section-hdr .sub { font-size: 11px; color: var(--text-secondary); }
+
+/* Data table */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table th {
+  text-align: left; padding: 8px 12px;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+  color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+  background: var(--bg-surface); position: sticky; top: 0;
+}
+.data-table th:hover { color: var(--text-secondary); }
+.data-table th .sort-arrow { opacity: 0.3; margin-left: 4px; }
+.data-table th.sorted .sort-arrow { opacity: 1; color: var(--accent-text); }
+.data-table td {
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  color: var(--text-primary); vertical-align: middle;
+}
+.data-table tr:hover td { background: var(--bg-hover); }
+.data-table tr.highlight td { background: var(--c-green-dim); border-left: 2px solid var(--c-green); }
+.data-table tr.expandable { cursor: pointer; }
+.data-table tr.detail-row td { background: var(--bg-raised); padding: 12px 24px; }
+
+/* Pills / badges */
+.pill {
+  display: inline-block; padding: 2px 8px; border-radius: 3px;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+}
+.pill-accent { background: var(--accent-dim); color: var(--accent-text); }
+.pill-green { background: var(--c-green-dim); color: var(--c-green); }
+.pill-amber { background: var(--c-amber-dim); color: var(--c-amber); }
+.pill-red { background: var(--c-red-dim); color: var(--c-red); }
+.pill-gray { background: var(--c-gray-dim); color: var(--c-gray); }
+.pill-purple { background: var(--c-purple-dim); color: var(--c-purple); }
+
+/* Filter buttons */
+.filter-bar { display: flex; gap: 8px; padding: 12px 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+.filter-btn {
+  padding: 5px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg-raised); color: var(--text-secondary);
+  font-family: var(--font-mono); font-size: 11px; cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.filter-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+.filter-btn.active { border-color: var(--accent); color: var(--accent-text); background: var(--accent-dim); }
+
+/* Cards */
+.card {
+  background: var(--bg-raised); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px;
+  transition: border-color var(--transition-fast);
+}
+.card:hover { border-color: var(--border-light); }
+
+/* Progress bar */
+.progress-bar {
+  height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden;
+}
+.progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.5s; }
+
+/* Empty state */
+.empty-state {
+  padding: 60px 24px; text-align: center; color: var(--text-tertiary);
+  font-family: var(--font-mono); font-size: 12px;
+}
+
+/* Activity card */
+.activity-card {
+  background: var(--bg-raised); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 14px 16px;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.activity-card .sev-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+}
+.sev-HIGH { background: var(--c-red); }
+.sev-P0 { background: var(--c-red); }
+.sev-MEDIUM { background: var(--c-amber); }
+.sev-LOW { background: var(--c-gray); }
+.activity-card .body { flex: 1; min-width: 0; }
+.activity-card .headline { font-weight: 500; color: var(--text-primary); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.activity-card .meta { font-size: 11px; color: var(--text-secondary); display: flex; gap: 8px; flex-wrap: wrap; }
+.activity-card .ts { font-size: 10px; color: var(--text-tertiary); margin-top: 4px; }
+.activity-list { display: flex; flex-direction: column; gap: 8px; padding: 16px 24px; }
+.load-more-btn {
+  display: block; width: 100%; padding: 10px; margin: 8px 24px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg-raised); color: var(--text-secondary);
+  font-family: var(--font-mono); font-size: 11px; text-align: center;
+  cursor: pointer; transition: all var(--transition-fast);
+  max-width: calc(100% - 48px);
+}
+.load-more-btn:hover { border-color: var(--accent); color: var(--accent-text); }
+
+/* Vertical cards */
+.vert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; padding: 16px 24px; }
+
+/* Matrix */
+.matrix-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.matrix-table th {
+  padding: 8px; font-family: var(--font-mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary);
+  background: var(--bg-surface); border: 1px solid var(--border);
+}
+.matrix-table td {
+  padding: 10px 8px; border: 1px solid var(--border);
+  text-align: center; min-width: 80px; position: relative;
+}
+.matrix-table td.saturated { background: var(--c-red-dim); border-color: var(--c-red); }
+.matrix-table td.competitive { background: var(--c-amber-dim); border-color: var(--c-amber); }
+.matrix-table td.emerging { background: var(--c-green-dim); border-color: var(--c-green); }
+.matrix-table td.gap { border-style: dashed; border-color: var(--text-muted); color: var(--text-muted); }
+.matrix-dots { display: flex; gap: 3px; justify-content: center; margin-top: 4px; }
+.matrix-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+/* Analysis cards */
+.analysis-card {
+  background: var(--bg-raised); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 8px;
+}
+.analysis-hdr {
+  padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  transition: background var(--transition-fast);
+}
+.analysis-hdr:hover { background: var(--bg-hover); }
+.analysis-hdr .chevron { transition: transform 0.2s; color: var(--text-tertiary); }
+.analysis-card.open .chevron { transform: rotate(90deg); }
+.analysis-body { padding: 0 16px 14px; font-size: 12px; color: var(--text-secondary); line-height: 1.7; display: none; }
+.analysis-card.open .analysis-body { display: block; }
+
+/* Skeleton loader */
+.skeleton { background: linear-gradient(90deg, var(--bg-raised) 25%, var(--bg-elevated) 50%, var(--bg-raised) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Health footer */
+#health-bar {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--bg-surface); border-top: 1px solid var(--border);
+  padding: 0 24px; height: 36px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary);
+}
+.health-dot {
+  width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 4px;
+}
+.health-ok { background: var(--status-ok); }
+.health-warn { background: var(--status-warn); }
+.health-down { background: var(--status-error); }
+.health-none { background: var(--text-muted); }
+
+/* Pagination */
+.pagination { display: flex; align-items: center; gap: 8px; padding: 12px 24px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+.pagination button { padding: 4px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-raised); color: var(--text-secondary); font-family: var(--font-mono); font-size: 11px; }
+.pagination button:hover { border-color: var(--accent); color: var(--accent-text); }
+.pagination button:disabled { opacity: 0.3; cursor: default; }
+
+/* KPI strip */
+.kpi-strip { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+.kpi-card { flex: 1; padding: 14px 20px; border-right: 1px solid var(--border); }
+.kpi-card:last-child { border-right: none; }
+.kpi-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.kpi-value { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.kpi-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+/* Auth gate */
+#auth-gate { position: fixed; inset: 0; background: var(--bg-base); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+#auth-gate .msg { font-family: var(--font-mono); font-size: 13px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<!-- ═══ AUTH GATE ═══ -->
+<div id="auth-gate"><div class="msg">Authenticating...</div></div>
+
+<!-- ═══ COMMAND BAR ═══ -->
+<div id="cmd-bar">
+  <div class="cmd-logo">
+    <div class="cmd-logo-icon">K</div>
+    Keywordit<span class="cmd-logo-dot">.</span>
+  </div>
+  <div class="cmd-title">Intelligence</div>
+  <div class="cmd-spacer"></div>
+  <button class="btn-cmd" onclick="location.href='dashboard.html'">Dashboard</button>
+  <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+    <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
+    <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+  </button>
+  <button class="btn-signout" onclick="signOut()">Sign Out</button>
+</div>
+
+<!-- ═══ TAB NAV ═══ -->
+<nav class="tab-nav">
+  <button class="tab-btn active" data-tab="warroom">War Room</button>
+  <button class="tab-btn" data-tab="activity">Activity</button>
+  <button class="tab-btn" data-tab="keywords">Keywords</button>
+  <button class="tab-btn" data-tab="verticals">Verticals</button>
+  <button class="tab-btn" data-tab="matrix">Matrix</button>
+  <button class="tab-btn" data-tab="analysis">Analysis</button>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SECTION A — NETWORK WAR ROOM
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-warroom" class="tab-content active">
+  <div class="kpi-strip" id="wr-kpi"></div>
+  <div style="overflow-x:auto">
+    <table class="data-table" id="wr-table">
+      <thead><tr>
+        <th data-col="name">Network <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="domain_count">Domains <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="active_ads">Active Ads <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="new_today">Today <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="new_7d">7d <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="new_30d">30d <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="avg_durability">Durability <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="velocity_7d">Velocity <span class="sort-arrow">&#9650;</span></th>
+        <th>Top Verticals</th>
+        <th data-col="last_scrape">Last Scrape <span class="sort-arrow">&#9650;</span></th>
+      </tr></thead>
+      <tbody id="wr-body"></tbody>
+    </table>
+  </div>
+  <div class="empty-state hidden" id="wr-empty">No networks tracked yet. Run the fb_intelligence scheduler to populate data.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SECTION B — COMPETITOR ACTIVITY FEED
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-activity" class="tab-content">
+  <div class="filter-bar">
+    <button class="filter-btn" data-period="1">Today</button>
+    <button class="filter-btn active" data-period="7">7 Days</button>
+    <button class="filter-btn" data-period="30">30 Days</button>
+  </div>
+  <div class="activity-list" id="act-list"></div>
+  <button class="load-more-btn hidden" id="act-more">Load More</button>
+  <div class="empty-state hidden" id="act-empty">No activity in this period.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SECTION C — KEYWORD INTELLIGENCE TABLE
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-keywords" class="tab-content">
+  <div class="filter-bar">
+    <select id="kw-vert-filter" style="background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);font-family:var(--font-mono);font-size:11px;padding:5px 10px;border-radius:var(--radius-sm)">
+      <option value="">All Verticals</option>
+    </select>
+    <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);margin-left:auto">Showing <span id="kw-showing">0</span> of <span id="kw-total">0</span></span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="data-table" id="kw-table">
+      <thead><tr>
+        <th data-col="keyword">Keyword <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="network_count">Networks <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="max_durability">Durability <span class="sort-arrow">&#9650;</span></th>
+        <th>Vertical</th>
+        <th data-col="volume">Volume <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="cpc_usd">CPC <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="competition">KD <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="rsoc_score">RSOC Score <span class="sort-arrow">&#9650;</span></th>
+        <th>Status</th>
+        <th data-col="first_seen">First Seen <span class="sort-arrow">&#9650;</span></th>
+      </tr></thead>
+      <tbody id="kw-body"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="kw-pagination"></div>
+  <div class="empty-state hidden" id="kw-empty">No keywords queued yet.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SECTION D — VERTICAL LEADERBOARD
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-verticals" class="tab-content">
+  <div class="section-hdr"><h2>Vertical Leaderboard</h2><div class="sub">Ranked by consensus score</div></div>
+  <div class="vert-grid" id="vert-grid"></div>
+  <div class="empty-state hidden" id="vert-empty">No verticals classified yet.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SECTION E — ANGLE × VERTICAL MATRIX
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-matrix" class="tab-content">
+  <div class="section-hdr">
+    <h2>Angle &times; Vertical Matrix</h2>
+    <div class="sub">
+      <span class="pill pill-red">Saturated</span>
+      <span class="pill pill-amber">Competitive</span>
+      <span class="pill pill-green">Emerging</span>
+      <span class="pill pill-gray">Gap</span>
+    </div>
+  </div>
+  <div style="overflow-x:auto;padding:16px 24px">
+    <table class="matrix-table" id="matrix-table"></table>
+  </div>
+  <div class="empty-state hidden" id="matrix-empty">No classified ads yet.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SECTION F — AI TREND ANALYSIS
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-analysis" class="tab-content">
+  <div class="section-hdr" style="display:flex;align-items:center;justify-content:space-between">
+    <div><h2>AI Trend Analysis</h2><div class="sub" id="analysis-ts">Loading...</div></div>
+    <button class="btn-cmd" id="analysis-regen">Regenerate</button>
+  </div>
+  <div style="padding:16px 24px" id="analysis-cards"></div>
+</div>
+
+<!-- ═══ HEALTH FOOTER ═══ -->
+<div id="health-bar">
+  <span><span class="health-dot health-none" id="hb-dot"></span> Scraper: <span id="hb-status">--</span></span>
+  <span>Last scrape: <span id="hb-last">--</span></span>
+  <span>Total ads: <span id="hb-total">--</span></span>
+  <span>Active: <span id="hb-active">--</span></span>
+  <span>Pending KW: <span id="hb-pending">--</span></span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+'use strict';
+
+const API = 'http://localhost:5555/api/intel';
+const loaded = {};       // track which tabs have been fetched
+let actPage = 1;
+let actPeriod = '7';
+let kwPage = 1;
+let kwSort = 'network_count';
+let kwDir = 'desc';
+let kwVert = '';
+
+// ── Auth gate ────────────────────────────────────────────────────────────────
+(function authCheck() {
+  const gate = document.getElementById('auth-gate');
+  try {
+    const sess = localStorage.getItem('keywordit_session');
+    const users = JSON.parse(localStorage.getItem('keywordit_users') || '{}');
+    if (!sess || !Object.values(users).some(u => u.session === sess)) {
+      gate.querySelector('.msg').textContent = 'Not authenticated. Redirecting...';
+      setTimeout(() => location.href = 'login.html', 800);
+      return;
+    }
+  } catch(e) {
+    location.href = 'login.html';
+    return;
+  }
+  gate.style.display = 'none';
+})();
+
+// ── Theme ────────────────────────────────────────────────────────────────────
+const savedTheme = localStorage.getItem('keywordit-theme') || localStorage.getItem('keywordit_theme');
+if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('keywordit-theme', next);
+  localStorage.setItem('keywordit_theme', next);
+});
+
+function signOut() {
+  localStorage.removeItem('keywordit_session');
+  location.href = 'login.html';
+}
+window.signOut = signOut;
+
+// ── Tab switching ────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (!loaded[tab]) { loaders[tab](); loaded[tab] = true; }
+  });
+});
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function timeAgo(ts) {
+  if (!ts) return '--';
+  const d = (Date.now() - new Date(ts).getTime()) / 1000;
+  if (d < 60) return Math.round(d) + 's ago';
+  if (d < 3600) return Math.round(d/60) + 'm ago';
+  if (d < 86400) return Math.round(d/3600) + 'h ago';
+  return Math.round(d/86400) + 'd ago';
+}
+
+function fmt(n) { return n == null ? '--' : n.toLocaleString(); }
+function fmtUsd(n) { return n == null ? '--' : '$' + n.toFixed(2); }
+
+async function api(path) {
+  try {
+    const r = await fetch(API + path);
+    if (!r.ok) throw new Error(r.status);
+    return await r.json();
+  } catch(e) {
+    console.error('API error:', path, e);
+    return null;
+  }
+}
+
+// ── A. Network War Room ──────────────────────────────────────────────────────
+let wrData = [];
+let wrSortCol = 'active_ads', wrSortDir = -1;
+
+async function loadWarRoom() {
+  const d = await api('/networks');
+  if (!d || !d.networks.length) { document.getElementById('wr-empty').classList.remove('hidden'); return; }
+  wrData = d.networks;
+
+  // KPIs
+  const strip = document.getElementById('wr-kpi');
+  const totalNets = wrData.length;
+  const totalAds = wrData.reduce((s,n) => s + n.active_ads, 0);
+  const newWeek = wrData.reduce((s,n) => s + n.new_7d, 0);
+  const avgDur = wrData.length ? (wrData.reduce((s,n) => s + n.avg_durability, 0) / wrData.length).toFixed(1) : 0;
+  strip.innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Networks</div><div class="kpi-value">${totalNets}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Active Ads</div><div class="kpi-value">${fmt(totalAds)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">New (7d)</div><div class="kpi-value">${fmt(newWeek)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg Durability</div><div class="kpi-value">${avgDur}d</div></div>`;
+
+  renderWrTable();
+
+  // Sortable headers
+  document.querySelectorAll('#wr-table th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (wrSortCol === col) wrSortDir *= -1; else { wrSortCol = col; wrSortDir = -1; }
+      renderWrTable();
+    });
+  });
+}
+
+function renderWrTable() {
+  wrData.sort((a,b) => {
+    let va = a[wrSortCol], vb = b[wrSortCol];
+    if (typeof va === 'string') return wrSortDir * va.localeCompare(vb);
+    return wrSortDir * ((va||0) - (vb||0));
+  });
+  const tbody = document.getElementById('wr-body');
+  tbody.innerHTML = wrData.map(n => `
+    <tr class="expandable" data-id="${n.id}">
+      <td><strong>${n.name}</strong></td>
+      <td>${n.domain_count}</td>
+      <td>${fmt(n.active_ads)}</td>
+      <td>${n.new_today || 0}</td>
+      <td>${n.new_7d || 0}</td>
+      <td>${n.new_30d || 0}</td>
+      <td><span class="pill pill-${n.durability_class === 'winner' || n.durability_class === 'evergreen' ? 'green' : n.durability_class === 'validated' || n.durability_class === 'promising' ? 'amber' : 'gray'}">${n.avg_durability}d</span></td>
+      <td>${n.velocity_7d}</td>
+      <td>${(n.top_verticals||[]).map(v => '<span class="pill pill-accent">'+v+'</span> ').join('')}</td>
+      <td>${timeAgo(n.last_scrape)}</td>
+    </tr>
+    <tr class="detail-row hidden" data-detail="${n.id}">
+      <td colspan="10">
+        <div style="font-size:11px;color:var(--text-secondary)">
+          ${(n.domains||[]).map(d => '<div style="padding:2px 0">' + d.domain + ' &mdash; ' + d.pages + ' pages, ' + d.ads + ' ads</div>').join('')}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  // Expand/collapse
+  tbody.querySelectorAll('tr.expandable').forEach(row => {
+    row.addEventListener('click', () => {
+      const detail = tbody.querySelector('tr[data-detail="' + row.dataset.id + '"]');
+      detail.classList.toggle('hidden');
+    });
+  });
+}
+
+// ── B. Activity Feed ─────────────────────────────────────────────────────────
+async function loadActivity() {
+  document.querySelectorAll('#tab-activity .filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#tab-activity .filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      actPeriod = btn.dataset.period;
+      actPage = 1;
+      fetchActivity(false);
+    });
+  });
+  document.getElementById('act-more').addEventListener('click', () => { actPage++; fetchActivity(true); });
+  fetchActivity(false);
+}
+
+async function fetchActivity(append) {
+  const d = await api('/activity?period=' + actPeriod + '&page=' + actPage);
+  const list = document.getElementById('act-list');
+  const empty = document.getElementById('act-empty');
+  const more = document.getElementById('act-more');
+
+  if (!d || !d.items.length) {
+    if (!append) { list.innerHTML = ''; empty.classList.remove('hidden'); }
+    more.classList.add('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  more.classList.toggle('hidden', !d.has_more);
+
+  const html = d.items.map(item => `
+    <div class="activity-card">
+      <div class="sev-dot sev-${item.severity}"></div>
+      <div class="body">
+        <div class="headline">${item.headline || item.signal_type || 'Signal'}</div>
+        <div class="meta">
+          ${item.network ? '<span class="pill pill-accent">'+item.network+'</span>' : ''}
+          ${item.domain ? '<span>'+item.domain+'</span>' : ''}
+          ${item.vertical ? '<span class="pill pill-purple">'+item.vertical+'</span>' : ''}
+          ${item.angle ? '<span class="pill pill-gray">'+item.angle+'</span>' : ''}
+        </div>
+        <div class="ts">${timeAgo(item.timestamp)}</div>
+      </div>
+    </div>
+  `).join('');
+
+  if (append) list.innerHTML += html; else list.innerHTML = html;
+}
+
+// ── C. Keyword Intelligence ──────────────────────────────────────────────────
+async function loadKeywords() {
+  // Populate vertical dropdown
+  const d0 = await api('/keywords?page=1');
+  if (d0 && d0.verticals) {
+    const sel = document.getElementById('kw-vert-filter');
+    d0.verticals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+    sel.addEventListener('change', () => { kwVert = sel.value; kwPage = 1; fetchKeywords(); });
+  }
+  // Sort headers
+  document.querySelectorAll('#kw-table th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (kwSort === col) kwDir = kwDir === 'desc' ? 'asc' : 'desc'; else { kwSort = col; kwDir = 'desc'; }
+      kwPage = 1;
+      fetchKeywords();
+    });
+  });
+  fetchKeywords();
+}
+
+async function fetchKeywords() {
+  const d = await api('/keywords?vertical=' + kwVert + '&sort=' + kwSort + '&dir=' + kwDir + '&page=' + kwPage);
+  const tbody = document.getElementById('kw-body');
+  const empty = document.getElementById('kw-empty');
+  if (!d || !d.keywords.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  document.getElementById('kw-showing').textContent = d.keywords.length;
+  document.getElementById('kw-total').textContent = d.total;
+
+  tbody.innerHTML = d.keywords.map(k => `
+    <tr class="${k.highlight ? 'highlight' : ''}">
+      <td><strong>${k.keyword}</strong></td>
+      <td>${k.network_count}</td>
+      <td><span class="pill pill-${k.durability_class === 'winner' || k.durability_class === 'evergreen' ? 'green' : k.durability_class === 'validated' ? 'amber' : 'gray'}">${k.max_durability}d</span></td>
+      <td>${(k.verticals||[]).map(v => '<span class="pill pill-accent">'+v+'</span>').join(' ')}</td>
+      <td>${fmt(k.volume)}</td>
+      <td>${fmtUsd(k.cpc_usd)}</td>
+      <td>${k.competition != null ? k.competition.toFixed(2) : '--'}</td>
+      <td>${k.rsoc_score != null ? k.rsoc_score.toFixed(3) : '--'}</td>
+      <td>${k.validation_status === 'validated' ? '<span class="pill pill-green">Validated</span>' : '<span class="pill pill-amber">Pending</span>'}</td>
+      <td>${timeAgo(k.first_seen)}</td>
+    </tr>
+  `).join('');
+
+  // Pagination
+  const totalPages = Math.ceil(d.total / 50);
+  const pg = document.getElementById('kw-pagination');
+  pg.innerHTML = `<button ${kwPage<=1?'disabled':''} onclick="kwPrev()">Prev</button>
+    <span>Page ${kwPage} of ${totalPages}</span>
+    <button ${kwPage>=totalPages?'disabled':''} onclick="kwNext()">Next</button>`;
+}
+window.kwPrev = function() { if (kwPage > 1) { kwPage--; fetchKeywords(); } };
+window.kwNext = function() { kwPage++; fetchKeywords(); };
+
+// ── D. Vertical Leaderboard ──────────────────────────────────────────────────
+async function loadVerticals() {
+  const d = await api('/verticals');
+  const grid = document.getElementById('vert-grid');
+  const empty = document.getElementById('vert-empty');
+  if (!d || !d.verticals.length) { empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  grid.innerHTML = d.verticals.map(v => {
+    const consensus = v.network_count / 7; // proxy: out of 7 max
+    const durColor = v.avg_durability >= 30 ? 'c-green' : v.avg_durability >= 14 ? 'c-amber' : 'c-red';
+    return `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-weight:600;font-size:14px">#${v.rank} ${v.vertical}</div>
+          <span class="pill pill-accent">${v.network_count} networks</span>
+        </div>
+        <div style="margin-bottom:8px">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);margin-bottom:3px">CONSENSUS (${v.network_count}/7)</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(consensus*100)}%"></div></div>
+        </div>
+        <div style="display:flex;gap:16px;font-size:11px;color:var(--text-secondary)">
+          <span>Ads: <strong style="color:var(--text-primary)">${v.total_ads}</strong></span>
+          <span>Durability: <strong style="color:var(--${durColor})">${v.avg_durability.toFixed(1)}d</strong></span>
+          <span>Velocity: <strong style="color:var(--text-primary)">${v.velocity_7d}</strong>/7d</span>
+        </div>
+        ${v.top_keyword ? '<div style="margin-top:8px"><span class="pill pill-purple">' + v.top_keyword + '</span></div>' : ''}
+      </div>`;
+  }).join('');
+}
+
+// ── E. Matrix ────────────────────────────────────────────────────────────────
+async function loadMatrix() {
+  const d = await api('/matrix');
+  const table = document.getElementById('matrix-table');
+  const empty = document.getElementById('matrix-empty');
+  if (!d || !d.verticals.length || !d.angles.length) { empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  let html = '<thead><tr><th></th>';
+  d.angles.forEach(a => { html += '<th>' + a + '</th>'; });
+  html += '</tr></thead><tbody>';
+
+  d.verticals.forEach(v => {
+    html += '<tr><th>' + v + '</th>';
+    d.angles.forEach(a => {
+      const key = v + '|' + a;
+      const cell = d.cells[key];
+      if (cell) {
+        html += '<td class="' + cell.classification + '" title="' + cell.network_count + ' networks, ' + cell.max_durability + 'd">';
+        html += '<div style="font-weight:600">' + cell.ad_count + '</div>';
+        html += '<div class="matrix-dots">';
+        for (let i = 0; i < Math.min(cell.network_count, 7); i++) html += '<span class="matrix-dot"></span>';
+        html += '</div></td>';
+      } else {
+        html += '<td class="gap">&mdash;</td>';
+      }
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+// ── F. AI Analysis ───────────────────────────────────────────────────────────
+async function loadAnalysis(force) {
+  const container = document.getElementById('analysis-cards');
+  const ts = document.getElementById('analysis-ts');
+  container.innerHTML = '<div class="skeleton" style="height:40px;margin-bottom:8px"></div>'.repeat(5);
+  ts.textContent = 'Loading...';
+
+  const d = await api('/analysis' + (force ? '?force=true' : ''));
+  if (!d || d.error) {
+    container.innerHTML = '<div class="empty-state">' + (d ? d.error : 'API unavailable') + '</div>';
+    ts.textContent = 'Failed';
+    return;
+  }
+  if (d.generated_at) ts.textContent = (d.cached ? 'Cached ' : 'Generated ') + timeAgo(d.generated_at);
+
+  const labels = {
+    today_moves: "Today's Moves",
+    weekly_patterns: 'Weekly Patterns',
+    monthly_trends: 'Monthly Trends',
+    predicted_opportunities: 'Predicted Opportunities',
+    anomalies: 'Anomalies',
+  };
+
+  const insights = d.insights || {};
+  container.innerHTML = Object.entries(labels).map(([key, label]) => `
+    <div class="analysis-card" onclick="this.classList.toggle('open')">
+      <div class="analysis-hdr">
+        <span class="chevron">&#9654;</span>
+        <span>${label}</span>
+      </div>
+      <div class="analysis-body">${insights[key] || 'No data'}</div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('analysis-regen').addEventListener('click', () => loadAnalysis(true));
+
+// ── G. Health ────────────────────────────────────────────────────────────────
+async function loadHealth() {
+  const d = await api('/health');
+  if (!d) return;
+  const dot = document.getElementById('hb-dot');
+  const statusEl = document.getElementById('hb-status');
+  dot.className = 'health-dot ' + ({healthy:'health-ok',degraded:'health-warn',down:'health-down'}[d.scraper_status] || 'health-none');
+  statusEl.textContent = d.scraper_status || '--';
+  document.getElementById('hb-last').textContent = d.last_scrape ? timeAgo(d.last_scrape) : 'Never';
+  document.getElementById('hb-total').textContent = fmt(d.total_ads);
+  document.getElementById('hb-active').textContent = fmt(d.active_ads);
+  document.getElementById('hb-pending').textContent = fmt(d.pending_keywords);
+}
+
+// ── Loader map & init ────────────────────────────────────────────────────────
+const loaders = {
+  warroom: loadWarRoom,
+  activity: loadActivity,
+  keywords: loadKeywords,
+  verticals: loadVerticals,
+  matrix: loadMatrix,
+  analysis: () => loadAnalysis(false),
+};
+
+// Load War Room + Health on page load
+loadWarRoom(); loaded.warroom = true;
+loadHealth();
+setInterval(loadHealth, 60000);
+
+})();
+</script>
+</body>
+</html>
