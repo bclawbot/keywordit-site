@@ -34,9 +34,9 @@ ONCE_PER_DAY_DFS         = True  # DataForSEO fires on the FIRST pipeline run ea
                                   # Set to False to allow multiple runs per day (watch costs!).
 
 # ── Dollar-based budget (replaces DAILY_API_BUDGET) ────────────────────────────
-DFS_DAILY_BUDGET_USD     = 2.00  # Hard daily dollar cap. Tune after pricing confirmed.
-                                  # Expected spend with Labs-only: $0.15-0.50/day
-                                  # $2.00 provides safety margin for unexpected spikes.
+DFS_DAILY_BUDGET_USD     = 4.00  # Hard daily dollar cap.
+                                  # Labs enrichment: ~$0.02/run, search_volume fallback: ~$0.15/run
+                                  # 4 runs/day × $0.17 = $0.68 expected. $4.00 covers re-runs + retries.
 
 DAILY_API_BUDGET         = 500   # Legacy task-count budget (kept for backward compat)
 BUDGET_PRIORITY_ORDER    = [1, 2, 3, 4]   # tier 1 first when trimming to budget
@@ -50,10 +50,13 @@ DFS_SEEDS_PER_EXPAND_TASK    = 5    # Seeds per keyword_ideas/live call (was 20,
 
 # ── DataForSEO endpoint costs (update from billing dashboard after first run) ───
 DFS_ENDPOINT_COSTS = {
-    "bulk_kd":                0.00001,   # $0.01 per 1,000 keywords
-    "keyword_overview":       0.0000286, # $0.02 per 700 keywords
-    "keyword_ideas":          0.01,      # $0.01 base cost per call
-    "keyword_ideas_per_result": 0.0001,  # $0.0001 per result (max 200 = $0.02)
+    "bulk_kd":                    0.00001,   # $0.01 per 1,000 keywords (LEGACY — no longer called)
+    "keyword_overview_task_fee":  0.01,      # $0.01 fixed fee per API task/batch
+    "keyword_overview_per_kw":    0.0001,    # $0.0001 per keyword in the batch
+    # Full batch cost: $0.01 + (700 × $0.0001) = $0.08 per 700 keywords
+    "keyword_ideas":              0.01,      # $0.01 base cost per call
+    "keyword_ideas_per_result":   0.0001,    # $0.0001 per result (max 200 = $0.02)
+    "search_volume_live":         0.01,      # $0.01 per keyword (LEGACY — no longer called)
 }
 
 # ── Non-English market minimums ───────────────────────────────────────────────
@@ -151,6 +154,57 @@ def get_country_tier(country_code: str) -> int:
     """Return the tier for a country code. Used by validation.py and dashboard_builder.py."""
     cfg = COUNTRY_CONFIG.get(country_code.upper(), DEFAULT_COUNTRY)
     return cfg["tier"]
+
+
+# ── Phase 1.1: Dynamic config loader from signal_weights.json ──────────────
+import json as _json
+from pathlib import Path as _Path
+
+_SIGNAL_WEIGHTS_PATH = _Path.home() / ".openclaw" / "signal_weights.json"
+
+_FILTER_MODE_MULTIPLIERS = {
+    "max_strict": 1.5,
+    "strict":     1.0,
+    "relaxed":    0.8,
+}
+
+def load_country_config(signal_weights: dict = None) -> dict:
+    """Return COUNTRY_CONFIG with min_cpc dynamically adjusted by signal_weights.json.
+
+    filter_mode from reflection.py controls the multiplier:
+      max_strict → 1.5× base min_cpc  (no GOLDEN recently — raise the bar)
+      strict     → 1.0× base min_cpc  (default)
+      relaxed    → 0.8× base min_cpc  (healthy golden_rate — lower the bar)
+
+    If signal_weights is None, loads from ~/.openclaw/signal_weights.json.
+    Returns a new dict (does not mutate the global COUNTRY_CONFIG).
+    """
+    if signal_weights is None:
+        if _SIGNAL_WEIGHTS_PATH.exists():
+            try:
+                signal_weights = _json.loads(
+                    _SIGNAL_WEIGHTS_PATH.read_text(encoding="utf-8"))
+            except Exception:
+                signal_weights = {}
+        else:
+            signal_weights = {}
+
+    adjusted = {}
+    for cc, base_cfg in COUNTRY_CONFIG.items():
+        cfg = dict(base_cfg)  # shallow copy
+        sw = signal_weights.get(cc)
+        if isinstance(sw, dict):
+            mode = sw.get("filter_mode", "strict")
+            mult = _FILTER_MODE_MULTIPLIERS.get(mode, 1.0)
+            # Apply multiplier — override min_cpc from signal_weights if present
+            sw_min_cpc = sw.get("min_cpc")
+            if sw_min_cpc is not None:
+                cfg["min_cpc"] = round(sw_min_cpc, 3)
+            else:
+                cfg["min_cpc"] = round(base_cfg["min_cpc"] * mult, 3)
+        adjusted[cc] = cfg
+
+    return adjusted
 
 
 # ── Country-specific CPC floors (Master Plan Section 4) ───────────────────────

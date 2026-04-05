@@ -1,0 +1,32 @@
+# Ruff configuration for OpenClaw/Dwight
+# Run: ruff check . --fix && ruff format .
+
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "E741",   # ambiguous variable name (too many false positives in data code)
+    "B904",   # raise without from (existing pattern throughout codebase)
+    "SIM108", # ternary instead of if/else (readability preference)
+]
+
+[lint.per-file-ignores]
+"test_*.py" = ["E402"]  # import not at top (test files use sys.path.insert)
+"tests/*" = ["E402"]
+
+[lint.isort]
+known-first-party = ["config", "normalize", "llm_client", "cpc_cache", "country_config", "vector_store"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

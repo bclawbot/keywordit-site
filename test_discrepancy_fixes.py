@@ -29,6 +29,8 @@ def read_src(fname):
 # ══════════════════════════════════════════════════════════════════════════════
 # Read all source files once
 val_src = read_src("validation.py")
+# Scoring functions were extracted to modules/rsoc_scorer.py — include both for source inspection
+val_src += "\n" + read_src(os.path.join("modules", "rsoc_scorer.py"))
 ke_src  = read_src("keyword_extractor.py")
 cc_src  = read_src("country_config.py")
 cp_src  = read_src("cpc_cache.py")

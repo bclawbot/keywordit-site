@@ -5,7 +5,7 @@ import json
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path("/Users/newmac/.openclaw/oracle.db")
+DB_PATH = Path(__file__).resolve().parent.parent / "oracle.db"
 
 def _conn():
     con = sqlite3.connect(DB_PATH)
@@ -41,7 +41,7 @@ def increment_usd_spent(amount: float, endpoint: str):
         if row and row["endpoint_breakdown"]:
             try:
                 breakdown = json.loads(row["endpoint_breakdown"])
-            except:
+            except (json.JSONDecodeError, ValueError, TypeError):
                 breakdown = {}
         
         # Update breakdown

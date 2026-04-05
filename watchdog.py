@@ -27,7 +27,7 @@ from pathlib import Path
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
-BASE          = Path("/Users/newmac/.openclaw/workspace")
+BASE          = Path(__file__).resolve().parent
 ENV_FILE      = Path.home() / ".openclaw" / ".env"
 CHAT_ID_FILE  = BASE / ".telegram_chat_id"
 HEARTBEAT_LOG = Path.home() / ".openclaw" / "logs" / "heartbeat.log"
@@ -51,7 +51,7 @@ STAGE_TIMEOUTS = {
     "keyword_expander.py":    600,
     "keyword_extractor.py":   21600,
     "vetting.py":             3600,
-    "validation.py":          900,
+    "validation.py":          1800,
     "dashboard_builder.py":   120,
     "reflection.py":          300,
     "deploy_dashboard.sh":    120,
@@ -228,6 +228,21 @@ def check_heartbeat_staleness(state: dict, alerts: list, token: str, chat_id: st
             )
             if result.returncode == 0:
                 print("[watchdog] Kicked ai.openclaw.heartbeat via launchctl")
+            elif "Could not find service" in result.stderr:
+                # plist not loaded — load it first, then retry kickstart
+                subprocess.run(
+                    ["launchctl", "load",
+                     str(Path.home() / "Library/LaunchAgents/ai.openclaw.heartbeat.plist")],
+                    capture_output=True, text=True, timeout=10,
+                )
+                retry = subprocess.run(
+                    ["launchctl", "kickstart", "-k", "user/501/ai.openclaw.heartbeat"],
+                    capture_output=True, text=True, timeout=10,
+                )
+                if retry.returncode == 0:
+                    print("[watchdog] Loaded plist and kicked ai.openclaw.heartbeat")
+                else:
+                    print(f"[watchdog] kickstart failed after load: {retry.stderr.strip()}")
             else:
                 print(f"[watchdog] kickstart failed: {result.stderr.strip()}")
         except Exception as _ke:

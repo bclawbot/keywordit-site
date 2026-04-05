@@ -9,7 +9,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 
-BASE    = Path("/Users/newmac/.openclaw/workspace")
+BASE    = Path(__file__).resolve().parent
 INPUT   = BASE / "commercial_keywords.json"
 OUTPUT  = BASE / "vetted_opportunities.json"
 HISTORY = BASE / "vetted_history.jsonl"
@@ -143,6 +143,26 @@ async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
             results = await search_brave(keyword, session)
 
         survivors = []
+        # Phase 2.1: Compute SERP dominance — ratio of HIGH_DA authority sites in results
+        # High serp_dominance = dominated by authority sites = HARD to rank = BAD for arbitrage
+        # Low serp_dominance  = thin SERP coverage = EASY to rank = GOOD for arbitrage
+        HIGH_DA_DOMAINS = (
+            "wikipedia.org", "webmd.com", "forbes.com", "nytimes.com",
+            "reddit.com", "amazon.com", "yelp.com", "bbc.com", "cnn.com",
+            "mayoclinic.org", "healthline.com", "investopedia.com",
+            "nerdwallet.com", "gov.",
+        )
+        noise_domains = ("youtube.com", "twitter.com", "x.com", "instagram.com",
+                         "tiktok.com", "facebook.com")
+        total_results  = len(results)
+        dominant_hits  = 0
+        for r in results:
+            url = r.get("url", "").lower()
+            if any(d in url for d in HIGH_DA_DOMAINS):
+                dominant_hits += 1
+        # serp_dominance: 0.0 (thin SERP) to 1.0 (fully dominated by authority sites)
+        serp_dominance = round(dominant_hits / max(total_results, 1), 3)
+
         for r in results:
             url     = r.get("url", "")
             title   = r.get("title", "")
@@ -151,8 +171,6 @@ async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
             if not is_long_form(url, snippet):
                 continue
 
-            noise_domains = ("youtube.com", "twitter.com", "x.com", "instagram.com",
-                             "tiktok.com", "facebook.com", "reddit.com", "wikipedia.org")
             if any(d in url.lower() for d in noise_domains):
                 continue
 
@@ -166,13 +184,18 @@ async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
                 "lander_title":    title,
                 "ad_age_days":     90,
                 "data_source":     "ddg_serp",
+                "serp_dominance":  serp_dominance,
                 "vetted_at":       datetime.now().isoformat(),
             }
             # Copy all CPC and metrics fields from commercial_keywords
             for key in ["cpc_usd", "search_volume", "competition", "competition_index",
                         "opportunity_score", "estimated_rpm", "metrics_source",
                         "commercial_category", "confidence", "country_tier",
-                        "efficiency_factor", "processed_at", "cpc_low_usd", "cpc_high_usd"]:
+                        "efficiency_factor", "processed_at", "cpc_low_usd", "cpc_high_usd",
+                        # Discovery context fields — required by Stage 3a (angle_engine.py)
+                        "source_trend", "language_code", "trend_source", "source",
+                        "subreddit", "reddit_score", "original_keyword",
+                        "expansion_seed", "is_branded"]:
                 if key in entry:
                     vetted_entry[key] = entry[key]
             
@@ -267,8 +290,11 @@ if __name__ == "__main__":
         before_zero_filter = len(commercial_keywords)
         commercial_keywords = [
             kw for kw in commercial_keywords
-            if (kw.get("vertical", "general") in HIGH_VALUE_VERTICALS
-                and kw.get("confidence", "") in ("high", "medium"))
+            if (
+                (kw.get("vertical", "general") in HIGH_VALUE_VERTICALS
+                 or kw.get("commercial_category", "general") in HIGH_VALUE_VERTICALS)
+                and kw.get("confidence", "") in ("high", "medium")
+            )
         ]
         dropped_zero = before_zero_filter - len(commercial_keywords)
         if dropped_zero > 0:
@@ -280,6 +306,21 @@ if __name__ == "__main__":
             OUTPUT.write_text("[]")
             print(f"✅ Vetting complete: 0 opportunities (no actionable keywords) → {OUTPUT.name}")
             raise SystemExit(0)
+
+    # Deduplicate by (keyword, country) before SERP calls — saves DDG/Brave quota.
+    # Keep the first occurrence (preserves ordering from prior sort/filter).
+    _seen_kw_country = set()
+    _deduped = []
+    for kw in commercial_keywords:
+        _key = (kw.get("keyword", "").strip().lower(), kw.get("country", "").strip().upper())
+        if _key not in _seen_kw_country:
+            _seen_kw_country.add(_key)
+            _deduped.append(kw)
+    _dedup_dropped = len(commercial_keywords) - len(_deduped)
+    if _dedup_dropped > 0:
+        print(f"  [Dedup] Removed {_dedup_dropped} duplicate kw+country pairs "
+              f"({len(commercial_keywords)} → {len(_deduped)})")
+    commercial_keywords = _deduped
 
     # Cap at 2000 keywords to keep vetting within the 3600s heartbeat timeout.
     # At 8s DDG timeout × 2000 kw / 15 concurrent ≈ 1067s worst-case.

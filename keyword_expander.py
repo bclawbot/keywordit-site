@@ -23,15 +23,12 @@
 
 import json
 import os
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
 
-BASE      = Path("/Users/newmac/.openclaw/workspace")
+BASE      = Path(__file__).resolve().parent
 ENV_FILE  = Path.home() / ".openclaw" / ".env"
-sys.path.insert(0, str(BASE))
-
 from country_config import COUNTRY_CONFIG, DEFAULT_COUNTRY
 
 # ── Load .env ─────────────────────────────────────────────────────────────────
@@ -126,6 +123,72 @@ _last_call_time      = 0.0
 # Max keywords per call (Google accepts up to 20 seed keywords per request)
 MAX_SEEDS_PER_CALL = 20
 
+# True  = allow test-account / Google Suggest data (CPC=0, competition=UNSPECIFIED)
+#         through as Bucket B.  Set False only when the developer token has
+#         Basic/Standard access and real CPC data flows.
+LENIENT_PREFILTER = True
+
+
+# ── Google Suggest fallback (no auth required) ────────────────────────────────
+
+def _expand_via_suggest(seeds: list, country: str) -> list:
+    """
+    Expand seed keywords using Google Suggest autocomplete.
+    Returns raw idea dicts compatible with _passes_prefilter / classify_keyword.
+    avg_monthly_searches is set to -1 (sentinel = "unknown, came from trend keyword").
+    Used when Google Ads API is unavailable (test developer token + no test account).
+    """
+    import urllib.request
+    import urllib.parse
+
+    # Map country code to Google hl param (best-effort)
+    LANG_MAP = {
+        "US": "en", "GB": "en", "AU": "en", "CA": "en", "IE": "en",
+        "NZ": "en", "ZA": "en", "IN": "en", "PH": "en", "SG": "en",
+        "MY": "en", "NG": "en", "KE": "en", "HK": "en", "TW": "en",
+        "DE": "de", "AT": "de", "CH": "de",
+        "FR": "fr", "BE": "fr",
+        "ES": "es", "MX": "es", "AR": "es", "CO": "es", "CL": "es", "PE": "es",
+        "JP": "ja", "KR": "ko", "BR": "pt-BR", "PT": "pt",
+        "NL": "nl", "IT": "it", "PL": "pl", "RO": "ro", "HU": "hu",
+        "CZ": "cs", "GR": "el", "TR": "tr", "TH": "th", "VN": "vi",
+        "ID": "id", "UA": "uk", "IL": "iw", "EG": "ar", "SA": "ar",
+        "SE": "sv", "NO": "no", "DK": "da", "FI": "fi",
+    }
+
+    results = []
+    hl = LANG_MAP.get(country.upper(), "en")
+    gl = country.lower()
+
+    for seed in seeds:
+        # Truncate very long seeds (news headlines) to first 8 words for Suggest
+        query = " ".join(seed.split()[:8]) if len(seed) > 80 else seed
+        url = (
+            "https://suggestqueries.google.com/complete/search"
+            f"?client=firefox&q={urllib.parse.quote(query)}&hl={hl}&gl={gl}"
+        )
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                suggestions = data[1] if len(data) > 1 else []
+                for s in suggestions:
+                    if isinstance(s, str) and s.strip():
+                        results.append({
+                            "text":                 s.strip(),
+                            "avg_monthly_searches": -1,        # unknown
+                            "competition":          "UNSPECIFIED",
+                            "competition_index":    0,
+                            "cpc_low":              0.0,
+                            "cpc_high":             0.0,
+                            "estimated_cpc":        0.0,
+                            "monthly_searches":     [],
+                        })
+        except Exception as e:
+            print(f"  [keyword_expander] suggest error [{country}] '{seed}': {e}")
+
+    return results
+
 
 # ── Core expansion function ───────────────────────────────────────────────────
 
@@ -219,25 +282,31 @@ def _is_branded(text: str) -> bool:
 
 def _passes_prefilter(idea: dict, country: str) -> bool:
     """
-    Pre-filter before LLM or DataForSEO:
-    - CPC > 0
-    - volume >= country min_volume
-    - competition is known (not UNSPECIFIED)
-    - not branded
-    - 2+ words
+    Pre-filter before LLM or DataForSEO.
+    In LENIENT_PREFILTER mode (test token / Suggest fallback), CPC=0 and
+    UNSPECIFIED competition are allowed through; volume=-1 (unknown) also passes.
+    In strict mode, all gates are enforced.
     """
     cfg = COUNTRY_CONFIG.get(country.upper(), DEFAULT_COUNTRY)
 
-    if idea["estimated_cpc"] <= 0:
-        return False
-    if idea["avg_monthly_searches"] < cfg["min_volume"]:
-        return False
-    if idea["competition"] == "UNSPECIFIED":
-        return False
+    # Always enforce: branded check and minimum word count
     if _is_branded(idea["text"]):
         return False
     if len(idea["text"].split()) < 2:
         return False
+
+    if LENIENT_PREFILTER:
+        # avg_monthly_searches == -1 means "unknown" (Suggest result) — let it through
+        if idea["avg_monthly_searches"] != -1 and idea["avg_monthly_searches"] < cfg["min_volume"]:
+            return False
+    else:
+        if idea["estimated_cpc"] <= 0:
+            return False
+        if idea["avg_monthly_searches"] < cfg["min_volume"]:
+            return False
+        if idea["competition"] == "UNSPECIFIED":
+            return False
+
     return True
 
 
@@ -248,28 +317,31 @@ def classify_keyword(idea: dict, country: str) -> str:
     Returns 'A', 'B', or 'C'.
 
     Bucket A: Google says it's golden — skip DataForSEO entirely
-    Bucket B: Promising but needs DataForSEO validation
+    Bucket B: Promising but needs DataForSEO validation (also: Suggest / test-account results)
     Bucket C: Discard
     """
     cfg = COUNTRY_CONFIG.get(country.upper(), DEFAULT_COUNTRY)
     min_cpc = cfg["min_cpc"]
 
-    if idea["estimated_cpc"] <= 0 or idea["avg_monthly_searches"] < cfg["min_volume"]:
-        return "C"
-    if idea["competition"] == "UNSPECIFIED":
-        return "C"
+    # In strict mode, enforce hard volume / CPC / competition gates
+    if not LENIENT_PREFILTER:
+        if idea["estimated_cpc"] <= 0 or idea["avg_monthly_searches"] < cfg["min_volume"]:
+            return "C"
+        if idea["competition"] == "UNSPECIFIED":
+            return "C"
+    else:
+        # Lenient: only discard known-zero volume (not -1 sentinel)
+        if idea["avg_monthly_searches"] != -1 and idea["avg_monthly_searches"] < cfg["min_volume"]:
+            return "C"
 
-    # Bucket A: high-confidence — Google competition_index ≥ 70, CPC ≥ 2× min, volume ≥ 2× min
+    # Bucket A: high-confidence real data (won't fire for test/suggest results since CPC=0)
     if (idea["competition_index"] >= 70
             and idea["estimated_cpc"] >= min_cpc * 2
             and idea["avg_monthly_searches"] >= cfg["min_volume"] * 2):
         return "A"
 
-    # Bucket B: CPC > 0 but doesn't meet the A threshold
-    if idea["estimated_cpc"] > 0:
-        return "B"
-
-    return "C"
+    # Bucket B: everything that passed — includes CPC=0 / UNSPECIFIED (Suggest / test data)
+    return "B"
 
 
 # ── Main expansion entry point ────────────────────────────────────────────────
@@ -287,16 +359,7 @@ def expand(trends: list) -> tuple:
       google_competition_index, monthly_search_history, is_branded,
       metrics_source, needs_dataforseo_validation
     """
-    if not check_credentials():
-        return [], []
-
-    try:
-        client = _build_client()
-    except Exception as e:
-        print(f"  [keyword_expander] Failed to build GoogleAdsClient: {e}")
-        return [], []
-
-    # Group seeds by (country, geo_id, lang_id)
+    # Group seeds by country (for both Google Ads and Suggest paths)
     by_locale: dict = {}
     for trend in trends:
         seed    = trend.get("term") or trend.get("keyword") or trend.get("title", "")
@@ -313,54 +376,106 @@ def expand(trends: list) -> tuple:
     api_calls = 0
     errors = 0
 
-    for (country, geo_id, lang_id), seeds in by_locale.items():
-        # Batch seeds: up to MAX_SEEDS_PER_CALL per API call
-        for i in range(0, len(seeds), MAX_SEEDS_PER_CALL):
-            batch = seeds[i : i + MAX_SEEDS_PER_CALL]
-            try:
-                ideas = _expand_batch(client, batch, geo_id, lang_id)
-                api_calls += 1
-            except Exception as e:
-                print(f"  [keyword_expander] Error [{country}] batch {i // MAX_SEEDS_PER_CALL + 1}: {e}")
-                errors += 1
-                continue
+    # ── Try Google Ads Keyword Planner first ──────────────────────────────────
+    use_suggest_fallback = False
+    client = None
 
-            total_ideas += len(ideas)
+    if check_credentials():
+        try:
+            client = _build_client()
+        except Exception as e:
+            print(f"  [keyword_expander] Failed to build GoogleAdsClient: {e}")
+            use_suggest_fallback = True
+    else:
+        use_suggest_fallback = True
 
-            for idea in ideas:
-                if not _passes_prefilter(idea, country):
+    if not use_suggest_fallback:
+        for (country, geo_id, lang_id), seeds in by_locale.items():
+            for i in range(0, len(seeds), MAX_SEEDS_PER_CALL):
+                batch = seeds[i : i + MAX_SEEDS_PER_CALL]
+                try:
+                    ideas = _expand_batch(client, batch, geo_id, lang_id)
+                    api_calls += 1
+                except Exception as e:
+                    err = str(e)
+                    # Test token against production account → switch to Suggest for the rest
+                    if "DEVELOPER_TOKEN_NOT_APPROVED" in err or "developer token" in err.lower():
+                        print(f"  [keyword_expander] Google Ads test-token restriction — switching to Suggest fallback")
+                        use_suggest_fallback = True
+                        break
+                    print(f"  [keyword_expander] Error [{country}] batch {i // MAX_SEEDS_PER_CALL + 1}: {e}")
+                    errors += 1
                     continue
 
-                total_passed += 1
-                bucket = classify_keyword(idea, country)
-                if bucket == "C":
-                    continue
+                total_ideas += len(ideas)
 
-                record = {
-                    "keyword":                idea["text"],
-                    "country":                country,
-                    "expansion_seed":         batch[0] if len(batch) == 1 else ", ".join(batch[:3]),
-                    "google_cpc_low":         idea["cpc_low"],
-                    "google_cpc_high":        idea["cpc_high"],
-                    "google_estimated_cpc":   idea["estimated_cpc"],
-                    "google_volume":          idea["avg_monthly_searches"],
-                    "google_competition":     idea["competition"],
-                    "google_competition_index": idea["competition_index"],
-                    "monthly_search_history": idea["monthly_searches"],
-                    "is_branded":             _is_branded(idea["text"]),
-                    "metrics_source":         "google_keyword_planner",
-                    "needs_dataforseo_validation": bucket == "B",
-                    "source":                 "google_keyword_planner",
-                    "fetched_at":             datetime.now().isoformat(),
-                }
+                for idea in ideas:
+                    if not _passes_prefilter(idea, country):
+                        continue
+                    total_passed += 1
+                    bucket = classify_keyword(idea, country)
+                    if bucket == "C":
+                        continue
+                    record = {
+                        "keyword":                idea["text"],
+                        "country":                country,
+                        "expansion_seed":         batch[0] if len(batch) == 1 else ", ".join(batch[:3]),
+                        "google_cpc_low":         idea["cpc_low"],
+                        "google_cpc_high":        idea["cpc_high"],
+                        "google_estimated_cpc":   idea["estimated_cpc"],
+                        "google_volume":          idea["avg_monthly_searches"],
+                        "google_competition":     idea["competition"],
+                        "google_competition_index": idea["competition_index"],
+                        "monthly_search_history": idea["monthly_searches"],
+                        "is_branded":             _is_branded(idea["text"]),
+                        "metrics_source":         "google_keyword_planner",
+                        "needs_dataforseo_validation": bucket == "B",
+                        "source":                 "google_keyword_planner",
+                        "fetched_at":             datetime.now().isoformat(),
+                    }
+                    if bucket == "A":
+                        bucket_a.append(record)
+                    else:
+                        bucket_b.append(record)
+            if use_suggest_fallback:
+                break
 
-                if bucket == "A":
-                    bucket_a.append(record)
-                else:
+    # ── Google Suggest fallback (no auth, no CPC data) ────────────────────────
+    if use_suggest_fallback or (api_calls == 0 and not bucket_a and not bucket_b):
+        print(f"  [keyword_expander] Using Google Suggest fallback (LENIENT_PREFILTER mode)")
+        for (country, geo_id, lang_id), seeds in by_locale.items():
+            for seed in seeds:
+                ideas = _expand_via_suggest([seed], country)
+                total_ideas += len(ideas)
+                for idea in ideas:
+                    if not _passes_prefilter(idea, country):
+                        continue
+                    total_passed += 1
+                    bucket = classify_keyword(idea, country)
+                    if bucket == "C":
+                        continue
+                    record = {
+                        "keyword":                idea["text"],
+                        "country":                country,
+                        "expansion_seed":         seed,
+                        "google_cpc_low":         0.0,
+                        "google_cpc_high":        0.0,
+                        "google_estimated_cpc":   0.0,
+                        "google_volume":          None,
+                        "google_competition":     "UNSPECIFIED",
+                        "google_competition_index": 0,
+                        "monthly_search_history": [],
+                        "is_branded":             _is_branded(idea["text"]),
+                        "metrics_source":         "google_suggest",
+                        "needs_dataforseo_validation": True,
+                        "source":                 "google_suggest",
+                        "fetched_at":             datetime.now().isoformat(),
+                    }
                     bucket_b.append(record)
 
     discarded = total_ideas - total_passed
-    print(f"[keyword_expander] {api_calls} API calls "
+    source_label = "Suggest" if use_suggest_fallback else "Keyword Planner"
+    print(f"[keyword_expander] [{source_label}] {api_calls} API calls "
           f"({errors} errors) → {total_ideas} ideas → "
           f"pre-filter kept {total_passed} ({discarded} discarded) → "
           f"A={len(bucket_a)}, B={len(bucket_b)}")

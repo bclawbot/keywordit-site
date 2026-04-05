@@ -12,19 +12,11 @@ to each expansion dict. Returns the same list with those fields populated.
 """
 
 import json
-import os
 import re
 import sys
 import time
-import requests
 
-# ── Config ──────────────────────────────────────────────────────────────────
-LITELLM_URL     = os.environ.get("LITELLM_URL",    "http://localhost:4000/v1/chat/completions")
-LITELLM_API_KEY = os.environ.get("LITELLM_API_KEY", "sk-dwight-local")
-LITELLM_MODEL   = os.environ.get("LITELLM_MODEL",   "dwight-primary")
-
-OLLAMA_URL      = "http://localhost:11434/api/generate"
-OLLAMA_MODEL    = os.environ.get("OLLAMA_MODEL", "qwen3:14b")
+from llm_client import call as _llm_call, LLMError
 
 PLAUSIBILITY_BATCH_SIZE = 50   # expansions per LLM call
 MAX_RETRIES             = 3
@@ -62,42 +54,6 @@ def _strip_code_fences(text: str) -> str:
     return re.sub(r'^```json?\n?|\n?```$', '', text.strip(), flags=re.MULTILINE)
 
 
-def _call_litellm(user_content: str) -> str:
-    resp = requests.post(
-        LITELLM_URL,
-        headers={"Authorization": f"Bearer {LITELLM_API_KEY}"},
-        json={
-            "model": LITELLM_MODEL,
-            "messages": [
-                {"role": "system", "content": _PLAUSIBILITY_SYSTEM},
-                {"role": "user",   "content": user_content},
-            ],
-            "temperature": 0.1,
-            "max_tokens":  3000,
-        },
-        timeout=120,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
-
-
-def _call_ollama(user_content: str) -> str:
-    prompt = f"{_PLAUSIBILITY_SYSTEM}\n\n{user_content}\n\n/no_think"
-    resp = requests.post(
-        OLLAMA_URL,
-        json={
-            "model":      OLLAMA_MODEL,
-            "prompt":     prompt,
-            "stream":     False,
-            "keep_alive": -1,
-            "options": {"num_ctx": 32768, "temperature": 0.1, "num_predict": 3000},
-        },
-        timeout=180,
-    )
-    resp.raise_for_status()
-    return resp.json().get("response", "")
-
-
 def check_batch(expansions: list) -> list:
     """
     Check plausibility of expanded keywords.
@@ -129,12 +85,14 @@ def check_batch(expansions: list) -> list:
 
         for attempt in range(MAX_RETRIES):
             try:
-                try:
-                    raw = _call_litellm(user_content)
-                except Exception as litellm_err:
-                    print(f"  [plausibility] LiteLLM failed ({litellm_err}), trying Ollama…",
-                          file=sys.stderr)
-                    raw = _call_ollama(user_content)
+                raw = _llm_call(
+                    [{"role": "system", "content": _PLAUSIBILITY_SYSTEM},
+                     {"role": "user", "content": user_content}],
+                    max_tokens=3000,
+                    temperature=0.1,
+                    timeout="normal",
+                    stage="plausibility_checker",
+                )
 
                 cleaned = _strip_code_fences(raw)
                 cleaned = re.sub(r'<think>.*?</think>', '', cleaned, flags=re.DOTALL).strip()
@@ -145,7 +103,7 @@ def check_batch(expansions: list) -> list:
 
                 break
 
-            except Exception as e:
+            except (Exception, LLMError) as e:
                 last_error = e
                 if attempt < MAX_RETRIES - 1:
                     time.sleep(RETRY_DELAY)
@@ -162,6 +120,8 @@ def check_batch(expansions: list) -> list:
         # Align results back to expansion dicts
         result_map = {}
         for item in parsed:
+            if not isinstance(item, dict):
+                continue
             key = (item.get("source_keyword", ""), item.get("expanded_keyword", ""))
             result_map[key] = item
 

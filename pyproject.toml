@@ -1,0 +1,59 @@
+[project]
+name = "openclaw"
+version = "0.1.0"
+description = "OpenClaw/Dwight — media buying arbitrage research pipeline"
+requires-python = ">=3.12"
+dependencies = [
+    # HTTP clients
+    "requests>=2.32",
+    "httpx>=0.28",
+    "aiohttp>=3.13",
+    # Telegram bot
+    "python-telegram-bot>=22.6",
+    # LLM & AI
+    "smolagents>=1.24",
+    # Google Ads
+    "google-ads>=29.0",
+    "google-auth-oauthlib>=1.0",
+    # Data
+    "lancedb>=0.29",
+    "pyarrow>=23.0",
+    "pandas>=2.3",
+    "pydantic>=2.12",
+    # Web scraping
+    "beautifulsoup4>=4.14",
+    "duckduckgo_search>=8.1",
+    "playwright>=1.58",
+    # Web servers
+    "flask>=3.1",
+    "flask-cors>=6.0",
+    # Config & env
+    "python-dotenv>=1.2",
+    "pyyaml>=6.0",
+    # Forecasting
+    "neuralprophet>=0.8",
+    # Resilience
+    "tenacity>=9.1",
+    # MCP
+    "mcp>=1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.11",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "."]
+python_files = ["test_*.py"]
+markers = [
+    "integration: requires live API credentials (deselect with -m 'not integration')",
+    "slow: takes more than 30 seconds",
+]
+asyncio_mode = "auto"
+
+[tool.ruff]
+# Main config in ruff.toml — this section is for tools that read pyproject.toml
+extend = "ruff.toml"

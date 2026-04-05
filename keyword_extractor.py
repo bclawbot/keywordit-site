@@ -27,11 +27,11 @@ from concurrent.futures import ThreadPoolExecutor as _ThreadPoolExecutor, as_com
 from datetime import datetime
 from pathlib import Path
 
-import sys
-
 import requests
 
-BASE      = Path("/Users/newmac/.openclaw/workspace")
+from normalize import normalize_keyword as _normalize_keyword_raw
+
+BASE      = Path(__file__).resolve().parent
 INPUT     = BASE / "explosive_trends.json"
 OUTPUT    = BASE / "commercial_keywords.json"
 ERROR_LOG = BASE / "error_log.jsonl"
@@ -39,7 +39,6 @@ EXPANDED_RAW = BASE / "expanded_keywords.json"   # output of keyword_expander.py
 EXPANDED_TRANSFORMED = BASE / "transformed_keywords.json"  # output of commercial_keyword_transformer.py
 EXPANDED  = EXPANDED_TRANSFORMED if EXPANDED_TRANSFORMED.exists() else EXPANDED_RAW
 
-sys.path.insert(0, str(BASE))
 from country_config import (
     COUNTRY_CONFIG, DEFAULT_COUNTRY, ASSUMED_AD_CTR,
     CACHE_TTL_HOURS, DAILY_API_BUDGET, HIGH_CONFIDENCE_PRIORITY, ONCE_PER_DAY_DFS,
@@ -75,39 +74,17 @@ from cpc_cache import (
 #
 # Original keyword is preserved in "original_keyword" for display/reporting.
 
-_RE_YEAR    = re.compile(r'\s+\b20\d{2}\b\s*$')
-_RE_ARTICLE = re.compile(r'^(the|a|an)\s+', re.IGNORECASE)
-_RE_FILLER  = re.compile(
-    r'\s+(online|near me|for free|review|reviews|today|now|'
-    r'here|guide|tutorial|explained|reddit|quora)\s*$',
-    re.IGNORECASE,
-)
-_RE_PUNCT   = re.compile(r'[^\w\s-]')
-_DFS_MAX_WORDS = 5
-
-
 def _normalize_for_dfs(keyword: str) -> str:
-    kw = keyword.lower().strip()
-    kw = _RE_YEAR.sub('', kw)
-    kw = _RE_ARTICLE.sub('', kw)
-    kw = _RE_FILLER.sub('', kw)
-    kw = _RE_PUNCT.sub(' ', kw)
-    kw = re.sub(r'\s+', ' ', kw).strip()
-    words = kw.split()
-    return ' '.join(words[:_DFS_MAX_WORDS]) if len(words) > _DFS_MAX_WORDS else kw
+    return _normalize_keyword_raw(
+        keyword, strip_year=True, strip_articles=True, strip_filler=True,
+        strip_punctuation=True, max_words=5,
+    )
 
 
-# ── LLM ────────────────────────────────────────────────────────────────────────
+# ── LLM — centralized client ───────────────────────────────────────────────────
 LLM_BATCH_SIZE = 8    # trends per LLM call
 
-# Direct backends — bypass LiteLLM proxy (avoids 90s wasted on proxy restarts)
-OLLAMA_URL     = "http://localhost:11434/api/chat"
-OLLAMA_MODEL   = "qwen3:14b"
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "")
-OPENROUTER_PIPELINE_MODEL = "deepseek/deepseek-v3.2"
-_OLLAMA_TIMEOUT = 180  # seconds — local model; allow for queue wait when bot uses Ollama concurrently
-_CLOUD_TIMEOUT  = 90   # seconds — cloud API
+from llm_client import call as _llm_call, LLMError
 
 # ── DataForSEO ─────────────────────────────────────────────────────────────────
 DFS_LOGIN    = os.environ.get("DATAFORSEO_LOGIN", "")
@@ -226,56 +203,21 @@ def _strip_code_fences(text: str) -> str:
 
 def _llm_post_direct(user_message: str) -> dict:
     """
-    Call LLM directly: Ollama first, OpenRouter as fallback.
-    Returns OpenAI-compatible response dict.
-    Bypasses LiteLLM proxy — avoids 90s wasted per batch when proxy is killed by macOS.
+    Call LLM via centralized client (LiteLLM → Ollama → OpenRouter).
+    Returns OpenAI-compatible response dict for caller compatibility.
     """
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user",   "content": user_message},
     ]
-
-    # ── Tier 1: Ollama (local, fastest) ─────────────────────────────────────
-    try:
-        r = requests.post(
-            OLLAMA_URL,
-            json={
-                "model":    OLLAMA_MODEL,
-                "messages": messages,
-                "stream":   False,
-                "think":    False,
-                "options":  {"num_ctx": 32768, "temperature": 0.3},
-            },
-            timeout=_OLLAMA_TIMEOUT,
-        )
-        r.raise_for_status()
-        content = r.json()["message"]["content"]
-        if content:
-            return {"choices": [{"message": {"content": content}}]}
-    except Exception as e:
-        print(f"  ⚠️  Ollama unavailable ({type(e).__name__}) — trying OpenRouter…")
-
-    # ── Tier 2: OpenRouter (cloud fallback) ─────────────────────────────────
-    if not OPENROUTER_KEY:
-        raise requests.exceptions.ConnectionError("Ollama failed and OPENROUTER_API_KEY not set")
-    r = requests.post(
-        OPENROUTER_URL,
-        headers={
-            "Authorization": f"Bearer {OPENROUTER_KEY}",
-            "HTTP-Referer":  "https://github.com/openclaw",
-            "X-Title":       "OpenClaw-Pipeline",
-            "Content-Type":  "application/json",
-        },
-        json={
-            "model":       OPENROUTER_PIPELINE_MODEL,
-            "messages":    messages,
-            "temperature": 0.3,
-            "max_tokens":  4096,
-        },
-        timeout=_CLOUD_TIMEOUT,
+    content = _llm_call(
+        messages,
+        max_tokens=4096,
+        temperature=0.3,
+        timeout="generous",
+        stage="keyword_extractor/llm",
     )
-    r.raise_for_status()
-    return r.json()
+    return {"choices": [{"message": {"content": content}}]}
 
 
 def llm_extract_keywords(batch: list, _retry: bool = True) -> list:
@@ -324,8 +266,8 @@ def llm_extract_keywords(batch: list, _retry: bool = True) -> list:
             _log_error("keyword_extractor/llm", "JSON parse failed after retry")
             return []
 
-        except requests.exceptions.Timeout:
-            # On timeout: split batch in half and retry each half once
+        except LLMError:
+            # On total LLM failure: split batch in half and retry each half once
             if _retry and len(batch) > 3:
                 half = len(batch) // 2
                 _log_error("keyword_extractor/llm_retry",
@@ -655,7 +597,7 @@ def dfs_labs_keyword_ideas(seed_objects: list) -> list:
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
-if __name__ == "__main__":
+def main():
     if not INPUT.exists():
         print(f"⚠️  {INPUT} not found — run trends_postprocess.py first")
         raise SystemExit(1)
@@ -1307,3 +1249,7 @@ if __name__ == "__main__":
 
     OUTPUT.write_text(json.dumps(passed, indent=2))
     print(f"✅ Keyword extraction complete: {len(passed)} commercial keywords → {OUTPUT.name}")
+
+
+if __name__ == "__main__":
+    main()
