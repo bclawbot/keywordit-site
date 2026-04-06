@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit · Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 [data-theme="dark"] {
@@ -72,7 +74,6 @@ body {
 [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 [data-theme="light"] .theme-toggle .icon-sun { display: none; }
 [data-theme="light"] .theme-toggle .icon-moon { display: block; }
-}
 
 /* ═══ NAV ═══ */
 .admin-nav {
@@ -371,7 +372,7 @@ body {
     <div class="nav-right">
       <span class="nav-user" id="admin-user-label"></span>
       <button class="btn-nav" onclick="window.location.href='dashboard.html'">Dashboard</button>
-      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
         <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
         <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
       </button>
@@ -552,17 +553,58 @@ function renderRequests() {
   `).join('');
 }
 
+function showPasswordModal(username) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+      <div style="background:var(--surface,#0a0a0c);border:1px solid var(--border,#141418);border-radius:12px;padding:24px;max-width:380px;width:90%;font-family:inherit;">
+        <h3 style="color:var(--text,#e8e8f0);margin-bottom:16px;font-size:15px;">Set password for "${username}"</h3>
+        <div style="position:relative;margin-bottom:12px;">
+          <input type="password" id="modal-pass" placeholder="Enter password" autofocus
+            style="width:100%;padding:10px 40px 10px 12px;background:var(--bg,#020203);border:1px solid var(--border,#141418);border-radius:8px;color:var(--text,#e8e8f0);font-size:14px;font-family:inherit;">
+          <button type="button" onclick="var i=document.getElementById('modal-pass');i.type=i.type==='password'?'text':'password';"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim,#3a3a48);cursor:pointer;font-size:16px;">&#128065;</button>
+        </div>
+        <div id="modal-strength" style="font-size:11px;margin-bottom:16px;color:var(--text-dim,#3a3a48);"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button id="modal-cancel" style="padding:8px 16px;border:1px solid var(--border,#141418);border-radius:8px;background:none;color:var(--text,#e8e8f0);cursor:pointer;">Cancel</button>
+          <button id="modal-ok" style="padding:8px 16px;border:none;border-radius:8px;background:var(--teal,#2dd4bf);color:#000;cursor:pointer;font-weight:600;">Approve</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const inp = document.getElementById('modal-pass');
+    const str = document.getElementById('modal-strength');
+    inp.addEventListener('input', () => {
+      const v = inp.value;
+      if (v.length < 6) str.textContent = 'Too short (min 6 chars)';
+      else if (v.length < 8) { str.textContent = 'Weak'; str.style.color = '#f59e0b'; }
+      else { str.textContent = 'Strong'; str.style.color = '#22c55e'; }
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && inp.value.length >= 6) { overlay.remove(); resolve(inp.value); } });
+    document.getElementById('modal-ok').onclick = () => { if (inp.value.length < 6) { str.textContent = 'Password must be at least 6 characters'; str.style.color = '#ef4444'; return; } overlay.remove(); resolve(inp.value); };
+    document.getElementById('modal-cancel').onclick = () => { overlay.remove(); resolve(null); };
+    overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(null); } });
+    inp.focus();
+  });
+}
+
 async function approveRequest(idx) {
   const requests = getRequests();
   const pending = requests.filter(r => r.status === 'pending');
   const req = pending[idx];
   if (!req) return;
 
-  // Prompt for a password
-  const pass = prompt(`Set password for "${req.username}":`);
+  const pass = await showPasswordModal(req.username);
   if (!pass) return;
 
   const users = getUsers();
+  const existing = users.find(u => u.username === req.username);
+  if (existing) {
+    toast('User "' + req.username + '" already exists');
+    return;
+  }
+
   const passHash = await hashStr(pass);
   users.push({
     username: req.username,
@@ -602,6 +644,10 @@ function declineRequest(idx) {
 function renderUsers() {
   const users = getUsers();
   const tbody = document.getElementById('users-body');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;opacity:.5;">No users</td></tr>';
+    return;
+  }
   tbody.innerHTML = users.map((u, i) => `
     <tr>
       <td class="mono">${esc(u.username)}</td>
@@ -611,7 +657,7 @@ function renderUsers() {
       <td><span class="status-badge status-${u.status}">${u.status.toUpperCase()}</span></td>
       <td class="muted">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
       <td>
-        ${u.username !== 'admin' ? `<button class="btn-delete" onclick="deleteUser(${i})">Remove</button>` : '<span class="muted">protected</span>'}
+        ${u.username !== 'admin' ? `<button class="btn-delete" onclick="deleteUser('${esc(u.username)}')">Remove</button>` : '<span class="muted">protected</span>'}
       </td>
     </tr>
   `).join('');
@@ -648,15 +694,13 @@ async function addUser() {
   renderAll();
 }
 
-function deleteUser(idx) {
-  const users = getUsers();
-  const u = users[idx];
-  if (!u || u.username === 'admin') return;
-  if (!confirm(`Remove user "${u.username}"? This cannot be undone.`)) return;
-  users.splice(idx, 1);
-  setUsers(users);
-  toast(`Removed: ${u.username}`);
-  renderAll();
+function deleteUser(username) {
+  if (!confirm('Remove user "' + username + '"?')) return;
+  let users = getUsers();
+  users = users.filter(u => u.username !== username);
+  localStorage.setItem('keywordit_users', JSON.stringify(users));
+  renderUsers();
+  toast('User removed');
 }
 
 function logout() {
