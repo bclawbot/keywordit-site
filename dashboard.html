@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="KeywordIt — AI-powered media buying arbitrage research dashboard">
+<meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit · Intelligence Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+<link rel="stylesheet" href="shared/base.css">
 <style>
 /* ============================================================
    THEME VARIABLES
@@ -1254,6 +1255,7 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
   <button class="tab-btn" data-tab="performance">Performance</button>
   <button class="tab-btn" data-tab="content">Content Engine</button>
   <button class="tab-btn" data-tab="intel">Intel</button>
+  <button class="tab-btn" data-tab="pipeline">Pipeline</button>
 </nav>
 <script>
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1473,38 +1475,20 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 </div>
 </div><!-- /tab-discovery -->
 
+<script src="shared/theme.js"></script>
+<script src="shared/auth.js"></script>
+<script src="shared/palette.js"></script>
 <script>
 // ═══ AUTH GATE ═══
-(function() {
-  const gate = document.getElementById('auth-gate');
-  const gateMsg = document.getElementById('gate-msg');
-  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
-
-  if (!session || !session.token) {
-    gateMsg.textContent = 'Not authenticated. Redirecting to login...';
-    setTimeout(() => window.location.href = 'login.html', 1200);
-    return;
-  }
-
-  const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-  const user = users.find(u => u.username === session.user && u.status === 'approved');
-
-  if (!user) {
-    gateMsg.textContent = 'Access denied. Redirecting...';
-    localStorage.removeItem('keywordit_session');
-    setTimeout(() => window.location.href = 'login.html', 1200);
-    return;
-  }
-
-  // Authenticated — show dashboard
+requireAuth({ onSuccess: function(s) {
+  var gate = document.getElementById('auth-gate');
   gate.classList.add('hidden');
-
   // Show admin button if admin
-  if (user.role === 'admin') {
-    const adminBtn = document.getElementById('admin-link-btn');
+  if (s.role === 'admin') {
+    var adminBtn = document.getElementById('admin-link-btn');
     if (adminBtn) adminBtn.style.display = '';
   }
-})();
+} });
 
 function signOut() {
   localStorage.removeItem('keywordit_session');
@@ -1514,7 +1498,7 @@ function signOut() {
 
 <script>
 window.OPPORTUNITIES = [];
-window.PIPELINE_META = {"generated_at": "2026-04-06T11:14:25.023489", "total_validated": 4971, "total_scored": 4636, "total_golden": 427, "total_emerging": 3084, "total_unscored": 335, "countries_covered": 47, "last_run_at": "2026-04-06T02:41:44.525810", "run_id": "run_20260406_1114", "metrics_from_google_kp": 4248, "metrics_from_dataforseo": 157, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06"], "accumulated_runs": 14};
+window.PIPELINE_META = {"generated_at": "2026-04-06T17:29:14.148581", "total_validated": 5454, "total_scored": 5119, "total_golden": 540, "total_emerging": 3438, "total_unscored": 335, "countries_covered": 47, "last_run_at": "2026-04-06T17:10:25.158234", "run_id": "run_20260406_1729", "metrics_from_google_kp": 4731, "metrics_from_dataforseo": 157, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06"], "accumulated_runs": 14};
 window.ANGLES = {};
 
 (function() {
@@ -1757,24 +1741,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ===== THEME =====
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('keywordit-theme', next);
-  // Rebuild charts with new colors
-  if (S.chartsOpen) {
-    Object.values(S.charts).forEach(c => c.destroy());
-    S.charts = {};
-    buildCharts();
-    updateCharts();
-  }
-}
-// Restore theme on load
+// ===== THEME (chart rebuild on theme change) =====
+// theme.js handles the actual toggle; we just rebuild charts when it changes
 (function() {
-  const saved = localStorage.getItem('keywordit-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  var observer = new MutationObserver(function() {
+    if (S.chartsOpen) {
+      Object.values(S.charts).forEach(function(c) { c.destroy(); });
+      S.charts = {};
+      buildCharts();
+      updateCharts();
+    }
+  });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 })();
 
 // ===== COLUMN DROPDOWN =====
@@ -2769,8 +2747,7 @@ function bindEvents() {
     }
   });
 
-  // Theme
-  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  // Theme toggle is handled by shared/theme.js
 
   // Drawer
   document.getElementById('drawer-close-btn').addEventListener('click', closeDrawer);
@@ -2800,11 +2777,21 @@ function bindEvents() {
 
 })();
 </script>
+<script>
+Palette.register([
+  { id: 'dash-golden', label: 'Show Golden Only', shortcut: 'g', category: 'Filters', action: function() { var cb = document.querySelector('input[value="GOLDEN_OPPORTUNITY"]'); if(cb && !cb.checked) { cb.checked = true; onFilterChange(); } } },
+  { id: 'dash-clear-filters', label: 'Clear All Filters', category: 'Filters', action: function() { var btn = document.getElementById('reset-all-filters'); if(btn) btn.click(); } },
+  { id: 'dash-export-csv', label: 'Export as CSV', category: 'Actions', action: function() { if(typeof exportCSV === 'function') exportCSV(); } },
+  { id: 'dash-export-json', label: 'Export as JSON', category: 'Actions', action: function() { if(typeof exportJSON === 'function') exportJSON(); } },
+  { id: 'dash-toggle-charts', label: 'Toggle Charts', shortcut: 'c', category: 'Actions', action: function() { var btn = document.getElementById('charts-toggle'); if(btn) btn.click(); } },
+  { id: 'dash-toggle-filters', label: 'Toggle Filter Panel', shortcut: 'f', category: 'Actions', action: function() { if(typeof toggleFilterPanel === 'function') toggleFilterPanel(); } },
+]);
+</script>
 <div id="tab-content" class="tab-content">
 <div style="padding:16px">
 <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px">
-<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Keywords Processed</div><div style="font-size:24px;font-weight:700;color:#4caf50">4025</div></div>
-<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Angles Selected</div><div style="font-size:24px;font-weight:700;color:#2196f3">20125</div></div>
+<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Keywords Processed</div><div style="font-size:24px;font-weight:700;color:#4caf50">4175</div></div>
+<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Angles Selected</div><div style="font-size:24px;font-weight:700;color:#2196f3">20875</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Articles Generated</div><div style="font-size:24px;font-weight:700;color:#ff9800">4</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">RAF Compliant</div><div style="font-size:24px;font-weight:700;color:#4caf50">4/4</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Avg Quality Score</div><div style="font-size:24px;font-weight:700;color:#9c27b0">0.78</div></div>
@@ -2824,7 +2811,7 @@ function bindEvents() {
 <tr style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="生命保険">生命保険</td><td style="padding:6px 7px;color:#aaa">hidden_costs</td><td style="padding:6px 7px;color:#aaa">EN</td><td style="padding:6px 7px;text-align:right;color:#ccc">673</td><td style="padding:6px 7px;text-align:right;color:#ff9800">0.62</td><td style="padding:6px 7px;text-align:right;color:#4caf50">LOW</td><td style="padding:6px 7px;color:#888;font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="articles/2026-04-01/生命保険_hidden_costs_1.md">生命保険_hidden_costs_1.md</td></tr>
 <tr style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="生命保険">生命保険</td><td style="padding:6px 7px;color:#aaa">hidden_costs</td><td style="padding:6px 7px;color:#aaa">EN</td><td style="padding:6px 7px;text-align:right;color:#ccc">755</td><td style="padding:6px 7px;text-align:right;color:#4caf50">0.75</td><td style="padding:6px 7px;text-align:right;color:#4caf50">LOW</td><td style="padding:6px 7px;color:#888;font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="articles/2026-04-01/生命保険_hidden_costs.md">生命保険_hidden_costs.md</td></tr>
 </tbody></table>
-<h3 style="margin:24px 0 8px;color:#e0e0e0">Angles Ready to Generate (20122)</h3>
+<h3 style="margin:24px 0 8px;color:#e0e0e0">Angles Ready to Generate (20872)</h3>
 <table style="width:100%;border-collapse:collapse;font-size:12px">
 <thead><tr style="background:#2a2a3e;color:#aaa"><th style="padding:7px;text-align:left">Keyword</th><th style="padding:7px;text-align:left">Angle Type</th><th style="padding:7px;text-align:left">Title</th><th style="padding:7px;text-align:right">CPC</th><th style="padding:7px;text-align:right">Score</th><th style="padding:7px;text-align:left">Signal</th><th style="padding:7px;text-align:center">Generate</th></tr></thead><tbody>
 <tr id="angle-row-ashar-hari-ini_eligibility_explainer" style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ashar hari ini">ashar hari ini</td><td style="padding:6px 7px;color:#90caf9">eligibility_explainer</td><td style="padding:6px 7px;color:#aaa;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ashar hari ini – 2026">ashar hari ini – 2026</td><td style="padding:6px 7px;text-align:right;color:#ccc">$4.12</td><td style="padding:6px 7px;text-align:right;color:#ccc">0.51</td><td style="padding:6px 7px;color:#607d8b">keyword_expansion</td><td style="padding:6px 7px;text-align:center"><button id="gen-btn-ashar-hari-ini_eligibility_explainer" class="gen-btn" data-angle-id="ashar-hari-ini_eligibility_explainer" data-keyword="ashar hari ini" data-vertical="unknown" data-language="id" data-country="ID" data-cpc="4.12" data-angle-type="eligibility_explainer" data-angle-title="ashar hari ini – 2026" data-rsoc="0.5147" data-signal="" onclick="generateArticle(this)" style="cursor:pointer;background:#1565c0;color:#fff;border:none;border-radius:4px;padding:4px 10px;font-size:11px;white-space:nowrap">Generate</button></td></tr><tr id="article-row-ashar-hari-ini_eligibility_explainer" style="display:none"><td colspan="7" style="padding:0"><details open style="background:#111;padding:12px;border-left:3px solid #1565c0"><summary style="cursor:pointer;color:#90caf9;font-size:12px;user-select:none">Article: ashar hari ini – 2026</summary><pre id="article-text-ashar-hari-ini_eligibility_explainer" style="color:#ccc;white-space:pre-wrap;font-size:12px;margin:8px 0 0;font-family:monospace">Waiting...</pre></details></td></tr>
@@ -3116,9 +3103,9 @@ document.addEventListener("click", function(e) {
 <div class="exp-header">
 <h2>Experimental — Template Multiplier Output</h2>
 <div class="exp-stats">
-This cycle: <span>206</span> expansions from <span>45</span> source keywords<br>
-CPC Confirmed: <span>40</span> (19.4%) | CPC Inherited: <span>166</span> (80.6%)<br>
-Expansion budget used: <span>206</span>/500
+This cycle: <span>209</span> expansions from <span>46</span> source keywords<br>
+CPC Confirmed: <span>42</span> (20.1%) | CPC Inherited: <span>167</span> (79.9%)<br>
+Expansion budget used: <span>209</span>/500
 </div></div>
 <div class="exp-filters">
 <button class="exp-filter-btn active" data-exp-filter="all">All</button>
@@ -3503,10 +3490,18 @@ Expansion budget used: <span>206</span>/500
 <li data-cpc-track="confirmed"><span class="kw-name">VA breast pump</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
 <li data-cpc-track="inherited"><span class="kw-name">Medicaid breast pump</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$0.37e</span></li>
 </ul></div>
+<div class="tmpl-group">
+<div class="tmpl-pattern">TEMPLATE: {government_program} good insurance</div>
+<div class="tmpl-source">Source: is tricare good insurance — <span class="revenue">— proven revenue</span></div>
+<ul class="tmpl-expansions" data-template="{government_program} good insurance">
+<li data-cpc-track="confirmed"><span class="kw-name">Medicare good insurance</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">VA good insurance</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Medicaid good insurance</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$0.37e</span></li>
+</ul></div>
 </div>
 <div class="exp-section"><div class="exp-section-title">Entity Scoreboard</div>
 <table class="entity-table"><thead><tr><th>Entity</th><th>Type</th><th>Status</th><th>Expansions</th><th>Est. Rev</th></tr></thead><tbody>
-<tr><td>VA</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>3</td><td>—</td></tr>
+<tr><td>VA</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>4</td><td>—</td></tr>
 <tr><td>Sam&#39;s Club</td><td>membership_retailer</td><td><span class="entity-status-proven">PROVEN</span></td><td>16</td><td>—</td></tr>
 <tr><td>Sam&#39;s</td><td>membership_retailer</td><td><span class="entity-status-proven">PROVEN</span></td><td>16</td><td>—</td></tr>
 <tr><td>Costco</td><td>membership_retailer</td><td><span class="entity-status-proven">PROVEN</span></td><td>14</td><td>—</td></tr>
@@ -3516,7 +3511,7 @@ Expansion budget used: <span>206</span>/500
 <tr><td>DVA</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>4</td><td>—</td></tr>
 <tr><td>Walmart</td><td>membership_retailer</td><td><span class="entity-status-proven">PROVEN</span></td><td>13</td><td>—</td></tr>
 <tr><td>SSI</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>4</td><td>—</td></tr>
-<tr><td>Medicare</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>5</td><td>—</td></tr>
+<tr><td>Medicare</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>6</td><td>—</td></tr>
 <tr><td>Section 8</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>4</td><td>—</td></tr>
 <tr><td>HUD VASH</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>5</td><td>—</td></tr>
 <tr><td>BJ&#39;s Wholesale</td><td>membership_retailer</td><td><span class="entity-status-test">TEST</span></td><td>9</td><td>—</td></tr>
@@ -3534,7 +3529,7 @@ Expansion budget used: <span>206</span>/500
 <tr><td>Budget Direct</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>16</td><td>—</td></tr>
 <tr><td>Target</td><td>membership_retailer</td><td><span class="entity-status-test">TEST</span></td><td>6</td><td>—</td></tr>
 <tr><td>Kroger</td><td>membership_retailer</td><td><span class="entity-status-test">TEST</span></td><td>2</td><td>—</td></tr>
-<tr><td>Medicaid</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>3</td><td>—</td></tr>
+<tr><td>Medicaid</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>4</td><td>—</td></tr>
 <tr><td>SNAP</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>2</td><td>—</td></tr>
 <tr><td>WIC</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>2</td><td>—</td></tr>
 <tr><td>CHIP</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>1</td><td>—</td></tr>
@@ -4511,6 +4506,79 @@ Total keywords in dataset: <span>174,631</span> | Matched to pipeline: <span>0</
 <span style="background:#313244;color:#cdd6f4;padding:6px 12px;border-radius:6px;font-size:13px;">jobs <b style="color:#cba6f7;">10</b></span>
 </div>
 </div>
+<div class="tab-panel" id="tab-pipeline" style="display:none;">
+<div class="pipeline-grid">
+<div class="pipeline-card">
+<div class="pipeline-card-title">Pipeline Status</div>
+<div class="pipeline-status-value error">Error</div>
+<div class="pipeline-meta">
+<div>Last run: <span>2026-04-06T15:25:13</span></div>
+<div>Duration: <span>—</span></div>
+<div>Next scheduled: <span>21:25</span></div>
+</div>
+<button class="btn-run-now" id="btn-run-now" onclick="triggerPipeline()">Run Now</button>
+</div>
+<div class="pipeline-card">
+<div class="pipeline-card-title">Stage Timeline</div>
+<ul class="stage-timeline">
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Subreddit Discovery</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Reddit Intelligence</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Trends Scraper</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Trends Postprocess</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Keyword Expander</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Keyword Extractor</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Commercial Keyword Transformer</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Vetting</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Validation</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Angle Engine</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Dashboard Builder</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Reflection</span></li>
+</ul></div>
+<div class="pipeline-card" style="grid-column:span 2;">
+<div class="pipeline-card-title">Last 7 Runs</div>
+<div class="run-history">
+<div class="run-card"><div class="run-card-date">2026-04-06</div><div class="run-card-golden">139</div><div class="run-card-total">599 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-05</div><div class="run-card-golden">166</div><div class="run-card-total">675 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-04</div><div class="run-card-golden">193</div><div class="run-card-total">1278 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-03</div><div class="run-card-golden">188</div><div class="run-card-total">849 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-02</div><div class="run-card-golden">0</div><div class="run-card-total">253 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-03-31</div><div class="run-card-golden">0</div><div class="run-card-total">410 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-03-30</div><div class="run-card-golden">0</div><div class="run-card-total">936 total</div></div>
+</div></div>
+<div class="pipeline-card" style="grid-column:span 2;">
+<div class="pipeline-card-title">Recent Errors</div>
+<div class="error-list">
+<div class="error-item"><span class="error-timestamp">2026-04-06T16:16:54</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div></div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T16:15:15</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div></div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T16:07:53</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div></div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T16:05:46</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">&#39;NoneType&#39; object has no attribute &#39;get&#39;</div></div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T16:04:30</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div></div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T03:14:14</span><span class="error-stage">content_store._embed</span><div class="error-msg" onclick="this.classList.toggle('expanded')">bge-m3 embedding failed: HTTP Error 503: Service Unavailable</div></div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T03:14:14</span><span class="error-stage">content_store._embed</span><div class="error-msg" onclick="this.classList.toggle('expanded')">bge-m3 embedding failed: HTTP Error 503: Service Unavailable</div></div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T03:14:14</span><span class="error-stage">content_store._embed</span><div class="error-msg" onclick="this.classList.toggle('expanded')">bge-m3 embedding failed: HTTP Error 503: Service Unavailable</div></div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T03:14:14</span><span class="error-stage">content_store._embed</span><div class="error-msg" onclick="this.classList.toggle('expanded')">bge-m3 embedding failed: HTTP Error 503: Service Unavailable</div></div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T03:14:14</span><span class="error-stage">content_store._embed</span><div class="error-msg" onclick="this.classList.toggle('expanded')">bge-m3 embedding failed: HTTP Error 503: Service Unavailable</div></div>
+</div></div>
+</div><!-- /pipeline-grid -->
+<script>
+function triggerPipeline() {
+  var btn = document.getElementById('btn-run-now');
+  btn.disabled = true;
+  btn.textContent = 'Triggering...';
+  fetch('/api/trigger-pipeline', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      btn.textContent = d.status === 'triggered' ? 'Triggered! Refreshing...' : 'Error: ' + (d.message || 'unknown');
+      if (d.status === 'triggered') setTimeout(function() { location.reload(); }, 5000);
+      else setTimeout(function() { btn.disabled = false; btn.textContent = 'Run Now'; }, 3000);
+    })
+    .catch(function(e) {
+      btn.textContent = 'API unavailable';
+      setTimeout(function() { btn.disabled = false; btn.textContent = 'Run Now'; }, 3000);
+    });
+}
+</script>
+</div><!-- /tab-pipeline -->
 <script>
 // Experimental tab filter/sort
 (function(){
@@ -4702,7 +4770,10 @@ function copyDemotion(entity) {
         <h3>Research Assistant</h3>
         <p class="chat-subtitle">Ask about entities, verticals, templates</p>
       </div>
-      <button id="chat-close" class="chat-close-btn">×</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="chat-clear" class="chat-close-btn" title="Clear history" style="font-size:14px;">&#8634;</button>
+        <button id="chat-close" class="chat-close-btn">×</button>
+      </div>
     </div>
     
     <div id="chat-messages" class="chat-messages">
@@ -4937,6 +5008,16 @@ function copyDemotion(entity) {
 }
 
 /* Mobile responsive */
+.chat-message.ai { max-height: 400px; overflow-y: auto; }
+
+.typing-dots span {
+  animation: typingDot 1.4s infinite;
+  opacity: 0;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingDot { 0%,60%,100% { opacity: 0; } 30% { opacity: 1; } }
+
 @media (max-width: 480px) {
   .chat-panel {
     width: calc(100vw - 32px);
@@ -4953,37 +5034,69 @@ const ChatWidget = {
   apiUrl: (window.location.origin || 'http://localhost:5555') + '/api',
   isLoggedIn: false,
   
+  _storageKey: 'keywordit_chat_history',
+  _maxMessages: 50,
+
   init() {
-    // Check if user is logged in
     this.isLoggedIn = this.checkLoginStatus();
-    
+
     if (this.isLoggedIn) {
       document.getElementById('chat-widget').style.display = 'block';
       this.bindEvents();
+      this._restoreHistory();
+    }
+  },
+
+  _restoreHistory() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(this._storageKey) || '[]');
+      if (saved.length > 0) {
+        saved.forEach(m => this.addMessage(m.type, m.text, true));
+      } else {
+        this.addMessage('ai', 'Hi! I\'m your research assistant. Ask me about entities, verticals, templates, or performance data.');
+      }
+    } catch(e) {
       this.addMessage('ai', 'Hi! I\'m your research assistant. Ask me about entities, verticals, templates, or performance data.');
     }
   },
+
+  _saveHistory() {
+    try {
+      const msgs = Array.from(document.querySelectorAll('.chat-message:not(.typing)')).map(el => ({
+        type: el.classList.contains('user') ? 'user' : 'ai',
+        text: el.textContent
+      })).slice(-this._maxMessages);
+      localStorage.setItem(this._storageKey, JSON.stringify(msgs));
+    } catch(e) {}
+  },
+
+  clearHistory() {
+    document.getElementById('chat-messages').innerHTML = '';
+    localStorage.removeItem(this._storageKey);
+    this.addMessage('ai', 'Chat cleared. How can I help?');
+  },
   
   checkLoginStatus() {
-    // For development/testing, always show chatbox
-    // In production, check actual login status:
-    
-    // Option 1: Check for session cookie
-    if (document.cookie.includes('keywordit_session')) return true;
-    
-    // Option 2: Check for global variable set by login system
+    // Check localStorage session (consistent with login.html, dashboard.html, etc.)
+    try {
+      const sess = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
+      if (sess && sess.token) {
+        // Check session expiry
+        if (sess.expiresAt && Date.now() > sess.expiresAt) return false;
+        return true;
+      }
+    } catch(e) {}
+
+    // Fallback: check for global variable set by parent page
     if (typeof window.isAuthenticated !== 'undefined' && window.isAuthenticated) return true;
-    
-    // Option 3: Check localStorage
-    if (localStorage.getItem('keywordit_auth')) return true;
-    
-    // No auth check passed — widget stays hidden
+
     return false;
   },
   
   bindEvents() {
     document.getElementById('chat-toggle').onclick = () => this.togglePanel();
     document.getElementById('chat-close').onclick = () => this.closePanel();
+    document.getElementById('chat-clear').onclick = () => this.clearHistory();
     document.getElementById('chat-send').onclick = () => this.sendMessage();
     document.getElementById('chat-input').onkeypress = (e) => {
       if (e.key === 'Enter' && !e.shiftKey && !document.getElementById('chat-send').disabled) {
@@ -5038,7 +5151,7 @@ const ChatWidget = {
       }
     } catch (error) {
       this.hideTyping();
-      this.addMessage('ai', 'Sorry, the research API is not available. Please make sure it\'s running on localhost:5555.');
+      this.addMessage('ai', 'Sorry, the research API is not available right now. Please try again later.');
       console.error('Chat API error:', error);
     } finally {
       sendBtn.disabled = false;
@@ -5047,15 +5160,18 @@ const ChatWidget = {
   },
   
   formatAI(text) {
-    let s = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // Sanitize: escape ALL HTML first, then allow only safe markdown patterns
+    let s = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
     s = s.replace(/`(.+?)`/g, '<code>$1</code>');
     s = s.replace(/\n/g, '<br>');
+    // Final pass: strip any remaining raw HTML tags that got through (belt + suspenders)
+    s = s.replace(/<(?!\/?(strong|em|code|br)\b)[^>]*>/gi, '');
     return s;
   },
 
-  addMessage(type, text) {
+  addMessage(type, text, skipSave) {
     const container = document.getElementById('chat-messages');
     const msg = document.createElement('div');
     msg.className = `chat-message ${type}`;
@@ -5066,15 +5182,19 @@ const ChatWidget = {
     }
     container.appendChild(msg);
     container.scrollTop = container.scrollHeight;
+    // Trim to max messages
+    const all = container.querySelectorAll('.chat-message:not(.typing)');
+    if (all.length > this._maxMessages) all[0].remove();
+    if (!skipSave) this._saveHistory();
   },
-  
+
   showTyping() {
-    this.hideTyping(); // remove any existing indicator first
+    this.hideTyping();
     const container = document.getElementById('chat-messages');
     const msg = document.createElement('div');
     msg.className = 'chat-message typing';
     msg.id = 'typing-indicator';
-    msg.textContent = 'Thinking...';
+    msg.innerHTML = 'Assistant is typing<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>';
     container.appendChild(msg);
     container.scrollTop = container.scrollHeight;
   },

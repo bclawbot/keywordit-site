@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="KeywordIt — AI-powered media buying arbitrage research dashboard">
+<meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit · Competitive Intelligence</title>
+<link rel="stylesheet" href="shared/base.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
@@ -345,6 +346,7 @@ button { cursor: pointer; font-family: var(--font-sans); }
 /* Skeleton loader */
 .skeleton { background: linear-gradient(90deg, var(--bg-raised) 25%, var(--bg-elevated) 50%, var(--bg-raised) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Health footer */
 #health-bar {
@@ -558,6 +560,9 @@ button { cursor: pointer; font-family: var(--font-sans); }
 <!-- ══════════════════════════════════════════════════════════════════════════
      JAVASCRIPT
      ══════════════════════════════════════════════════════════════════════════ -->
+<script src="shared/theme.js"></script>
+<script src="shared/auth.js"></script>
+<script src="shared/palette.js"></script>
 <script>
 (function() {
 'use strict';
@@ -577,34 +582,18 @@ let kwDir = 'desc';
 let kwVert = '';
 
 // ── Auth gate ────────────────────────────────────────────────────────────────
-(function authCheck() {
-  const gate = document.getElementById('auth-gate');
-  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
-  if (!session || !session.token) {
-    gate.querySelector('.msg').textContent = 'Not authenticated. Redirecting...';
-    setTimeout(() => location.href = 'login.html', 800);
-    return;
-  }
-  const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-  const user = users.find(u => u.username === session.user && u.status === 'approved');
-  if (!user) {
-    gate.querySelector('.msg').textContent = 'Access denied. Redirecting...';
-    localStorage.removeItem('keywordit_session');
-    setTimeout(() => location.href = 'login.html', 800);
-    return;
-  }
-  gate.style.display = 'none';
-})();
+requireAuth({ onSuccess: function(s) {
+  document.getElementById('auth-gate').style.display = 'none';
+} });
 
-// ── Theme ────────────────────────────────────────────────────────────────────
-const savedTheme = localStorage.getItem('keywordit-theme');
-if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
-
-document.getElementById('theme-toggle').addEventListener('click', () => {
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('keywordit-theme', next);
-});
+Palette.register([
+  { id: 'intel-warroom', label: 'War Room Tab', category: 'Intelligence', action: function() { document.querySelector('[data-tab="warroom"]').click(); } },
+  { id: 'intel-activity', label: 'Activity Feed', category: 'Intelligence', action: function() { document.querySelector('[data-tab="activity"]').click(); } },
+  { id: 'intel-keywords', label: 'Keywords Queue', category: 'Intelligence', action: function() { document.querySelector('[data-tab="keywords"]').click(); } },
+  { id: 'intel-verticals', label: 'Verticals Leaderboard', category: 'Intelligence', action: function() { document.querySelector('[data-tab="verticals"]').click(); } },
+  { id: 'intel-matrix', label: 'Angle Matrix', category: 'Intelligence', action: function() { document.querySelector('[data-tab="matrix"]').click(); } },
+  { id: 'intel-analysis', label: 'AI Analysis', category: 'Intelligence', action: function() { document.querySelector('[data-tab="analysis"]').click(); } },
+]);
 
 function signOut() {
   localStorage.removeItem('keywordit_session');
@@ -613,14 +602,36 @@ function signOut() {
 window.signOut = signOut;
 
 // ── Tab switching ────────────────────────────────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
+const tabBtns = document.querySelectorAll('.tab-btn');
+tabBtns.forEach((btn, i) => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    tabBtns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
     const tab = btn.dataset.tab;
     document.getElementById('tab-' + tab).classList.add('active');
-    if (!loaded[tab]) { loaders[tab](); loaded[tab] = true; }
+    if (!loaded[tab]) {
+      // Show loading state
+      const content = document.getElementById('tab-' + tab);
+      const existingLoader = content.querySelector('.tab-loading');
+      if (!existingLoader) {
+        const loader = document.createElement('div');
+        loader.className = 'tab-loading';
+        loader.style.cssText = 'text-align:center;padding:60px 20px;color:var(--text-secondary,var(--text-dim));';
+        loader.innerHTML = '<div style="margin-bottom:12px;">Loading...</div><div style="width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent,var(--teal));border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;"></div>';
+        content.prepend(loader);
+      }
+      loaders[tab]();
+      loaded[tab] = true;
+    }
+  });
+  // Keyboard arrow navigation
+  btn.addEventListener('keydown', (e) => {
+    let target;
+    if (e.key === 'ArrowRight') target = tabBtns[(i + 1) % tabBtns.length];
+    if (e.key === 'ArrowLeft') target = tabBtns[(i - 1 + tabBtns.length) % tabBtns.length];
+    if (target) { target.click(); target.focus(); e.preventDefault(); }
   });
 });
 
@@ -643,9 +654,11 @@ async function api(path) {
     const headers = {};
     if (sess.token) headers['Authorization'] = 'Bearer ' + sess.token;
     const r = await fetch(API + path, { headers });
-    if (!r.ok) return null;
+    if (!r.ok) return { error: true, message: 'API error: ' + r.status + ' ' + r.statusText };
     return await r.json();
-  } catch(e) { return null; }
+  } catch(e) {
+    return { error: true, message: 'Network error — check if the API is running' };
+  }
 }
 
 // ── A. Network War Room ──────────────────────────────────────────────────────
@@ -654,7 +667,18 @@ let wrSortCol = 'active_ads', wrSortDir = -1;
 
 async function loadWarRoom() {
   const d = await api('/networks');
+  // Remove loading spinner
+  const wrLoadingEl = document.getElementById('tab-warroom').querySelector('.tab-loading');
+  if (wrLoadingEl) wrLoadingEl.remove();
+
+  if (d && d.error) {
+    document.getElementById('wr-empty').classList.add('hidden');
+    document.getElementById('wr-body').innerHTML = '';
+    document.getElementById('wr-kpi').innerHTML = '<div class="error-state" style="text-align:center;padding:40px 20px;width:100%"><div style="font-size:14px;color:var(--c-red,#ef4444);margin-bottom:12px;">\u26A0 ' + esc(d.message) + '</div><button onclick="loaded[\'warroom\']=false; loaders[\'warroom\']()" style="padding:6px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg-surface,var(--surface));color:var(--text-primary,var(--text));cursor:pointer;">Retry</button></div>';
+    return;
+  }
   if (!d || !d.networks || !d.networks.length) { document.getElementById('wr-empty').classList.remove('hidden'); return; }
+  document.getElementById('wr-empty').classList.add('hidden');
   wrData = d.networks;
 
   // KPIs
@@ -713,10 +737,13 @@ function renderWrTable() {
     </tr>
   `).join('');
 
-  // Expand/collapse
+  // Expand/collapse with aria-expanded
   tbody.querySelectorAll('tr.expandable').forEach(row => {
+    row.setAttribute('aria-expanded', 'false');
     row.addEventListener('click', () => {
       const detail = tbody.querySelector('tr[data-detail="' + row.dataset.id + '"]');
+      const expanded = row.getAttribute('aria-expanded') === 'true';
+      row.setAttribute('aria-expanded', String(!expanded));
       detail.classList.toggle('hidden');
     });
   });
@@ -745,7 +772,18 @@ async function fetchActivity(append) {
   const list = document.getElementById('act-list');
   const empty = document.getElementById('act-empty');
   const more = document.getElementById('act-more');
+  // Remove loading spinner
+  const actLoadingEl = document.getElementById('tab-activity').querySelector('.tab-loading');
+  if (actLoadingEl) actLoadingEl.remove();
 
+  if (d && d.error) {
+    if (!append) {
+      list.innerHTML = '<div class="error-state" style="text-align:center;padding:40px 20px;"><div style="font-size:14px;color:var(--c-red,#ef4444);margin-bottom:12px;">\u26A0 ' + esc(d.message) + '</div><button onclick="loaded[\'activity\']=false; loaders[\'activity\']()" style="padding:6px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg-surface,var(--surface));color:var(--text-primary,var(--text));cursor:pointer;">Retry</button></div>';
+      empty.classList.add('hidden');
+    }
+    more.classList.add('hidden');
+    return;
+  }
   if (!d || !d.items || !d.items.length) {
     if (!append) { list.innerHTML = ''; empty.classList.remove('hidden'); }
     more.classList.add('hidden');
@@ -777,6 +815,16 @@ async function fetchActivity(append) {
 async function loadKeywords() {
   // Populate vertical dropdown
   const d0 = await api('/keywords?page=1');
+  // Remove loading spinner
+  const kwLoadingEl = document.getElementById('tab-keywords').querySelector('.tab-loading');
+  if (kwLoadingEl) kwLoadingEl.remove();
+
+  if (d0 && d0.error) {
+    document.getElementById('kw-body').innerHTML = '';
+    document.getElementById('kw-empty').classList.add('hidden');
+    document.getElementById('kw-pagination').innerHTML = '<div class="error-state" style="text-align:center;padding:40px 20px;width:100%"><div style="font-size:14px;color:var(--c-red,#ef4444);margin-bottom:12px;">\u26A0 ' + esc(d0.message) + '</div><button onclick="loaded[\'keywords\']=false; loaders[\'keywords\']()" style="padding:6px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg-surface,var(--surface));color:var(--text-primary,var(--text));cursor:pointer;">Retry</button></div>';
+    return;
+  }
   if (d0 && d0.verticals) {
     const sel = document.getElementById('kw-vert-filter');
     d0.verticals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
@@ -798,6 +846,12 @@ async function fetchKeywords() {
   const d = await api('/keywords?vertical=' + kwVert + '&sort=' + kwSort + '&dir=' + kwDir + '&page=' + kwPage);
   const tbody = document.getElementById('kw-body');
   const empty = document.getElementById('kw-empty');
+  if (d && d.error) {
+    tbody.innerHTML = '';
+    empty.classList.add('hidden');
+    document.getElementById('kw-pagination').innerHTML = '<div class="error-state" style="text-align:center;padding:40px 20px;width:100%"><div style="font-size:14px;color:var(--c-red,#ef4444);margin-bottom:12px;">\u26A0 ' + esc(d.message) + '</div><button onclick="fetchKeywords()" style="padding:6px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg-surface,var(--surface));color:var(--text-primary,var(--text));cursor:pointer;">Retry</button></div>';
+    return;
+  }
   if (!d || !d.keywords || !d.keywords.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
 
@@ -834,6 +888,15 @@ async function loadVerticals() {
   const d = await api('/verticals');
   const grid = document.getElementById('vert-grid');
   const empty = document.getElementById('vert-empty');
+  // Remove loading spinner
+  const vertLoadingEl = document.getElementById('tab-verticals').querySelector('.tab-loading');
+  if (vertLoadingEl) vertLoadingEl.remove();
+
+  if (d && d.error) {
+    empty.classList.add('hidden');
+    grid.innerHTML = '<div class="error-state" style="text-align:center;padding:40px 20px;"><div style="font-size:14px;color:var(--c-red,#ef4444);margin-bottom:12px;">\u26A0 ' + esc(d.message) + '</div><button onclick="loaded[\'verticals\']=false; loaders[\'verticals\']()" style="padding:6px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg-surface,var(--surface));color:var(--text-primary,var(--text));cursor:pointer;">Retry</button></div>';
+    return;
+  }
   if (!d || !d.verticals || !d.verticals.length) { empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
 
@@ -865,6 +928,15 @@ async function loadMatrix() {
   const d = await api('/matrix');
   const table = document.getElementById('matrix-table');
   const empty = document.getElementById('matrix-empty');
+  // Remove loading spinner
+  const matLoadingEl = document.getElementById('tab-matrix').querySelector('.tab-loading');
+  if (matLoadingEl) matLoadingEl.remove();
+
+  if (d && d.error) {
+    empty.classList.add('hidden');
+    table.innerHTML = '<tr><td><div class="error-state" style="text-align:center;padding:40px 20px;"><div style="font-size:14px;color:var(--c-red,#ef4444);margin-bottom:12px;">\u26A0 ' + esc(d.message) + '</div><button onclick="loaded[\'matrix\']=false; loaders[\'matrix\']()" style="padding:6px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg-surface,var(--surface));color:var(--text-primary,var(--text));cursor:pointer;">Retry</button></div></td></tr>';
+    return;
+  }
   if (!d || !d.verticals || !d.verticals.length || !d.angles || !d.angles.length) { empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
 
@@ -900,10 +972,14 @@ async function loadAnalysis(force) {
   const ts = document.getElementById('analysis-ts');
   container.innerHTML = '<div class="skeleton" style="height:40px;margin-bottom:8px"></div>'.repeat(5);
   ts.textContent = 'Loading...';
+  // Remove loading spinner
+  const anaLoadingEl = document.getElementById('tab-analysis').querySelector('.tab-loading');
+  if (anaLoadingEl) anaLoadingEl.remove();
 
   const d = await api('/analysis' + (force ? '?force=true' : ''));
-  if (!d || d.error) {
-    container.innerHTML = '<div class="empty-state">' + esc(d ? d.error : 'API unavailable') + '</div>';
+  if (d && d.error) {
+    const errMsg = d.message || (typeof d.error === 'string' ? d.error : 'API unavailable');
+    container.innerHTML = '<div class="error-state" style="text-align:center;padding:40px 20px;"><div style="font-size:14px;color:var(--c-red,#ef4444);margin-bottom:12px;">\u26A0 ' + esc(errMsg) + '</div><button onclick="loaded[\'analysis\']=false; loaders[\'analysis\']()" style="padding:6px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg-surface,var(--surface));color:var(--text-primary,var(--text));cursor:pointer;">Retry</button></div>';
     ts.textContent = 'Failed';
     return;
   }
@@ -934,7 +1010,7 @@ document.getElementById('analysis-regen').addEventListener('click', () => loadAn
 // ── G. Health ────────────────────────────────────────────────────────────────
 async function loadHealth() {
   const d = await api('/health');
-  if (!d) return;
+  if (!d || d.error) return;
   const dot = document.getElementById('hb-dot');
   const statusEl = document.getElementById('hb-status');
   dot.className = 'health-dot ' + ({healthy:'health-ok',degraded:'health-warn',down:'health-down'}[d.scraper_status] || 'health-none');
@@ -954,6 +1030,11 @@ const loaders = {
   matrix: loadMatrix,
   analysis: () => loadAnalysis(false),
 };
+
+// Expose for inline onclick retry handlers
+window.loaded = loaded;
+window.loaders = loaders;
+window.fetchKeywords = fetchKeywords;
 
 // Load War Room + Health on page load
 loadWarRoom(); loaded.warroom = true;

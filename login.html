@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="KeywordIt — AI-powered media buying arbitrage research dashboard">
+<meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit · Access</title>
+<link rel="stylesheet" href="shared/base.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 [data-theme="dark"] {
@@ -283,7 +284,10 @@ body::before {
     </div>
     <div class="form-group">
       <label class="form-label">Password</label>
-      <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password">
+      <div style="position:relative;">
+        <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" style="padding-right:40px;">
+        <button type="button" onclick="togglePassVis('login-pass', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:4px;" title="Show password" aria-label="Toggle password visibility">&#128065;</button>
+      </div>
     </div>
     <button class="btn-submit" id="login-btn" onclick="doLogin()">Sign In</button>
   </div>
@@ -321,6 +325,8 @@ body::before {
 
 <div class="login-footer">Access is reviewed manually · Typical approval: &lt;24h</div>
 
+<script src="shared/theme.js"></script>
+<script src="shared/palette.js"></script>
 <script>
 /**
  * AUTH SYSTEM
@@ -396,12 +402,13 @@ async function doLogin() {
     return;
   }
 
-  // Create session
+  // Create session with 24-hour expiry
   const session = {
     user: found.username,
     role: found.role,
     token: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2),
-    loginAt: new Date().toISOString()
+    loginAt: new Date().toISOString(),
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000
   };
   localStorage.setItem('keywordit_session', JSON.stringify(session));
   showMsg('login-msg', 'success', 'Authenticated. Redirecting...');
@@ -459,15 +466,33 @@ async function doRequest() {
   document.getElementById('req-username').value = '';
 }
 
-// Auto-redirect if already authenticated
+// Password visibility toggle
+function togglePassVis(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (inp.type === 'password') { inp.type = 'text'; btn.title = 'Hide password'; }
+  else { inp.type = 'password'; btn.title = 'Show password'; }
+}
+
+// Auto-redirect if already authenticated (with expiry check)
 (function() {
   const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
   if (session && session.token) {
+    // Check expiry
+    if (session.expiresAt && Date.now() > session.expiresAt) {
+      localStorage.removeItem('keywordit_session');
+      return; // expired — stay on login
+    }
     const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
     const user = users.find(u => u.username === session.user && u.status === 'approved');
     if (user) {
       window.location.href = 'dashboard.html';
     }
+  }
+
+  // Auto-select tab from URL param (?tab=request)
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('tab') === 'request') {
+    switchTab('request');
   }
 })();
 
@@ -482,17 +507,6 @@ document.getElementById('login-user').addEventListener('keydown', e => { if (e.k
   });
 });
 
-// Theme toggle
-(function() {
-  const saved = localStorage.getItem('keywordit-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('theme-toggle').addEventListener('click', function() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('keywordit-theme', next);
-  });
-})();
 </script>
 </body>
 </html>

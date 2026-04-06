@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="KeywordIt — AI-powered media buying arbitrage research dashboard">
+<meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit · Admin</title>
+<link rel="stylesheet" href="shared/base.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 [data-theme="dark"] {
@@ -472,6 +473,9 @@ body {
 
 <div class="toast" id="toast"></div>
 
+<script src="shared/theme.js"></script>
+<script src="shared/auth.js"></script>
+<script src="shared/palette.js"></script>
 <script>
 async function hashStr(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -491,25 +495,16 @@ function getRequests() { return JSON.parse(localStorage.getItem('keywordit_reque
 function setRequests(r) { localStorage.setItem('keywordit_requests', JSON.stringify(r)); }
 
 // ═══ AUTH CHECK ═══
-(function() {
-  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
-  if (!session || !session.token) {
-    document.getElementById('auth-gate').querySelector('.msg').textContent = 'Not authenticated. Redirecting...';
-    setTimeout(() => window.location.href = 'login.html', 1000);
-    return;
-  }
-  const users = getUsers();
-  const user = users.find(u => u.username === session.user && u.status === 'approved');
-  if (!user || user.role !== 'admin') {
-    document.getElementById('auth-gate').querySelector('.msg').textContent = 'Admin access required. Redirecting...';
-    setTimeout(() => window.location.href = 'dashboard.html', 1500);
-    return;
-  }
+requireAuth({ requireAdmin: true, onSuccess: function(s) {
   document.getElementById('auth-gate').style.display = 'none';
   document.getElementById('admin-main').style.display = 'block';
-  document.getElementById('admin-user-label').textContent = session.user + ' (admin)';
+  document.getElementById('admin-user-label').textContent = s.user + ' (admin)';
   renderAll();
-})();
+} });
+
+Palette.register([
+  { id: 'admin-add-user', label: 'Add New User', category: 'Admin', action: function() { document.getElementById('add-username').focus(); } },
+]);
 
 function renderAll() {
   renderRequests();
@@ -553,14 +548,49 @@ function renderRequests() {
   `).join('');
 }
 
+function showPasswordModal(username) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+      <div style="background:var(--surface,#0a0a0c);border:1px solid var(--border,#141418);border-radius:12px;padding:24px;max-width:380px;width:90%;font-family:inherit;">
+        <h3 style="color:var(--text,#e8e8f0);margin-bottom:16px;font-size:15px;">Set password for "${username}"</h3>
+        <div style="position:relative;margin-bottom:12px;">
+          <input type="password" id="modal-pass" placeholder="Enter password" autofocus
+            style="width:100%;padding:10px 40px 10px 12px;background:var(--bg,#020203);border:1px solid var(--border,#141418);border-radius:8px;color:var(--text,#e8e8f0);font-size:14px;font-family:inherit;">
+          <button type="button" onclick="var i=document.getElementById('modal-pass');i.type=i.type==='password'?'text':'password';"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim,#3a3a48);cursor:pointer;font-size:16px;">&#128065;</button>
+        </div>
+        <div id="modal-strength" style="font-size:11px;margin-bottom:16px;color:var(--text-dim,#3a3a48);"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button id="modal-cancel" style="padding:8px 16px;border:1px solid var(--border,#141418);border-radius:8px;background:none;color:var(--text,#e8e8f0);cursor:pointer;">Cancel</button>
+          <button id="modal-ok" style="padding:8px 16px;border:none;border-radius:8px;background:var(--teal,#2dd4bf);color:#000;cursor:pointer;font-weight:600;">Approve</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const inp = document.getElementById('modal-pass');
+    const str = document.getElementById('modal-strength');
+    inp.addEventListener('input', () => {
+      const v = inp.value;
+      if (v.length < 6) str.textContent = 'Too short (min 6 chars)';
+      else if (v.length < 8) { str.textContent = 'Weak'; str.style.color = '#f59e0b'; }
+      else { str.textContent = 'Strong'; str.style.color = '#22c55e'; }
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && inp.value.length >= 6) { overlay.remove(); resolve(inp.value); } });
+    document.getElementById('modal-ok').onclick = () => { if (inp.value.length < 6) { str.textContent = 'Password must be at least 6 characters'; str.style.color = '#ef4444'; return; } overlay.remove(); resolve(inp.value); };
+    document.getElementById('modal-cancel').onclick = () => { overlay.remove(); resolve(null); };
+    overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(null); } });
+    inp.focus();
+  });
+}
+
 async function approveRequest(idx) {
   const requests = getRequests();
   const pending = requests.filter(r => r.status === 'pending');
   const req = pending[idx];
   if (!req) return;
 
-  // Prompt for a password
-  const pass = prompt(`Set password for "${req.username}":`);
+  const pass = await showPasswordModal(req.username);
   if (!pass) return;
 
   const users = getUsers();
@@ -678,17 +708,6 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Theme toggle
-(function() {
-  const saved = localStorage.getItem('keywordit-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('theme-toggle').addEventListener('click', function() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('keywordit-theme', next);
-  });
-})();
 </script>
 </body>
 </html>
