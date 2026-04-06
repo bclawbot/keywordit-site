@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="KeywordIt — AI-powered media buying arbitrage research dashboard">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit — Search Arbitrage Intelligence</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -305,8 +307,13 @@ footer {
 .footer-right a { font-size: 12px; color: var(--text-muted); transition: color 0.2s; }
 .footer-right a:hover { color: var(--text-dim); }
 
+/* ═══ HAMBURGER ═══ */
+.hamburger { display: none; background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; padding: 8px; }
+
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 900px) {
+  .hamburger { display: block; }
+  .nav-links.open { display: flex !important; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: var(--nav-bg, var(--bg)); padding: 16px; gap: 16px; border-bottom: 1px solid var(--border); }
   nav { padding: 0 20px; }
   .nav-links { display: none; }
   .section { padding: 80px 20px; }
@@ -350,16 +357,17 @@ h1 { animation-delay: 0.1s; }
     <div class="nav-logo-icon">K</div>
     <span>keywordit<span class="nav-logo-dot">.xyz</span></span>
   </div>
+  <button class="hamburger" aria-label="Menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
   <div class="nav-links">
     <a href="#value">Platform</a>
     <a href="#how">How It Works</a>
     <a href="#access">Access</a>
   </div>
-  <a href="login.html" class="btn-launch">
+  <a href="login.html" class="btn-launch" role="button">
     Launch App
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
   </a>
-  <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+  <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
     <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
     <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
   </button>
@@ -381,11 +389,11 @@ h1 { animation-delay: 0.1s; }
     40+ countries — before competition erodes the margins.
   </p>
   <div class="hero-ctas">
-    <a href="login.html" class="btn-hero-primary">
+    <a href="login.html" class="btn-hero-primary" role="button">
       Request Access
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
     </a>
-    <a href="#how" class="btn-hero-secondary">See How It Works</a>
+    <a href="#how" class="btn-hero-secondary" role="button">See How It Works</a>
   </div>
 </section>
 
@@ -495,7 +503,7 @@ h1 { animation-delay: 0.1s; }
     Keywordit is a closed platform for qualified operators.<br>
     Submit your details and the team will review your application.
   </p>
-  <a href="login.html" class="btn-hero-primary">
+  <a href="login.html" class="btn-hero-primary" role="button">
     Request Access
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
   </a>

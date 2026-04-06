@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="KeywordIt — AI-powered media buying arbitrage research dashboard">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit · Competitive Intelligence</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -376,6 +378,32 @@ button { cursor: pointer; font-family: var(--font-sans); }
 /* Auth gate */
 #auth-gate { position: fixed; inset: 0; background: var(--bg-base); z-index: 9999; display: flex; align-items: center; justify-content: center; }
 #auth-gate .msg { font-family: var(--font-mono); font-size: 13px; color: var(--text-secondary); }
+
+/* ============================================================
+   MOBILE RESPONSIVENESS
+   ============================================================ */
+@media (max-width: 768px) {
+  #cmd-bar { flex-wrap: wrap; gap: 8px; height: auto; padding: 8px 16px; }
+  .kpi-strip { flex-wrap: wrap; }
+  .kpi-card { min-width: 120px; flex: 1 1 calc(50% - 1px); }
+  .tab-nav { overflow-x: auto; white-space: nowrap; padding: 0 16px; }
+  .tab-btn { font-size: 12px; padding: 8px 12px; }
+  .data-table { font-size: 12px; }
+  .data-table th, .data-table td { padding: 6px 8px; }
+  .matrix-table { font-size: 10px; }
+  .matrix-table th, .matrix-table td { padding: 6px 4px; min-width: 60px; }
+  .filter-bar { flex-wrap: wrap; gap: 8px; padding: 10px 16px; }
+  .vert-grid { grid-template-columns: 1fr; padding: 12px 16px; }
+  .activity-list { padding: 12px 16px; }
+  .section-hdr { padding: 16px; }
+}
+@media (max-width: 480px) {
+  .kpi-card { min-width: 100%; }
+  .cmd-logo { font-size: 12px; }
+  .cmd-title { display: none; }
+  .btn-cmd, .btn-signout { font-size: 10px; padding: 5px 10px; }
+  #health-bar { flex-wrap: wrap; height: auto; padding: 8px 16px; gap: 8px; }
+}
 </style>
 </head>
 <body>
@@ -392,7 +420,7 @@ button { cursor: pointer; font-family: var(--font-sans); }
   <div class="cmd-title">Intelligence</div>
   <div class="cmd-spacer"></div>
   <button class="btn-cmd" onclick="location.href='dashboard.html'">Dashboard</button>
-  <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+  <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
     <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
     <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
   </button>
@@ -400,13 +428,13 @@ button { cursor: pointer; font-family: var(--font-sans); }
 </div>
 
 <!-- ═══ TAB NAV ═══ -->
-<nav class="tab-nav">
-  <button class="tab-btn active" data-tab="warroom">War Room</button>
-  <button class="tab-btn" data-tab="activity">Activity</button>
-  <button class="tab-btn" data-tab="keywords">Keywords</button>
-  <button class="tab-btn" data-tab="verticals">Verticals</button>
-  <button class="tab-btn" data-tab="matrix">Matrix</button>
-  <button class="tab-btn" data-tab="analysis">Analysis</button>
+<nav class="tab-nav" role="tablist">
+  <button class="tab-btn active" data-tab="warroom" role="tab" aria-selected="true">War Room</button>
+  <button class="tab-btn" data-tab="activity" role="tab" aria-selected="false">Activity</button>
+  <button class="tab-btn" data-tab="keywords" role="tab" aria-selected="false">Keywords</button>
+  <button class="tab-btn" data-tab="verticals" role="tab" aria-selected="false">Verticals</button>
+  <button class="tab-btn" data-tab="matrix" role="tab" aria-selected="false">Matrix</button>
+  <button class="tab-btn" data-tab="analysis" role="tab" aria-selected="false">Analysis</button>
 </nav>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
@@ -534,6 +562,11 @@ button { cursor: pointer; font-family: var(--font-sans); }
 (function() {
 'use strict';
 
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 const API = 'http://localhost:5555/api/intel';
 const loaded = {};       // track which tabs have been fetched
 let actPage = 1;
@@ -564,14 +597,13 @@ let kwVert = '';
 })();
 
 // ── Theme ────────────────────────────────────────────────────────────────────
-const savedTheme = localStorage.getItem('keywordit-theme') || localStorage.getItem('keywordit_theme');
+const savedTheme = localStorage.getItem('keywordit-theme');
 if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
 
 document.getElementById('theme-toggle').addEventListener('click', () => {
   const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('keywordit-theme', next);
-  localStorage.setItem('keywordit_theme', next);
 });
 
 function signOut() {
@@ -607,13 +639,13 @@ function fmtUsd(n) { return n == null ? '--' : '$' + n.toFixed(2); }
 
 async function api(path) {
   try {
-    const r = await fetch(API + path);
-    if (!r.ok) throw new Error(r.status);
+    const sess = JSON.parse(localStorage.getItem('keywordit_session') || '{}');
+    const headers = {};
+    if (sess.token) headers['Authorization'] = 'Bearer ' + sess.token;
+    const r = await fetch(API + path, { headers });
+    if (!r.ok) return null;
     return await r.json();
-  } catch(e) {
-    console.error('API error:', path, e);
-    return null;
-  }
+  } catch(e) { return null; }
 }
 
 // ── A. Network War Room ──────────────────────────────────────────────────────
@@ -622,7 +654,7 @@ let wrSortCol = 'active_ads', wrSortDir = -1;
 
 async function loadWarRoom() {
   const d = await api('/networks');
-  if (!d || !d.networks.length) { document.getElementById('wr-empty').classList.remove('hidden'); return; }
+  if (!d || !d.networks || !d.networks.length) { document.getElementById('wr-empty').classList.remove('hidden'); return; }
   wrData = d.networks;
 
   // KPIs
@@ -640,13 +672,16 @@ async function loadWarRoom() {
   renderWrTable();
 
   // Sortable headers
-  document.querySelectorAll('#wr-table th[data-col]').forEach(th => {
-    th.addEventListener('click', () => {
-      const col = th.dataset.col;
-      if (wrSortCol === col) wrSortDir *= -1; else { wrSortCol = col; wrSortDir = -1; }
-      renderWrTable();
+  if (!loadWarRoom._sortBound) {
+    loadWarRoom._sortBound = true;
+    document.querySelectorAll('#wr-table th[data-col]').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = th.dataset.col;
+        if (wrSortCol === col) wrSortDir *= -1; else { wrSortCol = col; wrSortDir = -1; }
+        renderWrTable();
+      });
     });
-  });
+  }
 }
 
 function renderWrTable() {
@@ -657,8 +692,8 @@ function renderWrTable() {
   });
   const tbody = document.getElementById('wr-body');
   tbody.innerHTML = wrData.map(n => `
-    <tr class="expandable" data-id="${n.id}">
-      <td><strong>${n.name}</strong></td>
+    <tr class="expandable" data-id="${esc(n.id)}">
+      <td><strong>${esc(n.name)}</strong></td>
       <td>${n.domain_count}</td>
       <td>${fmt(n.active_ads)}</td>
       <td>${n.new_today || 0}</td>
@@ -666,13 +701,13 @@ function renderWrTable() {
       <td>${n.new_30d || 0}</td>
       <td><span class="pill pill-${n.durability_class === 'winner' || n.durability_class === 'evergreen' ? 'green' : n.durability_class === 'validated' || n.durability_class === 'promising' ? 'amber' : 'gray'}">${n.avg_durability}d</span></td>
       <td>${n.velocity_7d}</td>
-      <td>${(n.top_verticals||[]).map(v => '<span class="pill pill-accent">'+v+'</span> ').join('')}</td>
+      <td>${(n.top_verticals||[]).map(v => '<span class="pill pill-accent">'+esc(v)+'</span> ').join('')}</td>
       <td>${timeAgo(n.last_scrape)}</td>
     </tr>
-    <tr class="detail-row hidden" data-detail="${n.id}">
+    <tr class="detail-row hidden" data-detail="${esc(n.id)}">
       <td colspan="10">
         <div style="font-size:11px;color:var(--text-secondary)">
-          ${(n.domains||[]).map(d => '<div style="padding:2px 0">' + d.domain + ' &mdash; ' + d.pages + ' pages, ' + d.ads + ' ads</div>').join('')}
+          ${(n.domains||[]).map(d => '<div style="padding:2px 0">' + esc(d.domain) + ' &mdash; ' + d.pages + ' pages, ' + d.ads + ' ads</div>').join('')}
         </div>
       </td>
     </tr>
@@ -689,16 +724,19 @@ function renderWrTable() {
 
 // ── B. Activity Feed ─────────────────────────────────────────────────────────
 async function loadActivity() {
-  document.querySelectorAll('#tab-activity .filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#tab-activity .filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      actPeriod = btn.dataset.period;
-      actPage = 1;
-      fetchActivity(false);
+  if (!loadActivity._listenersBound) {
+    loadActivity._listenersBound = true;
+    document.querySelectorAll('#tab-activity .filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#tab-activity .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        actPeriod = btn.dataset.period;
+        actPage = 1;
+        fetchActivity(false);
+      });
     });
-  });
-  document.getElementById('act-more').addEventListener('click', () => { actPage++; fetchActivity(true); });
+    document.getElementById('act-more').addEventListener('click', () => { actPage++; fetchActivity(true); });
+  }
   fetchActivity(false);
 }
 
@@ -708,7 +746,7 @@ async function fetchActivity(append) {
   const empty = document.getElementById('act-empty');
   const more = document.getElementById('act-more');
 
-  if (!d || !d.items.length) {
+  if (!d || !d.items || !d.items.length) {
     if (!append) { list.innerHTML = ''; empty.classList.remove('hidden'); }
     more.classList.add('hidden');
     return;
@@ -718,14 +756,14 @@ async function fetchActivity(append) {
 
   const html = d.items.map(item => `
     <div class="activity-card">
-      <div class="sev-dot sev-${item.severity}"></div>
+      <div class="sev-dot sev-${esc(item.severity)}"></div>
       <div class="body">
-        <div class="headline">${item.headline || item.signal_type || 'Signal'}</div>
+        <div class="headline">${esc(item.headline || item.signal_type || 'Signal')}</div>
         <div class="meta">
-          ${item.network ? '<span class="pill pill-accent">'+item.network+'</span>' : ''}
-          ${item.domain ? '<span>'+item.domain+'</span>' : ''}
-          ${item.vertical ? '<span class="pill pill-purple">'+item.vertical+'</span>' : ''}
-          ${item.angle ? '<span class="pill pill-gray">'+item.angle+'</span>' : ''}
+          ${item.network ? '<span class="pill pill-accent">'+esc(item.network)+'</span>' : ''}
+          ${item.domain ? '<span>'+esc(item.domain)+'</span>' : ''}
+          ${item.vertical ? '<span class="pill pill-purple">'+esc(item.vertical)+'</span>' : ''}
+          ${item.angle ? '<span class="pill pill-gray">'+esc(item.angle)+'</span>' : ''}
         </div>
         <div class="ts">${timeAgo(item.timestamp)}</div>
       </div>
@@ -760,7 +798,7 @@ async function fetchKeywords() {
   const d = await api('/keywords?vertical=' + kwVert + '&sort=' + kwSort + '&dir=' + kwDir + '&page=' + kwPage);
   const tbody = document.getElementById('kw-body');
   const empty = document.getElementById('kw-empty');
-  if (!d || !d.keywords.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  if (!d || !d.keywords || !d.keywords.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
 
   document.getElementById('kw-showing').textContent = d.keywords.length;
@@ -768,10 +806,10 @@ async function fetchKeywords() {
 
   tbody.innerHTML = d.keywords.map(k => `
     <tr class="${k.highlight ? 'highlight' : ''}">
-      <td><strong>${k.keyword}</strong></td>
+      <td><strong>${esc(k.keyword)}</strong></td>
       <td>${k.network_count}</td>
       <td><span class="pill pill-${k.durability_class === 'winner' || k.durability_class === 'evergreen' ? 'green' : k.durability_class === 'validated' ? 'amber' : 'gray'}">${k.max_durability}d</span></td>
-      <td>${(k.verticals||[]).map(v => '<span class="pill pill-accent">'+v+'</span>').join(' ')}</td>
+      <td>${(k.verticals||[]).map(v => '<span class="pill pill-accent">'+esc(v)+'</span>').join(' ')}</td>
       <td>${fmt(k.volume)}</td>
       <td>${fmtUsd(k.cpc_usd)}</td>
       <td>${k.competition != null ? k.competition.toFixed(2) : '--'}</td>
@@ -796,7 +834,7 @@ async function loadVerticals() {
   const d = await api('/verticals');
   const grid = document.getElementById('vert-grid');
   const empty = document.getElementById('vert-empty');
-  if (!d || !d.verticals.length) { empty.classList.remove('hidden'); return; }
+  if (!d || !d.verticals || !d.verticals.length) { empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
 
   grid.innerHTML = d.verticals.map(v => {
@@ -805,7 +843,7 @@ async function loadVerticals() {
     return `
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div style="font-weight:600;font-size:14px">#${v.rank} ${v.vertical}</div>
+          <div style="font-weight:600;font-size:14px">#${v.rank} ${esc(v.vertical)}</div>
           <span class="pill pill-accent">${v.network_count} networks</span>
         </div>
         <div style="margin-bottom:8px">
@@ -817,7 +855,7 @@ async function loadVerticals() {
           <span>Durability: <strong style="color:var(--${durColor})">${v.avg_durability.toFixed(1)}d</strong></span>
           <span>Velocity: <strong style="color:var(--text-primary)">${v.velocity_7d}</strong>/7d</span>
         </div>
-        ${v.top_keyword ? '<div style="margin-top:8px"><span class="pill pill-purple">' + v.top_keyword + '</span></div>' : ''}
+        ${v.top_keyword ? '<div style="margin-top:8px"><span class="pill pill-purple">' + esc(v.top_keyword) + '</span></div>' : ''}
       </div>`;
   }).join('');
 }
@@ -827,20 +865,20 @@ async function loadMatrix() {
   const d = await api('/matrix');
   const table = document.getElementById('matrix-table');
   const empty = document.getElementById('matrix-empty');
-  if (!d || !d.verticals.length || !d.angles.length) { empty.classList.remove('hidden'); return; }
+  if (!d || !d.verticals || !d.verticals.length || !d.angles || !d.angles.length) { empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
 
   let html = '<thead><tr><th></th>';
-  d.angles.forEach(a => { html += '<th>' + a + '</th>'; });
+  d.angles.forEach(a => { html += '<th>' + esc(a) + '</th>'; });
   html += '</tr></thead><tbody>';
 
   d.verticals.forEach(v => {
-    html += '<tr><th>' + v + '</th>';
+    html += '<tr><th>' + esc(v) + '</th>';
     d.angles.forEach(a => {
       const key = v + '|' + a;
-      const cell = d.cells[key];
+      const cell = d.cells ? d.cells[key] : null;
       if (cell) {
-        html += '<td class="' + cell.classification + '" title="' + cell.network_count + ' networks, ' + cell.max_durability + 'd">';
+        html += '<td class="' + esc(cell.classification) + '" title="' + cell.network_count + ' networks, ' + cell.max_durability + 'd">';
         html += '<div style="font-weight:600">' + cell.ad_count + '</div>';
         html += '<div class="matrix-dots">';
         for (let i = 0; i < Math.min(cell.network_count, 7); i++) html += '<span class="matrix-dot"></span>';
@@ -865,7 +903,7 @@ async function loadAnalysis(force) {
 
   const d = await api('/analysis' + (force ? '?force=true' : ''));
   if (!d || d.error) {
-    container.innerHTML = '<div class="empty-state">' + (d ? d.error : 'API unavailable') + '</div>';
+    container.innerHTML = '<div class="empty-state">' + esc(d ? d.error : 'API unavailable') + '</div>';
     ts.textContent = 'Failed';
     return;
   }
@@ -886,7 +924,7 @@ async function loadAnalysis(force) {
         <span class="chevron">&#9654;</span>
         <span>${label}</span>
       </div>
-      <div class="analysis-body">${insights[key] || 'No data'}</div>
+      <div class="analysis-body">${esc(insights[key]) || 'No data'}</div>
     </div>
   `).join('');
 }
