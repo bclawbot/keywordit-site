@@ -1498,7 +1498,7 @@ function signOut() {
 
 <script>
 window.OPPORTUNITIES = [];
-window.PIPELINE_META = {"generated_at": "2026-04-06T19:03:33.070250", "total_validated": 5454, "total_scored": 5119, "total_golden": 540, "total_emerging": 3438, "total_unscored": 335, "countries_covered": 47, "last_run_at": "2026-04-06T17:10:25.158234", "run_id": "run_20260406_1903", "metrics_from_google_kp": 4731, "metrics_from_dataforseo": 157, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06"], "accumulated_runs": 14};
+window.PIPELINE_META = {"generated_at": "2026-04-07T02:48:54.290207", "total_validated": 5724, "total_scored": 5389, "total_golden": 602, "total_emerging": 3633, "total_unscored": 335, "countries_covered": 47, "last_run_at": "2026-04-07T02:33:57.249623", "run_id": "run_20260407_0248", "metrics_from_google_kp": 5001, "metrics_from_dataforseo": 157, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07"], "accumulated_runs": 15};
 window.ANGLES = {};
 
 (function() {
@@ -3854,10 +3854,10 @@ Total keywords in dataset: <span>174,631</span> | Matched to pipeline: <span>0</
         <th>Vertical</th>
         <th data-col="volume">Volume <span class="sort-arrow">&#9650;</span></th>
         <th data-col="cpc_usd">CPC <span class="sort-arrow">&#9650;</span></th>
-        <th data-col="competition">KD <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="kd">KD <span class="sort-arrow">&#9650;</span></th>
         <th data-col="rsoc_score">RSOC Score <span class="sort-arrow">&#9650;</span></th>
         <th>Status</th>
-        <th data-col="first_seen">First Seen <span class="sort-arrow">&#9650;</span></th>
+        <th>Angles</th>
       </tr></thead>
       <tbody id="intel-kw-body"></tbody>
     </table>
@@ -4195,18 +4195,61 @@ function _initIntel() {
       document.getElementById('intel-kw-total').textContent = d.total;
 
       tbody.innerHTML = d.keywords.map(function(k) {
-        return '<tr class="'+(k.highlight?'highlight':'')+'">' +
+        var angles = k.angles || [];
+        var angleCount = angles.length;
+        var anglesBadge = angleCount > 0
+          ? '<span class="pill pill-purple">' + angleCount + ' angles</span>'
+          : '<span class="pill pill-gray">0</span>';
+        var row = '<tr class="expandable '+(k.highlight?'highlight':'')+'" data-kw-id="'+k.id+'" data-kw-text="'+esc(k.keyword)+'" data-kw-vert="'+(k.verticals&&k.verticals[0]?esc(k.verticals[0]):'general')+'">' +
           '<td><strong>'+esc(k.keyword)+'</strong></td>' +
           '<td>'+k.network_count+'</td>' +
           '<td><span class="pill pill-'+(k.durability_class==='winner'||k.durability_class==='evergreen'?'green':k.durability_class==='validated'?'amber':'gray')+'">'+k.max_durability+'d</span></td>' +
           '<td>'+(k.verticals||[]).map(function(v){return '<span class="pill pill-accent">'+esc(v)+'</span>';}).join(' ')+'</td>' +
           '<td>'+fmt(k.volume)+'</td>' +
           '<td>'+fmtUsd(k.cpc_usd)+'</td>' +
-          '<td>'+(k.competition!=null?k.competition.toFixed(2):'--')+'</td>' +
+          '<td>'+(k.kd!=null?k.kd:'--')+'</td>' +
           '<td>'+(k.rsoc_score!=null?k.rsoc_score.toFixed(3):'--')+'</td>' +
           '<td>'+(k.validation_status==='validated'?'<span class="pill pill-green">Validated</span>':'<span class="pill pill-amber">Pending</span>')+'</td>' +
-          '<td>'+timeAgo(k.first_seen)+'</td></tr>';
+          '<td>'+anglesBadge+'</td></tr>';
+        // Detail row — always present, shows angles or generate button
+        row += '<tr class="detail-row hidden" data-kw-detail="'+k.id+'"><td colspan="10"><div class="kw-angles-container" data-kw-id="'+k.id+'" style="padding:4px 0">';
+        if (angleCount) {
+          row += renderAngles(angles);
+        } else {
+          row += '<div style="display:flex;align-items:center;gap:12px;padding:12px 0">' +
+            '<span style="font-size:12px;color:var(--text-tertiary)">No angles yet</span>' +
+            '<button class="filter-btn generate-angles-btn" data-kw-id="'+k.id+'" data-kw-text="'+esc(k.keyword)+'" data-kw-vert="'+(k.verticals&&k.verticals[0]?esc(k.verticals[0]):'general')+'">Generate Angles</button>' +
+            '</div>';
+        }
+        row += '</div></td></tr>';
+        return row;
       }).join('');
+
+      // Bind click-to-expand for ALL keyword rows
+      tbody.querySelectorAll('tr.expandable').forEach(function(row) {
+        row.setAttribute('aria-expanded','false');
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', function() {
+          var detail = tbody.querySelector('tr[data-kw-detail="'+row.dataset.kwId+'"]');
+          if (!detail) return;
+          var expanded = row.getAttribute('aria-expanded') === 'true';
+          row.setAttribute('aria-expanded', String(!expanded));
+          detail.classList.toggle('hidden');
+        });
+      });
+
+      // Bind generate-angles buttons
+      tbody.querySelectorAll('.generate-angles-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var kwId = btn.dataset.kwId;
+          var kwText = btn.dataset.kwText;
+          var kwVert = btn.dataset.kwVert;
+          btn.disabled = true;
+          btn.textContent = 'Generating...';
+          generateAngles(kwId, kwText, kwVert);
+        });
+      });
 
       var totalPages = Math.ceil(d.total / 50);
       var pg = document.getElementById('intel-kw-pagination');
@@ -4215,6 +4258,65 @@ function _initIntel() {
         '<button '+(kwPage>=totalPages?'disabled':'')+' id="intel-kw-next">Next</button>';
       document.getElementById('intel-kw-prev').addEventListener('click', function(){ if(kwPage>1){kwPage--;fetchKeywords();} });
       document.getElementById('intel-kw-next').addEventListener('click', function(){ kwPage++;fetchKeywords(); });
+    });
+  }
+
+  // ── Angle helpers ───────────────────────────────────────────────────────────
+  function renderAngles(angles) {
+    return angles.map(function(a) {
+      var badge = a.source === 'original'
+        ? '<span class="pill pill-red" style="min-width:80px;text-align:center">COMPETITOR</span>'
+        : '<span class="pill pill-accent" style="min-width:80px;text-align:center">GENERATED</span>';
+      return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">' +
+        badge +
+        '<span style="font-size:11px;color:var(--accent-text);min-width:140px">'+esc(a.type)+'</span>' +
+        '<span style="font-size:12px;color:var(--text-primary);flex:1">' +
+        (a.url ? '<a href="'+esc(a.url)+'" target="_blank" style="color:var(--accent-text);text-decoration:none">'+esc(a.title)+'</a>' : esc(a.title)) +
+        '</span>' +
+        (a.vertical ? '<span class="pill pill-purple">'+esc(a.vertical)+'</span>' : '') +
+        '<span style="font-size:10px;color:var(--text-tertiary)">'+(a.confidence ? (a.confidence*100).toFixed(0)+'%' : '')+'</span>' +
+        '</div>';
+    }).join('');
+  }
+
+  function generateAngles(kwId, kwText, kwVert) {
+    var sess = {};
+    try { sess = JSON.parse(localStorage.getItem('keywordit_session') || '{}'); } catch(e) {}
+    var headers = {'Content-Type': 'application/json'};
+    if (sess.token) headers['Authorization'] = 'Bearer ' + sess.token;
+
+    fetch(API + '/generate-angles', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ keyword_id: parseInt(kwId), keyword: kwText, vertical: kwVert })
+    })
+    .then(function(r) {
+      if (r.status === 503) return { error: 'Ollama is busy — angles will be generated in the next pipeline run', busy: true };
+      return r.json();
+    })
+    .then(function(d) {
+      var container = document.querySelector('.kw-angles-container[data-kw-id="'+kwId+'"]');
+      if (!container) return;
+      if (d.error) {
+        var color = d.busy ? 'var(--c-amber)' : 'var(--c-red)';
+        container.innerHTML = '<div style="color:'+color+';padding:8px 0;font-size:12px">'+esc(d.error)+'</div>';
+        return;
+      }
+      if (d.angles && d.angles.length) {
+        container.innerHTML = renderAngles(d.angles);
+        // Update the badge in the parent row
+        var row = document.querySelector('tr[data-kw-id="'+kwId+'"]');
+        if (row) {
+          var badge = row.querySelector('.pill-gray,.pill-purple');
+          if (badge) { badge.className = 'pill pill-purple'; badge.textContent = d.angles.length + ' angles'; }
+        }
+      } else {
+        container.innerHTML = '<div style="color:var(--text-tertiary);padding:8px 0">No angles generated. Try again.</div>';
+      }
+    })
+    .catch(function(e) {
+      var container = document.querySelector('.kw-angles-container[data-kw-id="'+kwId+'"]');
+      if (container) container.innerHTML = '<div style="color:var(--c-red);padding:8px 0">Failed to generate angles. Is the API running?</div>';
     });
   }
 
@@ -4321,7 +4423,7 @@ function _initIntel() {
 
       var insights = d.insights || {};
       container.innerHTML = Object.entries(labels).map(function(entry) {
-        return '<div class="analysis-card" onclick="this.classList.toggle('open')">' +
+        return '<div class="analysis-card" onclick="this.classList.toggle(\x27open\x27)">' +
           '<div class="analysis-hdr"><span class="chevron">&#9654;</span><span>'+entry[1]+'</span></div>' +
           '<div class="analysis-body">'+(esc(insights[entry[0]]) || 'No data')+'</div></div>';
       }).join('');
@@ -4380,16 +4482,17 @@ function _initIntel() {
 
 </script>
 </div>
-<div class="tab-panel" id="tab-pipeline" style="display:none;">
+<div class="tab-content" id="tab-pipeline">
 <div class="pipeline-grid">
 <div class="pipeline-card">
 <div class="pipeline-card-title">Pipeline Status</div>
 <div class="pipeline-status-value error">Error</div>
 <div class="pipeline-meta">
-<div>Last run: <span>2026-04-06T15:25:13</span></div>
+<div>Last run: <span>2026-04-07T01:12:20</span></div>
 <div>Duration: <span>—</span></div>
-<div>Next scheduled: <span>21:25</span></div>
+<div>Next scheduled: <span>2026-04-07 07:12</span></div>
 </div>
+<div class="pipeline-status-explain">4x DataForSEO's server returned an internal error. This is on their side, not ours — transient.<br>3x Request timed out. Usually caused by Ollama model loading or slow external API.<br>1x Expecting property name enclosed in double quotes: line 1 co<br>1x The LLM returned malformed JSON. Non-fatal — the pipeline retries or skips this item.</div>
 <button class="btn-run-now" id="btn-run-now" onclick="triggerPipeline()">Run Now</button>
 </div>
 <div class="pipeline-card">
@@ -4400,38 +4503,57 @@ function _initIntel() {
 <li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Trends Scraper</span></li>
 <li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Trends Postprocess</span></li>
 <li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Keyword Expander</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Keyword Extractor</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Keyword Extractor</span></li>
 <li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Commercial Keyword Transformer</span></li>
 <li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Vetting</span></li>
 <li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Validation</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Angle Engine</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Dashboard Builder</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Reflection</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Angle Engine</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Dashboard Builder</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Reflection</span></li>
 </ul></div>
 <div class="pipeline-card" style="grid-column:span 2;">
 <div class="pipeline-card-title">Last 7 Runs</div>
 <div class="run-history">
+<div class="run-card"><div class="run-card-date">2026-04-07</div><div class="run-card-golden">133</div><div class="run-card-total">573 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-06</div><div class="run-card-golden">139</div><div class="run-card-total">599 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-05</div><div class="run-card-golden">166</div><div class="run-card-total">675 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-04</div><div class="run-card-golden">193</div><div class="run-card-total">1278 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-03</div><div class="run-card-golden">188</div><div class="run-card-total">849 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-02</div><div class="run-card-golden">0</div><div class="run-card-total">253 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-03-31</div><div class="run-card-golden">0</div><div class="run-card-total">410 total</div></div>
-<div class="run-card"><div class="run-card-date">2026-03-30</div><div class="run-card-golden">0</div><div class="run-card-total">936 total</div></div>
 </div></div>
 <div class="pipeline-card" style="grid-column:span 2;">
 <div class="pipeline-card-title">Recent Errors</div>
 <div class="error-list">
-<div class="error-item"><span class="error-timestamp">2026-04-06T16:16:54</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div></div>
-<div class="error-item"><span class="error-timestamp">2026-04-06T16:15:15</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div></div>
-<div class="error-item"><span class="error-timestamp">2026-04-06T16:07:53</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div></div>
-<div class="error-item"><span class="error-timestamp">2026-04-06T16:05:46</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">&#39;NoneType&#39; object has no attribute &#39;get&#39;</div></div>
-<div class="error-item"><span class="error-timestamp">2026-04-06T16:04:30</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div></div>
-<div class="error-item"><span class="error-timestamp">2026-04-06T03:14:14</span><span class="error-stage">content_store._embed</span><div class="error-msg" onclick="this.classList.toggle('expanded')">bge-m3 embedding failed: HTTP Error 503: Service Unavailable</div></div>
-<div class="error-item"><span class="error-timestamp">2026-04-06T03:14:14</span><span class="error-stage">content_store._embed</span><div class="error-msg" onclick="this.classList.toggle('expanded')">bge-m3 embedding failed: HTTP Error 503: Service Unavailable</div></div>
-<div class="error-item"><span class="error-timestamp">2026-04-06T03:14:14</span><span class="error-stage">content_store._embed</span><div class="error-msg" onclick="this.classList.toggle('expanded')">bge-m3 embedding failed: HTTP Error 503: Service Unavailable</div></div>
-<div class="error-item"><span class="error-timestamp">2026-04-06T03:14:14</span><span class="error-stage">content_store._embed</span><div class="error-msg" onclick="this.classList.toggle('expanded')">bge-m3 embedding failed: HTTP Error 503: Service Unavailable</div></div>
-<div class="error-item"><span class="error-timestamp">2026-04-06T03:14:14</span><span class="error-stage">content_store._embed</span><div class="error-msg" onclick="this.classList.toggle('expanded')">bge-m3 embedding failed: HTTP Error 503: Service Unavailable</div></div>
+<div class="error-item"><span class="error-timestamp">2026-04-07T01:18:23</span><span class="error-stage">trends_postprocess/classify</span><div class="error-msg" onclick="this.classList.toggle('expanded')">litellm: HTTPError: 401 Client Error: Unauthorized for url: http://localhost:4000/v1/chat/completions; ollama: ReadTimeout: HTTPConnectionPool(host=&#39;localhost&#39;, port=11434): Read timed out. (read time</div>
+<div class="error-explain">Request timed out. Usually caused by Ollama model loading or slow external API.</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-07T01:16:42</span><span class="error-stage">trends_postprocess/classify</span><div class="error-msg" onclick="this.classList.toggle('expanded')">litellm: HTTPError: 401 Client Error: Unauthorized for url: http://localhost:4000/v1/chat/completions; ollama: ReadTimeout: HTTPConnectionPool(host=&#39;localhost&#39;, port=11434): Read timed out. (read time</div>
+<div class="error-explain">Request timed out. Usually caused by Ollama model loading or slow external API.</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-07T01:15:01</span><span class="error-stage">trends_postprocess/classify</span><div class="error-msg" onclick="this.classList.toggle('expanded')">litellm: HTTPError: 401 Client Error: Unauthorized for url: http://localhost:4000/v1/chat/completions; ollama: ReadTimeout: HTTPConnectionPool(host=&#39;localhost&#39;, port=11434): Read timed out. (read time</div>
+<div class="error-explain">Request timed out. Usually caused by Ollama model loading or slow external API.</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-07T00:02:05</span><span class="error-stage">fb_intelligence/article_analysis_pass2</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Expecting property name enclosed in double quotes: line 1 column 518 (char 517)</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T22:57:42</span><span class="error-stage">fb_intelligence/article_analysis_pass2</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Expecting &#39;,&#39; delimiter: line 1 column 902 (char 901)</div>
+<div class="error-explain">The LLM returned malformed JSON. Non-fatal — the pipeline retries or skips this item.</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T16:16:54</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div>
+<div class="error-explain">DataForSEO&#39;s server returned an internal error. This is on their side, not ours — transient.</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T16:15:15</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div>
+<div class="error-explain">DataForSEO&#39;s server returned an internal error. This is on their side, not ours — transient.</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T16:07:53</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div>
+<div class="error-explain">DataForSEO&#39;s server returned an internal error. This is on their side, not ours — transient.</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T16:05:46</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">&#39;NoneType&#39; object has no attribute &#39;get&#39;</div>
+<div class="error-explain">DataForSEO returned an empty response for this batch. The keywords may not exist in their index.</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-06T16:04:30</span><span class="error-stage">keyword_extractor/dfs_labs_ideas</span><div class="error-msg" onclick="this.classList.toggle('expanded')">500 Server Error: Internal Server Error for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_ideas/live</div>
+<div class="error-explain">DataForSEO&#39;s server returned an internal error. This is on their side, not ours — transient.</div>
+</div>
 </div></div>
 </div><!-- /pipeline-grid -->
 <script>
