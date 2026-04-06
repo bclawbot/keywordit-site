@@ -6,6 +6,7 @@
 <meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit · Competitive Intelligence</title>
+<link rel="stylesheet" href="shared/base.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
@@ -559,6 +560,9 @@ button { cursor: pointer; font-family: var(--font-sans); }
 <!-- ══════════════════════════════════════════════════════════════════════════
      JAVASCRIPT
      ══════════════════════════════════════════════════════════════════════════ -->
+<script src="shared/theme.js"></script>
+<script src="shared/auth.js"></script>
+<script src="shared/palette.js"></script>
 <script>
 (function() {
 'use strict';
@@ -578,34 +582,18 @@ let kwDir = 'desc';
 let kwVert = '';
 
 // ── Auth gate ────────────────────────────────────────────────────────────────
-(function authCheck() {
-  const gate = document.getElementById('auth-gate');
-  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
-  if (!session || !session.token) {
-    gate.querySelector('.msg').textContent = 'Not authenticated. Redirecting...';
-    setTimeout(() => location.href = 'login.html', 800);
-    return;
-  }
-  const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-  const user = users.find(u => u.username === session.user && u.status === 'approved');
-  if (!user) {
-    gate.querySelector('.msg').textContent = 'Access denied. Redirecting...';
-    localStorage.removeItem('keywordit_session');
-    setTimeout(() => location.href = 'login.html', 800);
-    return;
-  }
-  gate.style.display = 'none';
-})();
+requireAuth({ onSuccess: function(s) {
+  document.getElementById('auth-gate').style.display = 'none';
+} });
 
-// ── Theme ────────────────────────────────────────────────────────────────────
-const savedTheme = localStorage.getItem('keywordit-theme');
-if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
-
-document.getElementById('theme-toggle').addEventListener('click', () => {
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('keywordit-theme', next);
-});
+Palette.register([
+  { id: 'intel-warroom', label: 'War Room Tab', category: 'Intelligence', action: function() { document.querySelector('[data-tab="warroom"]').click(); } },
+  { id: 'intel-activity', label: 'Activity Feed', category: 'Intelligence', action: function() { document.querySelector('[data-tab="activity"]').click(); } },
+  { id: 'intel-keywords', label: 'Keywords Queue', category: 'Intelligence', action: function() { document.querySelector('[data-tab="keywords"]').click(); } },
+  { id: 'intel-verticals', label: 'Verticals Leaderboard', category: 'Intelligence', action: function() { document.querySelector('[data-tab="verticals"]').click(); } },
+  { id: 'intel-matrix', label: 'Angle Matrix', category: 'Intelligence', action: function() { document.querySelector('[data-tab="matrix"]').click(); } },
+  { id: 'intel-analysis', label: 'AI Analysis', category: 'Intelligence', action: function() { document.querySelector('[data-tab="analysis"]').click(); } },
+]);
 
 function signOut() {
   localStorage.removeItem('keywordit_session');

@@ -6,6 +6,7 @@
 <meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit — Search Arbitrage Intelligence</title>
+<link rel="stylesheet" href="shared/base.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -518,17 +519,7 @@ h1 { animation-delay: 0.1s; }
   </div>
 </footer>
 
-<script>
-(function(){
-  var saved = localStorage.getItem('keywordit-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('theme-toggle').addEventListener('click', function(){
-    var current = document.documentElement.getAttribute('data-theme');
-    var next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('keywordit-theme', next);
-  });
-})();
-</script>
+<script src="shared/theme.js"></script>
+<script src="shared/palette.js"></script>
 </body>
 </html>

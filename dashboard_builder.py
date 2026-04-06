@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 from datetime import datetime
 
@@ -11,6 +12,24 @@ BASE    = Path(__file__).resolve().parent
 INPUT   = BASE / "validated_opportunities.json"
 HISTORY = BASE / "validation_history.jsonl"
 OUTPUT  = BASE / "dashboard.html"
+OUTPUT_DATA_DIR = BASE / "data"
+OPPS_JSON = OUTPUT_DATA_DIR / "opportunities.json"
+ANGLES_JSON_FILE = OUTPUT_DATA_DIR / "angles.json"
+
+DASHBOARD_FIELDS = {
+    'keyword', 'tag', 'country', 'vertical', 'cpc_usd', 'search_volume',
+    'rpc_display', 'opportunity_score', 'metrics_source', 'source_trend',
+    'country_tier', 'arbitrage_index', 'estimated_rpm', 'confidence',
+    'run_date', 'expansion_seed', 'rsoc_score', 'kd', 'main_intent',
+    'transformed_at', 'ssr', 'trend_monthly', 'kvsi', 'emerging_tag',
+    'scoring_profile', 'cpc_high_usd', 'search_intent', 'original_keyword',
+    'transformation_relationship', 'transformation_confidence', 'has_paid_ads',
+    'longevity_appearances', 'seed_keyword', 'rpc_confidence', 'rpc_source',
+    'competition', 'trend_source', 'commercial_category', 'hook_theme',
+    'lander_url', 'lander_title', 'efficiency_factor', 'longevity_first_seen',
+    'longevity_bonus', 'persistence_score', 'validated_at', 'processed_at',
+    'cpc_low_usd', 'cpc_spread', 'monthly_searches', 'is_branded',
+}
 
 # ── Load history (accumulate all keywords across runs) ─────────────────────────
 # validation_history.jsonl is the append-only permanent record.
@@ -155,8 +174,8 @@ meta = {
     'accumulated_runs':       len(run_dates),
 }
 
-data_json = json.dumps(opportunities, ensure_ascii=False)
-meta_json = json.dumps(meta, ensure_ascii=False)
+data_json = json.dumps(opportunities, ensure_ascii=False).replace('</','<\\/')
+meta_json = json.dumps(meta, ensure_ascii=False).replace('</','<\\/')
 
 # ── Load experimental data files ─────────────────────────────────────────────
 def _load_jsonl(p):
@@ -189,11 +208,25 @@ for _cluster in (angle_candidates if isinstance(angle_candidates, list) else [])
     _co = str(_cluster.get('country', '')).upper()
     if _kw:
         angles_by_key[f'{_kw}|{_co}'] = _cluster
-angles_json = json.dumps(angles_by_key, ensure_ascii=False)
+angles_json = json.dumps(angles_by_key, ensure_ascii=False).replace('</','<\\/')
+
+# ── Write external data files for async loading ──
+OUTPUT_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+def _prune(rec):
+    return {k: v for k, v in rec.items() if k in DASHBOARD_FIELDS and v is not None}
+
+opps_content = json.dumps(opportunities, ensure_ascii=False, separators=(',', ':'))
+OPPS_JSON.write_text(opps_content, encoding='utf-8')
+
+angles_content = json.dumps(angles_by_key, ensure_ascii=False, separators=(',', ':'))
+ANGLES_JSON_FILE.write_text(angles_content, encoding='utf-8')
+
+print(f"   External: {OPPS_JSON} ({len(opps_content)//1024}KB), {ANGLES_JSON_FILE} ({len(angles_content)//1024}KB)")
 
 def esc(s):
     if s is None: return ''
-    return str(s).replace('&','&amp;').replace('<','&lt;').replace('>','&gt;').replace('"','&quot;')
+    return str(s).replace('&','&amp;').replace('<','&lt;').replace('>','&gt;').replace('"','&quot;').replace("'",'&#39;')
 
 # ── Tab Navigation HTML ──────────────────────────────────────────────────────
 tab_nav_html = '''<nav class="tab-nav">
@@ -202,6 +235,7 @@ tab_nav_html = '''<nav class="tab-nav">
   <button class="tab-btn" data-tab="performance">Performance</button>
   <button class="tab-btn" data-tab="content">Content Engine</button>
   <button class="tab-btn" data-tab="intel">Intel</button>
+  <button class="tab-btn" data-tab="pipeline">Pipeline</button>
 </nav>
 <script>
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -507,17 +541,17 @@ def build_content_tab():
             lines.append(
                 f'<tr style="border-bottom:1px solid #1e1e2e">'
                 f'<td style="padding:6px 7px;color:#ccc;max-width:200px;overflow:hidden;'
-                f'text-overflow:ellipsis;white-space:nowrap" title="{rec.get("keyword","")}">'
-                f'{rec.get("keyword","")[:40]}</td>'
-                f'<td style="padding:6px 7px;color:#aaa">{rec.get("angle_type","")}</td>'
-                f'<td style="padding:6px 7px;color:#aaa">{rec.get("language_code","en").upper()}</td>'
+                f'text-overflow:ellipsis;white-space:nowrap" title="{esc(rec.get("keyword",""))}">'
+                f'{esc(rec.get("keyword","")[:40])}</td>'
+                f'<td style="padding:6px 7px;color:#aaa">{esc(rec.get("angle_type",""))}</td>'
+                f'<td style="padding:6px 7px;color:#aaa">{esc(rec.get("language_code","en").upper())}</td>'
                 f'<td style="padding:6px 7px;text-align:right;color:#ccc">'
                 f'{rec.get("word_count",0)}</td>'
                 f'<td style="padding:6px 7px;text-align:right;color:{q_col}">{q_score:.2f}</td>'
-                f'<td style="padding:6px 7px;text-align:right;color:{risk_col}">{risk}</td>'
+                f'<td style="padding:6px 7px;text-align:right;color:{risk_col}">{esc(risk)}</td>'
                 f'<td style="padding:6px 7px;color:#888;font-size:11px;max-width:150px;'
-                f'overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{rec.get("file_path","")}">'
-                f'{fname}</td>'
+                f'overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{esc(rec.get("file_path",""))}">'
+                f'{esc(fname)}</td>'
                 f'</tr>'
             )
         lines.append('</tbody></table>')
@@ -609,16 +643,16 @@ def build_content_tab():
                     f'<tr id="angle-row-{aid}" style="border-bottom:1px solid #1e1e2e">'
                     f'<td style="padding:6px 7px;color:#ccc;max-width:140px;overflow:hidden;'
                     f'text-overflow:ellipsis;white-space:nowrap" title="{_esc(row["keyword"])}">'
-                    f'{row["keyword"][:38]}</td>'
-                    f'<td style="padding:6px 7px;color:#90caf9">{row["angle_type"]}</td>'
+                    f'{esc(row["keyword"][:38])}</td>'
+                    f'<td style="padding:6px 7px;color:#90caf9">{esc(row["angle_type"])}</td>'
                     f'<td style="padding:6px 7px;color:#aaa;max-width:220px;overflow:hidden;'
                     f'text-overflow:ellipsis;white-space:nowrap" title="{_esc(row["angle_title"])}">'
-                    f'{row["angle_title"][:55]}</td>'
+                    f'{esc(row["angle_title"][:55])}</td>'
                     f'<td style="padding:6px 7px;text-align:right;color:#ccc">'
                     f'${row["cpc"]:.2f}</td>'
                     f'<td style="padding:6px 7px;text-align:right;color:#ccc">'
                     f'{row["rsoc_score"]:.2f}</td>'
-                    f'<td style="padding:6px 7px;color:{sig_col}">{row["signal_type"]}</td>'
+                    f'<td style="padding:6px 7px;color:{sig_col}">{esc(row["signal_type"])}</td>'
                     f'<td style="padding:6px 7px;text-align:center">{btn_html}</td>'
                     f'</tr>'
                     f'<tr id="article-row-{aid}" style="display:none">'
@@ -1091,7 +1125,8 @@ def build_performance_tab():
         lines.append('<div class="perf-section"><div class="perf-section-title">RPC Model Calibration</div>')
 
         # Overall MAPE
-        _mape_opps = [o for o in _rpc_opps if (o.get('rpc_actual_clicks') or 0) >= 50]
+        _mape_opps = [o for o in _rpc_opps if (o.get('rpc_actual_clicks') or 0) >= 50
+                      and o.get('rpc_expected', 0) != 0]
         if _mape_opps:
             _mape = round(sum(abs(o['rpc_actual'] - o['rpc_expected']) / o['rpc_expected']
                               for o in _mape_opps) / len(_mape_opps) * 100, 1)
@@ -1167,6 +1202,32 @@ function copyDemotion(entity) {
 (function() {
   var tbody = document.getElementById('table-body');
   if (!tbody) return;
+
+  var _anglesLoading = false;
+  var _anglesLoaded = false;
+  var _anglesPending = [];
+
+  function _ensureAngles(cb) {
+    if (_anglesLoaded) { cb(); return; }
+    _anglesPending.push(cb);
+    if (_anglesLoading) return;
+    _anglesLoading = true;
+    var ver = '?v=' + ((window.PIPELINE_META || {}).run_id || Date.now());
+    fetch('data/angles.json' + ver)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        window.ANGLES = data;
+        _anglesLoaded = true;
+        _anglesPending.forEach(function(fn) { fn(); });
+        _anglesPending = [];
+      })
+      .catch(function(err) {
+        console.error('Failed to load angles:', err);
+        _anglesLoading = false;
+        _anglesPending.forEach(function(fn) { fn(); });
+        _anglesPending = [];
+      });
+  }
 
   function getCluster(tr) {
     var kw = (tr.dataset.keyword || '').toLowerCase();
@@ -1284,16 +1345,217 @@ function copyDemotion(entity) {
     if (e.target.classList.contains('angle-copy-btn') || e.target.closest('.angle-copy-btn')) return;
     if (e.target.classList.contains('art-action-btn') || e.target.closest('.art-action-btn')) return;
     e.stopImmediatePropagation();
-    if (!removePanel(tr)) showPanel(tr);
+    if (!removePanel(tr)) _ensureAngles(function() { showPanel(tr); });
   }, true);
 })();
 </script>'''
+
+def build_pipeline_tab():
+    """Build the Pipeline Status tab showing stage timeline, run history, and errors."""
+    import os
+    lines = ['<div class="tab-panel" id="tab-pipeline" style="display:none;">']
+    lines.append('<div class="pipeline-grid">')
+
+    # ── Read checkpoint data ─────────────────────────────────────────────────
+    checkpoint = {}
+    cp_path = Path("/tmp/openclaw_run_checkpoint.json")
+    try:
+        if cp_path.exists():
+            checkpoint = json.loads(cp_path.read_text())
+    except Exception:
+        pass
+
+    started_at = checkpoint.get("started_at", "")
+    completed_stages = set(checkpoint.get("completed", []))
+    run_date = checkpoint.get("run_date", "")
+
+    # ── Determine pipeline state ─────────────────────────────────────────────
+    all_stages = [
+        "subreddit_discovery.py", "reddit_intelligence.py",
+        "trends_scraper.py", "trends_postprocess.py",
+        "keyword_expander.py", "keyword_extractor.py",
+        "commercial_keyword_transformer.py", "vetting.py",
+        "validation.py", "angle_engine.py",
+        "dashboard_builder.py", "reflection.py",
+    ]
+
+    # Check if heartbeat is currently running
+    hb_running = False
+    try:
+        import subprocess as _sp
+        r = _sp.run(["pgrep", "-f", "heartbeat.py"], capture_output=True, text=True, timeout=5)
+        hb_running = r.returncode == 0
+    except Exception:
+        pass
+
+    done_count = len(completed_stages)
+    if hb_running and done_count < len(all_stages):
+        state = "running"
+        state_label = "Running"
+        state_class = "warn"
+    elif done_count == len(all_stages):
+        state = "idle"
+        state_label = "Idle"
+        state_class = "ok"
+    else:
+        state = "partial"
+        state_label = f"Partial ({done_count}/{len(all_stages)})"
+        state_class = "warn"
+
+    # ── Read recent errors ───────────────────────────────────────────────────
+    recent_errors = []
+    try:
+        err_path = BASE / "error_log.jsonl"
+        if err_path.exists():
+            err_lines = err_path.read_text().strip().split("\n")
+            for line in reversed(err_lines[-20:]):
+                try:
+                    recent_errors.append(json.loads(line))
+                except Exception:
+                    pass
+            recent_errors = recent_errors[:10]
+    except Exception:
+        pass
+
+    if recent_errors and not hb_running:
+        # Check if last error is from today's run
+        last_err_date = recent_errors[0].get("timestamp", "")[:10]
+        if last_err_date == run_date:
+            state = "error"
+            state_label = "Error"
+            state_class = "error"
+
+    # ── Compute run history (golden counts per day from validation_history) ──
+    run_history = []
+    try:
+        vh_path = BASE / "validation_history.jsonl"
+        if vh_path.exists():
+            from collections import defaultdict
+            by_date = defaultdict(lambda: {"golden": 0, "total": 0})
+            for line in vh_path.read_text().strip().split("\n")[-5000:]:
+                try:
+                    rec = json.loads(line)
+                    d = (rec.get("validated_at") or rec.get("processed_at", ""))[:10]
+                    if d:
+                        by_date[d]["total"] += 1
+                        if rec.get("tag") == "GOLDEN_OPPORTUNITY":
+                            by_date[d]["golden"] += 1
+                except Exception:
+                    pass
+            for d in sorted(by_date.keys(), reverse=True)[:7]:
+                run_history.append({"date": d, **by_date[d]})
+    except Exception:
+        pass
+
+    # ── Duration ─────────────────────────────────────────────────────────────
+    duration_str = "—"
+    next_str = "—"
+    if started_at:
+        try:
+            started_dt = datetime.fromisoformat(started_at)
+            elapsed = (datetime.now() - started_dt).total_seconds()
+            if state == "idle":
+                duration_str = f"{int(elapsed // 60)}m {int(elapsed % 60)}s"
+            next_dt = started_dt.replace(hour=started_dt.hour + 6)
+            next_str = next_dt.strftime("%H:%M")
+        except Exception:
+            pass
+
+    # ── Status Card ──────────────────────────────────────────────────────────
+    lines.append('<div class="pipeline-card">')
+    lines.append('<div class="pipeline-card-title">Pipeline Status</div>')
+    lines.append(f'<div class="pipeline-status-value {state_class}">{esc(state_label)}</div>')
+    lines.append('<div class="pipeline-meta">')
+    lines.append(f'<div>Last run: <span>{esc(started_at[:19]) if started_at else "Never"}</span></div>')
+    lines.append(f'<div>Duration: <span>{duration_str}</span></div>')
+    lines.append(f'<div>Next scheduled: <span>{next_str}</span></div>')
+    lines.append('</div>')
+    lines.append('<button class="btn-run-now" id="btn-run-now" onclick="triggerPipeline()">Run Now</button>')
+    lines.append('</div>')
+
+    # ── Stage Timeline ───────────────────────────────────────────────────────
+    lines.append('<div class="pipeline-card">')
+    lines.append('<div class="pipeline-card-title">Stage Timeline</div>')
+    lines.append('<ul class="stage-timeline">')
+    for stage in all_stages:
+        if stage in completed_stages:
+            icon_cls = "done"
+            icon = "\u2713"
+        elif hb_running and stage not in completed_stages:
+            # First uncompleted stage while running = currently running
+            if all(s in completed_stages for s in all_stages[:all_stages.index(stage)]):
+                icon_cls = "running"
+                icon = "\u23F3"
+            else:
+                icon_cls = "pending"
+                icon = "\u2014"
+        else:
+            icon_cls = "pending"
+            icon = "\u2014"
+        name = stage.replace(".py", "").replace("_", " ").title()
+        lines.append(f'<li class="stage-item"><span class="stage-icon {icon_cls}">{icon}</span><span class="stage-name">{esc(name)}</span></li>')
+    lines.append('</ul></div>')
+
+    # ── Run History ──────────────────────────────────────────────────────────
+    lines.append('<div class="pipeline-card" style="grid-column:span 2;">')
+    lines.append('<div class="pipeline-card-title">Last 7 Runs</div>')
+    lines.append('<div class="run-history">')
+    if run_history:
+        for rh in run_history:
+            lines.append(f'<div class="run-card"><div class="run-card-date">{esc(rh["date"])}</div>'
+                        f'<div class="run-card-golden">{rh["golden"]}</div>'
+                        f'<div class="run-card-total">{rh["total"]} total</div></div>')
+    else:
+        lines.append('<div style="color:var(--text-muted);font-size:12px;padding:16px;">No run history yet.</div>')
+    lines.append('</div></div>')
+
+    # ── Error Log ────────────────────────────────────────────────────────────
+    lines.append('<div class="pipeline-card" style="grid-column:span 2;">')
+    lines.append('<div class="pipeline-card-title">Recent Errors</div>')
+    lines.append('<div class="error-list">')
+    if recent_errors:
+        for err in recent_errors:
+            ts = esc(err.get("timestamp", "")[:19])
+            stage = esc(err.get("stage", "unknown"))
+            msg = esc(str(err.get("error", ""))[:200])
+            lines.append(f'<div class="error-item"><span class="error-timestamp">{ts}</span>'
+                        f'<span class="error-stage">{stage}</span>'
+                        f'<div class="error-msg" onclick="this.classList.toggle(\'expanded\')">{msg}</div></div>')
+    else:
+        lines.append('<div style="color:var(--text-muted);font-size:12px;padding:16px;">No recent errors.</div>')
+    lines.append('</div></div>')
+
+    lines.append('</div><!-- /pipeline-grid -->')
+
+    # ── JS: Run Now handler ──────────────────────────────────────────────────
+    lines.append('''<script>
+function triggerPipeline() {
+  var btn = document.getElementById('btn-run-now');
+  btn.disabled = true;
+  btn.textContent = 'Triggering...';
+  fetch('/api/trigger-pipeline', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      btn.textContent = d.status === 'triggered' ? 'Triggered! Refreshing...' : 'Error: ' + (d.message || 'unknown');
+      if (d.status === 'triggered') setTimeout(function() { location.reload(); }, 5000);
+      else setTimeout(function() { btn.disabled = false; btn.textContent = 'Run Now'; }, 3000);
+    })
+    .catch(function(e) {
+      btn.textContent = 'API unavailable';
+      setTimeout(function() { btn.disabled = false; btn.textContent = 'Run Now'; }, 3000);
+    });
+}
+</script>''')
+    lines.append('</div><!-- /tab-pipeline -->')
+    return '\n'.join(lines)
+
 
 content_tab_html      = build_content_tab()
 experimental_tab_html = build_experimental_tab()
 performance_tab_html  = build_performance_tab()
 intel_tab_html        = build_intel_tab()
-extra_tabs_content    = content_tab_html + '\n' + experimental_tab_html + '\n' + performance_tab_html + '\n' + intel_tab_html + '\n' + extra_tabs_js
+pipeline_tab_html     = build_pipeline_tab()
+extra_tabs_content    = content_tab_html + '\n' + experimental_tab_html + '\n' + performance_tab_html + '\n' + intel_tab_html + '\n' + pipeline_tab_html + '\n' + extra_tabs_js
 
 exp_count = len(exp_results)
 disc_count = len(discovered_ent)
@@ -1312,14 +1574,16 @@ chat_widget_html = ""
 if chat_widget_path.exists():
     chat_widget_html = chat_widget_path.read_text(encoding='utf-8')
 
-html = (TEMPLATE
-    .replace('__DATA__', data_json)
-    .replace('__META__', meta_json)
-    .replace('__ANGLES_DATA__', angles_json)
-    .replace('__OR_KEY__', '')
-    .replace('__TAB_NAV__', tab_nav_html)
-    .replace('__EXTRA_TABS__', extra_tabs_content)
-)
+placeholders = {
+    '__DATA__': '[]',
+    '__META__': meta_json,
+    '__ANGLES_DATA__': '{}',
+    '__OR_KEY__': '',
+    '__TAB_NAV__': tab_nav_html,
+    '__EXTRA_TABS__': extra_tabs_content,
+}
+_ph_pattern = re.compile('|'.join(re.escape(k) for k in placeholders))
+html = _ph_pattern.sub(lambda m: placeholders[m.group(0)], TEMPLATE)
 
 # Inject chat widget before closing </body> tag
 if chat_widget_html:

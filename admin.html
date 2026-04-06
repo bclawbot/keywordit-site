@@ -6,6 +6,7 @@
 <meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit · Admin</title>
+<link rel="stylesheet" href="shared/base.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -472,6 +473,9 @@ body {
 
 <div class="toast" id="toast"></div>
 
+<script src="shared/theme.js"></script>
+<script src="shared/auth.js"></script>
+<script src="shared/palette.js"></script>
 <script>
 async function hashStr(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -491,25 +495,16 @@ function getRequests() { return JSON.parse(localStorage.getItem('keywordit_reque
 function setRequests(r) { localStorage.setItem('keywordit_requests', JSON.stringify(r)); }
 
 // ═══ AUTH CHECK ═══
-(function() {
-  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
-  if (!session || !session.token) {
-    document.getElementById('auth-gate').querySelector('.msg').textContent = 'Not authenticated. Redirecting...';
-    setTimeout(() => window.location.href = 'login.html', 1000);
-    return;
-  }
-  const users = getUsers();
-  const user = users.find(u => u.username === session.user && u.status === 'approved');
-  if (!user || user.role !== 'admin') {
-    document.getElementById('auth-gate').querySelector('.msg').textContent = 'Admin access required. Redirecting...';
-    setTimeout(() => window.location.href = 'dashboard.html', 1500);
-    return;
-  }
+requireAuth({ requireAdmin: true, onSuccess: function(s) {
   document.getElementById('auth-gate').style.display = 'none';
   document.getElementById('admin-main').style.display = 'block';
-  document.getElementById('admin-user-label').textContent = session.user + ' (admin)';
+  document.getElementById('admin-user-label').textContent = s.user + ' (admin)';
   renderAll();
-})();
+} });
+
+Palette.register([
+  { id: 'admin-add-user', label: 'Add New User', category: 'Admin', action: function() { document.getElementById('add-username').focus(); } },
+]);
 
 function renderAll() {
   renderRequests();
@@ -713,17 +708,6 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Theme toggle
-(function() {
-  const saved = localStorage.getItem('keywordit-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('theme-toggle').addEventListener('click', function() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('keywordit-theme', next);
-  });
-})();
 </script>
 </body>
 </html>

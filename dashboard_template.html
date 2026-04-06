@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+<link rel="stylesheet" href="shared/base.css">
 <style>
 /* ============================================================
    THEME VARIABLES
@@ -1457,38 +1458,20 @@ __TAB_NAV__
 </div>
 </div><!-- /tab-discovery -->
 
+<script src="shared/theme.js"></script>
+<script src="shared/auth.js"></script>
+<script src="shared/palette.js"></script>
 <script>
 // ═══ AUTH GATE ═══
-(function() {
-  const gate = document.getElementById('auth-gate');
-  const gateMsg = document.getElementById('gate-msg');
-  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
-
-  if (!session || !session.token) {
-    gateMsg.textContent = 'Not authenticated. Redirecting to login...';
-    setTimeout(() => window.location.href = 'login.html', 1200);
-    return;
-  }
-
-  const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-  const user = users.find(u => u.username === session.user && u.status === 'approved');
-
-  if (!user) {
-    gateMsg.textContent = 'Access denied. Redirecting...';
-    localStorage.removeItem('keywordit_session');
-    setTimeout(() => window.location.href = 'login.html', 1200);
-    return;
-  }
-
-  // Authenticated — show dashboard
+requireAuth({ onSuccess: function(s) {
+  var gate = document.getElementById('auth-gate');
   gate.classList.add('hidden');
-
   // Show admin button if admin
-  if (user.role === 'admin') {
-    const adminBtn = document.getElementById('admin-link-btn');
+  if (s.role === 'admin') {
+    var adminBtn = document.getElementById('admin-link-btn');
     if (adminBtn) adminBtn.style.display = '';
   }
-})();
+} });
 
 function signOut() {
   localStorage.removeItem('keywordit_session');
@@ -1741,24 +1724,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ===== THEME =====
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('keywordit-theme', next);
-  // Rebuild charts with new colors
-  if (S.chartsOpen) {
-    Object.values(S.charts).forEach(c => c.destroy());
-    S.charts = {};
-    buildCharts();
-    updateCharts();
-  }
-}
-// Restore theme on load
+// ===== THEME (chart rebuild on theme change) =====
+// theme.js handles the actual toggle; we just rebuild charts when it changes
 (function() {
-  const saved = localStorage.getItem('keywordit-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  var observer = new MutationObserver(function() {
+    if (S.chartsOpen) {
+      Object.values(S.charts).forEach(function(c) { c.destroy(); });
+      S.charts = {};
+      buildCharts();
+      updateCharts();
+    }
+  });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 })();
 
 // ===== COLUMN DROPDOWN =====
@@ -2753,8 +2730,7 @@ function bindEvents() {
     }
   });
 
-  // Theme
-  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  // Theme toggle is handled by shared/theme.js
 
   // Drawer
   document.getElementById('drawer-close-btn').addEventListener('click', closeDrawer);
@@ -2783,6 +2759,16 @@ function bindEvents() {
 }
 
 })();
+</script>
+<script>
+Palette.register([
+  { id: 'dash-golden', label: 'Show Golden Only', shortcut: 'g', category: 'Filters', action: function() { var cb = document.querySelector('input[value="GOLDEN_OPPORTUNITY"]'); if(cb && !cb.checked) { cb.checked = true; onFilterChange(); } } },
+  { id: 'dash-clear-filters', label: 'Clear All Filters', category: 'Filters', action: function() { var btn = document.getElementById('reset-all-filters'); if(btn) btn.click(); } },
+  { id: 'dash-export-csv', label: 'Export as CSV', category: 'Actions', action: function() { if(typeof exportCSV === 'function') exportCSV(); } },
+  { id: 'dash-export-json', label: 'Export as JSON', category: 'Actions', action: function() { if(typeof exportJSON === 'function') exportJSON(); } },
+  { id: 'dash-toggle-charts', label: 'Toggle Charts', shortcut: 'c', category: 'Actions', action: function() { var btn = document.getElementById('charts-toggle'); if(btn) btn.click(); } },
+  { id: 'dash-toggle-filters', label: 'Toggle Filter Panel', shortcut: 'f', category: 'Actions', action: function() { if(typeof toggleFilterPanel === 'function') toggleFilterPanel(); } },
+]);
 </script>
 __EXTRA_TABS__
 </body>
