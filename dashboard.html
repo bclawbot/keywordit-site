@@ -4769,83 +4769,151 @@ function _initIntel() {
 <div class="pipeline-grid">
 <div class="pipeline-card">
 <div class="pipeline-card-title">Pipeline Status</div>
-<div class="pipeline-status-value warn">Partial (0/12)</div>
+<div class="pipeline-status-value" id="pl-status">Loading...</div>
 <div class="pipeline-meta">
-<div>Last run: <span>Never</span></div>
-<div>Duration: <span>—</span></div>
-<div>Next scheduled: <span>—</span></div>
+<div>Last run: <span id="pl-last-run">—</span></div>
+<div>Duration: <span id="pl-duration">—</span></div>
+<div>Stages: <span id="pl-stages">—</span></div>
 </div>
-<button class="btn-run-now" id="btn-run-now" onclick="triggerPipeline()">Run Now</button>
 </div>
 <div class="pipeline-card">
 <div class="pipeline-card-title">Stage Timeline</div>
-<ul class="stage-timeline">
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Subreddit Discovery</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Reddit Intelligence</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Trends Scraper</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Trends Postprocess</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Keyword Expander</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Keyword Extractor</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Commercial Keyword Transformer</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Vetting</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Validation</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Angle Engine</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Dashboard Builder</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Reflection</span></li>
+<ul class="stage-timeline" id="pl-timeline">
+<li class="stage-item"><span class="stage-icon pending">...</span><span class="stage-name">Loading stages...</span></li>
 </ul></div>
 <div class="pipeline-card" style="grid-column:span 2;">
-<div class="pipeline-card-title">Last 7 Runs</div>
-<div class="run-history">
-<div class="run-card"><div class="run-card-date">2026-04-08</div><div class="run-card-golden">23</div><div class="run-card-total">667 total</div></div>
-<div class="run-card"><div class="run-card-date">2026-04-07</div><div class="run-card-golden">134</div><div class="run-card-total">596 total</div></div>
-<div class="run-card"><div class="run-card-date">2026-04-06</div><div class="run-card-golden">139</div><div class="run-card-total">599 total</div></div>
-<div class="run-card"><div class="run-card-date">2026-04-05</div><div class="run-card-golden">166</div><div class="run-card-total">675 total</div></div>
-<div class="run-card"><div class="run-card-date">2026-04-04</div><div class="run-card-golden">193</div><div class="run-card-total">1278 total</div></div>
-<div class="run-card"><div class="run-card-date">2026-04-03</div><div class="run-card-golden">188</div><div class="run-card-total">849 total</div></div>
-<div class="run-card"><div class="run-card-date">2026-04-02</div><div class="run-card-golden">0</div><div class="run-card-total">253 total</div></div>
+<div class="pipeline-card-title">Run History</div>
+<div class="run-history" id="pl-history">
+<div style="color:var(--text-dim,#666);padding:16px;">Loading run history...</div>
 </div></div>
 <div class="pipeline-card" style="grid-column:span 2;">
-<div class="pipeline-card-title">Recent Errors</div>
-<div class="error-list">
-<div class="error-item"><span class="error-timestamp">2026-04-08T12:00:50</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+<div class="pipeline-card-title">Data Funnel</div>
+<div id="pl-funnel" style="font-family:monospace;font-size:12px;color:var(--text-dim,#999);">—</div>
 </div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T12:00:50</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T12:00:50</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:12</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;経理代行 サービス&#39; [JP]: navigational_intent</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:12</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;経理代行 サービス&#39; [JP]: navigational_intent</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:11</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;cincinnati food festival&#39; [US]: navigational_intent</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:06</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;cbils loan&#39; [GB]: navigational_intent</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:06</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;cbils loan&#39; [GB]: navigational_intent</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:05</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;ファクタリング 手数料 安い&#39; [JP]: navigational_intent</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:04</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;meilleur compte pro en ligne&#39; [FR]: navigational_intent</div>
-</div>
+<div class="pipeline-card" style="grid-column:span 2;">
+<div class="pipeline-card-title">Errors</div>
+<div class="error-list" id="pl-errors">
+<div style="color:var(--text-dim,#666);padding:8px;">No errors reported</div>
 </div></div>
 </div><!-- /pipeline-grid -->
 <script>
-function triggerPipeline() {
-  var btn = document.getElementById('btn-run-now');
-  btn.disabled = true;
-  btn.textContent = 'Triggering...';
-  fetch('/api/trigger-pipeline', { method: 'POST' })
-    .then(function(r) { return r.json(); })
+(function() {
+  var headers = (window.auth && auth.getHeaders) ? auth.getHeaders() : {};
+
+  function fmtDuration(secs) {
+    if (!secs) return '—';
+    if (secs < 60) return Math.round(secs) + 's';
+    if (secs < 3600) return Math.round(secs / 60) + 'm ' + Math.round(secs % 60) + 's';
+    return Math.round(secs / 3600) + 'h ' + Math.round((secs % 3600) / 60) + 'm';
+  }
+  function fmtTime(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }
+  function statusClass(s) {
+    if (s === 'completed') return 'ok';
+    if (s === 'partial') return 'warn';
+    if (s === 'failed') return 'error';
+    return 'warn';
+  }
+  function stageIcon(s) {
+    if (s === 'completed') return 'OK';
+    if (s === 'failed') return 'X';
+    if (s === 'skipped') return '-';
+    if (s === 'running') return '~';
+    return '—';
+  }
+  function stageIconClass(s) {
+    if (s === 'completed') return 'done';
+    if (s === 'failed') return 'fail';
+    if (s === 'skipped') return 'skip';
+    return 'pending';
+  }
+  function prettyName(script) {
+    return script.replace('.py','').replace('.sh','').replace(/_/g,' ').replace(/\b\w/g, function(c){return c.toUpperCase();});
+  }
+
+  // Load current run
+  fetch(BACKEND_API + '/api/pipeline/current', { headers: headers })
+    .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(d) {
-      btn.textContent = d.status === 'triggered' ? 'Triggered! Refreshing...' : 'Error: ' + (d.message || 'unknown');
-      if (d.status === 'triggered') setTimeout(function() { location.reload(); }, 5000);
-      else setTimeout(function() { btn.disabled = false; btn.textContent = 'Run Now'; }, 3000);
+      if (!d || !d.run) {
+        document.getElementById('pl-status').textContent = 'No runs recorded';
+        document.getElementById('pl-status').className = 'pipeline-status-value warn';
+        return;
+      }
+      var run = d.run;
+      var stages = d.stages || [];
+
+      // Status
+      var el = document.getElementById('pl-status');
+      el.textContent = (run.status === 'completed' ? 'Completed' : run.status === 'partial' ? 'Partial' : run.status.charAt(0).toUpperCase() + run.status.slice(1)) + ' (' + run.completed_stages + '/' + run.total_stages + ')';
+      el.className = 'pipeline-status-value ' + statusClass(run.status);
+
+      document.getElementById('pl-last-run').textContent = fmtTime(run.started_at);
+      document.getElementById('pl-duration').textContent = fmtDuration(run.total_duration_secs);
+      document.getElementById('pl-stages').textContent = run.completed_stages + ' done, ' + run.failed_stages + ' failed, ' + run.skipped_stages + ' skipped';
+
+      // Timeline
+      if (stages.length) {
+        var html = stages.map(function(s) {
+          var dur = s.duration_secs ? ' (' + fmtDuration(s.duration_secs) + ')' : '';
+          var records = s.records_out ? ' — ' + s.records_out + ' records' : '';
+          var err = s.error_message ? '<div style="color:#ef4444;font-size:11px;margin-top:2px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + s.error_message.replace(/"/g,'&quot;') + '">' + s.error_message.substring(0,80) + '</div>' : '';
+          return '<li class="stage-item"><span class="stage-icon ' + stageIconClass(s.status) + '">' + stageIcon(s.status) + '</span><span class="stage-name">' + prettyName(s.script_name) + dur + records + '</span>' + err + '</li>';
+        }).join('');
+        document.getElementById('pl-timeline').innerHTML = html;
+      }
+
+      // Funnel
+      if (run.funnel_counts) {
+        var funnelHtml = Object.keys(run.funnel_counts).map(function(k) {
+          return '<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>' + k + '</span><span style="color:var(--text,#ccc)">' + run.funnel_counts[k].toLocaleString() + '</span></div>';
+        }).join('');
+        document.getElementById('pl-funnel').innerHTML = funnelHtml || '—';
+      }
+
+      // Errors from stages
+      var errStages = stages.filter(function(s) { return s.error_message; });
+      if (errStages.length || run.error_summary) {
+        var errHtml = errStages.map(function(s) {
+          return '<div class="error-item"><span class="error-stage">' + prettyName(s.script_name) + '</span><div class="error-msg" onclick="this.classList.toggle(\'expanded\')">' + (s.error_message || '').replace(/</g,'&lt;') + '</div></div>';
+        }).join('');
+        if (run.error_summary && !errStages.length) {
+          errHtml = '<div class="error-item"><div class="error-msg">' + run.error_summary.replace(/</g,'&lt;') + '</div></div>';
+        }
+        document.getElementById('pl-errors').innerHTML = errHtml;
+      }
     })
     .catch(function(e) {
-      btn.textContent = 'API unavailable';
-      setTimeout(function() { btn.disabled = false; btn.textContent = 'Run Now'; }, 3000);
+      document.getElementById('pl-status').textContent = 'Failed to load';
+      document.getElementById('pl-status').className = 'pipeline-status-value error';
     });
-}
+
+  // Load run history
+  fetch(BACKEND_API + '/api/pipeline/runs?per_page=10', { headers: headers })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(d) {
+      if (!d || !d.data || !d.data.length) {
+        document.getElementById('pl-history').innerHTML = '<div style="color:var(--text-dim,#666);padding:16px;">No pipeline runs recorded yet. Run sync_to_backend.py after the next heartbeat.</div>';
+        return;
+      }
+      var html = d.data.map(function(r) {
+        var statusBg = r.status === 'completed' ? '#1b5e20' : r.status === 'partial' ? '#e65100' : '#b71c1c';
+        return '<div class="run-card" onclick="window.open(\'#run-\' + \'' + r.run_id + '\',\'_self\')" style="cursor:default">' +
+          '<div class="run-card-date">' + fmtTime(r.started_at) + '</div>' +
+          '<div class="run-card-golden" title="Golden opportunities">' + (r.golden_count || 0) + '</div>' +
+          '<div class="run-card-total">' + (r.total_validated || '?') + ' validated</div>' +
+          '<div style="font-size:10px;margin-top:4px;"><span style="background:' + statusBg + ';color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;">' + r.status + ' (' + r.completed_stages + '/' + r.total_stages + ')</span>' +
+          (r.total_duration_secs ? ' <span style="color:var(--text-dim)">' + fmtDuration(r.total_duration_secs) + '</span>' : '') +
+          (r.failed_stages > 0 ? ' <span style="color:#ef4444">' + r.failed_stages + ' failed</span>' : '') +
+          '</div></div>';
+      }).join('');
+      document.getElementById('pl-history').innerHTML = html;
+    })
+    .catch(function() {});
+})();
 </script>
 </div><!-- /tab-pipeline -->
 <script>
