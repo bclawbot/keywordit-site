@@ -1515,33 +1515,22 @@ function signOut() {
 
 <script>
 window.OPPORTUNITIES = [];
-window.PIPELINE_META = {"generated_at": "2026-04-08T13:43:42.832439", "total_validated": 6286, "total_scored": 5935, "total_golden": 613, "total_emerging": 3858, "total_unscored": 351, "countries_covered": 47, "last_run_at": "2026-04-08T11:42:12.106066", "run_id": "run_20260408_1343", "metrics_from_google_kp": 5513, "metrics_from_dataforseo": 188, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08"], "accumulated_runs": 16};
+window.PIPELINE_META = {"generated_at": "2026-04-09T01:54:06.881794", "total_validated": 6303, "total_scored": 5946, "total_golden": 614, "total_emerging": 3867, "total_unscored": 357, "countries_covered": 47, "last_run_at": "2026-04-09T00:29:36.015326", "run_id": "run_20260409_0154", "metrics_from_google_kp": 5511, "metrics_from_dataforseo": 196, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09"], "accumulated_runs": 17};
 window.ANGLES = {};
 
-var BACKEND_API = 'https://keywordit-api-production.up.railway.app';
 (function() {
-  var headers = (window.auth && auth.getHeaders) ? auth.getHeaders() : {};
-  fetch(BACKEND_API + '/api/opportunities/export', { headers: headers })
+  var meta = window.PIPELINE_META || {};
+  var ver = '?v=' + (meta.run_id || Date.now());
+  fetch('data/opportunities.json' + ver)
     .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function(data) {
       window.OPPORTUNITIES = data;
       document.dispatchEvent(new CustomEvent('opportunities-loaded'));
     })
     .catch(function(err) {
-      console.warn('API unavailable, falling back to static data:', err);
-      var meta = window.PIPELINE_META || {};
-      var ver = '?v=' + (meta.run_id || Date.now());
-      fetch('data/opportunities.json' + ver)
-        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .then(function(data) {
-          window.OPPORTUNITIES = data;
-          document.dispatchEvent(new CustomEvent('opportunities-loaded'));
-        })
-        .catch(function(err2) {
-          console.error('Failed to load opportunities:', err2);
-          var el = document.querySelector('#data-loading .load-text');
-          if (el) el.textContent = 'Failed to load data. Try refreshing.';
-        });
+      console.error('Failed to load opportunities:', err);
+      var el = document.querySelector('#data-loading .load-text');
+      if (el) el.textContent = 'Failed to load data. Try refreshing.';
     });
 })();
 
@@ -2944,8 +2933,8 @@ Palette.register([
 <div id="tab-content" class="tab-content">
 <div style="padding:16px">
 <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px">
-<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Keywords Processed</div><div style="font-size:24px;font-weight:700;color:#4caf50">5249</div></div>
-<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Angles Selected</div><div style="font-size:24px;font-weight:700;color:#2196f3">26245</div></div>
+<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Keywords Processed</div><div style="font-size:24px;font-weight:700;color:#4caf50">5501</div></div>
+<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Angles Selected</div><div style="font-size:24px;font-weight:700;color:#2196f3">27505</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Articles Generated</div><div style="font-size:24px;font-weight:700;color:#ff9800">4</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">RAF Compliant</div><div style="font-size:24px;font-weight:700;color:#4caf50">4/4</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Avg Quality Score</div><div style="font-size:24px;font-weight:700;color:#9c27b0">0.78</div></div>
@@ -2965,7 +2954,7 @@ Palette.register([
 <tr style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="生命保険">生命保険</td><td style="padding:6px 7px;color:#aaa">hidden_costs</td><td style="padding:6px 7px;color:#aaa">EN</td><td style="padding:6px 7px;text-align:right;color:#ccc">673</td><td style="padding:6px 7px;text-align:right;color:#ff9800">0.62</td><td style="padding:6px 7px;text-align:right;color:#4caf50">LOW</td><td style="padding:6px 7px;color:#888;font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="articles/2026-04-01/生命保険_hidden_costs_1.md">生命保険_hidden_costs_1.md</td></tr>
 <tr style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="生命保険">生命保険</td><td style="padding:6px 7px;color:#aaa">hidden_costs</td><td style="padding:6px 7px;color:#aaa">EN</td><td style="padding:6px 7px;text-align:right;color:#ccc">755</td><td style="padding:6px 7px;text-align:right;color:#4caf50">0.75</td><td style="padding:6px 7px;text-align:right;color:#4caf50">LOW</td><td style="padding:6px 7px;color:#888;font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="articles/2026-04-01/生命保険_hidden_costs.md">生命保険_hidden_costs.md</td></tr>
 </tbody></table>
-<h3 style="margin:24px 0 8px;color:#e0e0e0">Angles Ready to Generate (26242)</h3>
+<h3 style="margin:24px 0 8px;color:#e0e0e0">Angles Ready to Generate (27502)</h3>
 <table style="width:100%;border-collapse:collapse;font-size:12px">
 <thead><tr style="background:#2a2a3e;color:#aaa"><th style="padding:7px;text-align:left">Keyword</th><th style="padding:7px;text-align:left">Angle Type</th><th style="padding:7px;text-align:left">Title</th><th style="padding:7px;text-align:right">CPC</th><th style="padding:7px;text-align:right">Score</th><th style="padding:7px;text-align:left">Signal</th><th style="padding:7px;text-align:center">Generate</th></tr></thead><tbody>
 <tr id="angle-row-ashar-hari-ini_eligibility_explainer" style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ashar hari ini">ashar hari ini</td><td style="padding:6px 7px;color:#90caf9">eligibility_explainer</td><td style="padding:6px 7px;color:#aaa;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ashar hari ini – 2026">ashar hari ini – 2026</td><td style="padding:6px 7px;text-align:right;color:#ccc">$4.12</td><td style="padding:6px 7px;text-align:right;color:#ccc">0.51</td><td style="padding:6px 7px;color:#607d8b">keyword_expansion</td><td style="padding:6px 7px;text-align:center"><button id="gen-btn-ashar-hari-ini_eligibility_explainer" class="gen-btn" data-angle-id="ashar-hari-ini_eligibility_explainer" data-keyword="ashar hari ini" data-vertical="unknown" data-language="id" data-country="ID" data-cpc="4.12" data-angle-type="eligibility_explainer" data-angle-title="ashar hari ini – 2026" data-rsoc="0.5147" data-signal="" onclick="generateArticle(this)" style="cursor:pointer;background:#1565c0;color:#fff;border:none;border-radius:4px;padding:4px 10px;font-size:11px;white-space:nowrap">Generate</button></td></tr><tr id="article-row-ashar-hari-ini_eligibility_explainer" style="display:none"><td colspan="7" style="padding:0"><details open style="background:#111;padding:12px;border-left:3px solid #1565c0"><summary style="cursor:pointer;color:#90caf9;font-size:12px;user-select:none">Article: ashar hari ini – 2026</summary><pre id="article-text-ashar-hari-ini_eligibility_explainer" style="color:#ccc;white-space:pre-wrap;font-size:12px;margin:8px 0 0;font-family:monospace">Waiting...</pre></details></td></tr>
@@ -3075,7 +3064,7 @@ var _localAvail = null, _localProbeAt = 0;
 function _probeLocal() {
   var now = Date.now();
   if (_localAvail !== null && now - _localProbeAt < 30000) return Promise.resolve(_localAvail);
-  return fetch(BACKEND_API + "/api/health", {signal: AbortSignal.timeout(3000)})
+  return fetch("http://127.0.0.1:5555/api/health", {signal: AbortSignal.timeout(1500)})
     .then(function(r) { _localAvail = r.ok; _localProbeAt = Date.now(); return _localAvail; })
     .catch(function()  { _localAvail = false; _localProbeAt = Date.now(); return false; });
 }
@@ -3130,9 +3119,8 @@ function _generateLocal(btn, aid, textEl, key) {
     angle_title: btn.dataset.angleTitle, rsoc_score: parseFloat(btn.dataset.rsoc)||0,
     discovery_signal_text: btn.dataset.signal||""
   };
-  var artHeaders = (window.auth && auth.getHeaders) ? auth.getHeaders() : {"Content-Type":"application/json"};
-  fetch(BACKEND_API + "/api/generate-article", {
-    method:"POST", headers:artHeaders, body:JSON.stringify(payload)
+  fetch("http://127.0.0.1:5555/api/generate-article", {
+    method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
   }).then(function(resp) {
     var reader = resp.body.getReader(), dec = new TextDecoder(), buf = "";
     function pump() {
@@ -4217,7 +4205,8 @@ function _initIntel() {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\'/g,'&#39;');
   }
 
-  var API = BACKEND_API + '/api/intel';
+  var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5555/api/intel' : window.location.origin + '/api/intel';
 
   var loaded = {};
   var actPage = 1, actPeriod = '7';
@@ -4769,151 +4758,85 @@ function _initIntel() {
 <div class="pipeline-grid">
 <div class="pipeline-card">
 <div class="pipeline-card-title">Pipeline Status</div>
-<div class="pipeline-status-value" id="pl-status">Loading...</div>
+<div class="pipeline-status-value warn">Partial (0/12)</div>
 <div class="pipeline-meta">
-<div>Last run: <span id="pl-last-run">—</span></div>
-<div>Duration: <span id="pl-duration">—</span></div>
-<div>Stages: <span id="pl-stages">—</span></div>
+<div>Last run: <span>Never</span></div>
+<div>Duration: <span>—</span></div>
+<div>Next scheduled: <span>—</span></div>
 </div>
+<button class="btn-run-now" id="btn-run-now" onclick="triggerPipeline()">Run Now</button>
 </div>
 <div class="pipeline-card">
 <div class="pipeline-card-title">Stage Timeline</div>
-<ul class="stage-timeline" id="pl-timeline">
-<li class="stage-item"><span class="stage-icon pending">...</span><span class="stage-name">Loading stages...</span></li>
+<ul class="stage-timeline">
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Subreddit Discovery</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Reddit Intelligence</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Trends Scraper</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Trends Postprocess</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Keyword Expander</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Keyword Extractor</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Commercial Keyword Transformer</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Vetting</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Validation</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Angle Engine</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Dashboard Builder</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Reflection</span></li>
 </ul></div>
 <div class="pipeline-card" style="grid-column:span 2;">
-<div class="pipeline-card-title">Run History</div>
-<div class="run-history" id="pl-history">
-<div style="color:var(--text-dim,#666);padding:16px;">Loading run history...</div>
+<div class="pipeline-card-title">Last 7 Runs</div>
+<div class="run-history">
+<div class="run-card"><div class="run-card-date">2026-04-09</div><div class="run-card-golden">2</div><div class="run-card-total">24 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-08</div><div class="run-card-golden">23</div><div class="run-card-total">667 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-07</div><div class="run-card-golden">134</div><div class="run-card-total">596 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-06</div><div class="run-card-golden">139</div><div class="run-card-total">599 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-05</div><div class="run-card-golden">166</div><div class="run-card-total">675 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-04</div><div class="run-card-golden">193</div><div class="run-card-total">1278 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-03</div><div class="run-card-golden">188</div><div class="run-card-total">849 total</div></div>
 </div></div>
 <div class="pipeline-card" style="grid-column:span 2;">
-<div class="pipeline-card-title">Data Funnel</div>
-<div id="pl-funnel" style="font-family:monospace;font-size:12px;color:var(--text-dim,#999);">—</div>
+<div class="pipeline-card-title">Recent Errors</div>
+<div class="error-list">
+<div class="error-item"><span class="error-timestamp">2026-04-09T00:00:41</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
 </div>
-<div class="pipeline-card" style="grid-column:span 2;">
-<div class="pipeline-card-title">Errors</div>
-<div class="error-list" id="pl-errors">
-<div style="color:var(--text-dim,#666);padding:8px;">No errors reported</div>
+<div class="error-item"><span class="error-timestamp">2026-04-09T00:00:41</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-09T00:00:41</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T20:10:15</span><span class="error-stage">3a</span><div class="error-msg" onclick="this.classList.toggle('expanded')">[angle_engine] Stage 3a started at 2026-04-08T18:50:12.254783
+[angle_engine] 6286 total opportunities (all history), 5953 tag-eligible (GOLDEN_OPPORTUNITY, WATCH, EMERGING_HIGH, EMERGING, LOW, UNSCORE</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T18:50:12</span><span class="error-stage">3</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Request made: ClientCustomerId: 9791476215, Host: googleads.googleapis.com, Method: /google.ads.googleads.v23.services.KeywordPlanIdeaService/GenerateKeywordIdeas, RequestId: dZYDdBrPjSzHllczCFVgPQ, I</div>
+<div class="error-explain">The upstream service was temporarily unavailable (503). Transient — usually resolves on retry.</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T18:25:14</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T18:25:14</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T18:25:14</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T12:33:14</span><span class="error-stage">3</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Request made: ClientCustomerId: 9791476215, Host: googleads.googleapis.com, Method: /google.ads.googleads.v23.services.KeywordPlanIdeaService/GenerateKeywordIdeas, RequestId: S7_bLmefWqy99jlZYIlt-Q, I</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T12:00:50</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+</div>
 </div></div>
 </div><!-- /pipeline-grid -->
 <script>
-(function() {
-  var headers = (window.auth && auth.getHeaders) ? auth.getHeaders() : {};
-
-  function fmtDuration(secs) {
-    if (!secs) return '—';
-    if (secs < 60) return Math.round(secs) + 's';
-    if (secs < 3600) return Math.round(secs / 60) + 'm ' + Math.round(secs % 60) + 's';
-    return Math.round(secs / 3600) + 'h ' + Math.round((secs % 3600) / 60) + 'm';
-  }
-  function fmtTime(iso) {
-    if (!iso) return '—';
-    var d = new Date(iso);
-    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-  }
-  function statusClass(s) {
-    if (s === 'completed') return 'ok';
-    if (s === 'partial') return 'warn';
-    if (s === 'failed') return 'error';
-    return 'warn';
-  }
-  function stageIcon(s) {
-    if (s === 'completed') return 'OK';
-    if (s === 'failed') return 'X';
-    if (s === 'skipped') return '-';
-    if (s === 'running') return '~';
-    return '—';
-  }
-  function stageIconClass(s) {
-    if (s === 'completed') return 'done';
-    if (s === 'failed') return 'fail';
-    if (s === 'skipped') return 'skip';
-    return 'pending';
-  }
-  function prettyName(script) {
-    return script.replace('.py','').replace('.sh','').replace(/_/g,' ').replace(/\b\w/g, function(c){return c.toUpperCase();});
-  }
-
-  // Load current run
-  fetch(BACKEND_API + '/api/pipeline/current', { headers: headers })
-    .then(function(r) { return r.ok ? r.json() : null; })
+function triggerPipeline() {
+  var btn = document.getElementById('btn-run-now');
+  btn.disabled = true;
+  btn.textContent = 'Triggering...';
+  fetch('/api/trigger-pipeline', { method: 'POST' })
+    .then(function(r) { return r.json(); })
     .then(function(d) {
-      if (!d || !d.run) {
-        document.getElementById('pl-status').textContent = 'No runs recorded';
-        document.getElementById('pl-status').className = 'pipeline-status-value warn';
-        return;
-      }
-      var run = d.run;
-      var stages = d.stages || [];
-
-      // Status
-      var el = document.getElementById('pl-status');
-      el.textContent = (run.status === 'completed' ? 'Completed' : run.status === 'partial' ? 'Partial' : run.status.charAt(0).toUpperCase() + run.status.slice(1)) + ' (' + run.completed_stages + '/' + run.total_stages + ')';
-      el.className = 'pipeline-status-value ' + statusClass(run.status);
-
-      document.getElementById('pl-last-run').textContent = fmtTime(run.started_at);
-      document.getElementById('pl-duration').textContent = fmtDuration(run.total_duration_secs);
-      document.getElementById('pl-stages').textContent = run.completed_stages + ' done, ' + run.failed_stages + ' failed, ' + run.skipped_stages + ' skipped';
-
-      // Timeline
-      if (stages.length) {
-        var html = stages.map(function(s) {
-          var dur = s.duration_secs ? ' (' + fmtDuration(s.duration_secs) + ')' : '';
-          var records = s.records_out ? ' — ' + s.records_out + ' records' : '';
-          var err = s.error_message ? '<div style="color:#ef4444;font-size:11px;margin-top:2px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + s.error_message.replace(/"/g,'&quot;') + '">' + s.error_message.substring(0,80) + '</div>' : '';
-          return '<li class="stage-item"><span class="stage-icon ' + stageIconClass(s.status) + '">' + stageIcon(s.status) + '</span><span class="stage-name">' + prettyName(s.script_name) + dur + records + '</span>' + err + '</li>';
-        }).join('');
-        document.getElementById('pl-timeline').innerHTML = html;
-      }
-
-      // Funnel
-      if (run.funnel_counts) {
-        var funnelHtml = Object.keys(run.funnel_counts).map(function(k) {
-          return '<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>' + k + '</span><span style="color:var(--text,#ccc)">' + run.funnel_counts[k].toLocaleString() + '</span></div>';
-        }).join('');
-        document.getElementById('pl-funnel').innerHTML = funnelHtml || '—';
-      }
-
-      // Errors from stages
-      var errStages = stages.filter(function(s) { return s.error_message; });
-      if (errStages.length || run.error_summary) {
-        var errHtml = errStages.map(function(s) {
-          return '<div class="error-item"><span class="error-stage">' + prettyName(s.script_name) + '</span><div class="error-msg" onclick="this.classList.toggle(\'expanded\')">' + (s.error_message || '').replace(/</g,'&lt;') + '</div></div>';
-        }).join('');
-        if (run.error_summary && !errStages.length) {
-          errHtml = '<div class="error-item"><div class="error-msg">' + run.error_summary.replace(/</g,'&lt;') + '</div></div>';
-        }
-        document.getElementById('pl-errors').innerHTML = errHtml;
-      }
+      btn.textContent = d.status === 'triggered' ? 'Triggered! Refreshing...' : 'Error: ' + (d.message || 'unknown');
+      if (d.status === 'triggered') setTimeout(function() { location.reload(); }, 5000);
+      else setTimeout(function() { btn.disabled = false; btn.textContent = 'Run Now'; }, 3000);
     })
     .catch(function(e) {
-      document.getElementById('pl-status').textContent = 'Failed to load';
-      document.getElementById('pl-status').className = 'pipeline-status-value error';
+      btn.textContent = 'API unavailable';
+      setTimeout(function() { btn.disabled = false; btn.textContent = 'Run Now'; }, 3000);
     });
-
-  // Load run history
-  fetch(BACKEND_API + '/api/pipeline/runs?per_page=10', { headers: headers })
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(d) {
-      if (!d || !d.data || !d.data.length) {
-        document.getElementById('pl-history').innerHTML = '<div style="color:var(--text-dim,#666);padding:16px;">No pipeline runs recorded yet. Run sync_to_backend.py after the next heartbeat.</div>';
-        return;
-      }
-      var html = d.data.map(function(r) {
-        var statusBg = r.status === 'completed' ? '#1b5e20' : r.status === 'partial' ? '#e65100' : '#b71c1c';
-        return '<div class="run-card" onclick="window.open(\'#run-\' + \'' + r.run_id + '\',\'_self\')" style="cursor:default">' +
-          '<div class="run-card-date">' + fmtTime(r.started_at) + '</div>' +
-          '<div class="run-card-golden" title="Golden opportunities">' + (r.golden_count || 0) + '</div>' +
-          '<div class="run-card-total">' + (r.total_validated || '?') + ' validated</div>' +
-          '<div style="font-size:10px;margin-top:4px;"><span style="background:' + statusBg + ';color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;">' + r.status + ' (' + r.completed_stages + '/' + r.total_stages + ')</span>' +
-          (r.total_duration_secs ? ' <span style="color:var(--text-dim)">' + fmtDuration(r.total_duration_secs) + '</span>' : '') +
-          (r.failed_stages > 0 ? ' <span style="color:#ef4444">' + r.failed_stages + ' failed</span>' : '') +
-          '</div></div>';
-      }).join('');
-      document.getElementById('pl-history').innerHTML = html;
-    })
-    .catch(function() {});
-})();
+}
 </script>
 </div><!-- /tab-pipeline -->
 <script>
@@ -4956,39 +4879,20 @@ function copyDemotion(entity) {
     _anglesPending.push(cb);
     if (_anglesLoading) return;
     _anglesLoading = true;
-    var aHeaders = (window.auth && auth.getHeaders) ? auth.getHeaders() : {};
-    fetch(BACKEND_API + '/api/angles/export', { headers: aHeaders })
-      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    var ver = '?v=' + ((window.PIPELINE_META || {}).run_id || Date.now());
+    fetch('data/angles.json' + ver)
+      .then(function(r) { return r.json(); })
       .then(function(data) {
-        // Convert array to keyed object (keyword|country) for backward compat
-        var keyed = {};
-        if (Array.isArray(data)) {
-          data.forEach(function(c) { keyed[c.keyword + '|' + c.country] = c; });
-        } else {
-          keyed = data;
-        }
-        window.ANGLES = keyed;
+        window.ANGLES = data;
         _anglesLoaded = true;
         _anglesPending.forEach(function(fn) { fn(); });
         _anglesPending = [];
       })
       .catch(function(err) {
-        console.warn('API angles unavailable, falling back to static:', err);
-        var ver = '?v=' + ((window.PIPELINE_META || {}).run_id || Date.now());
-        fetch('data/angles.json' + ver)
-          .then(function(r) { return r.json(); })
-          .then(function(data) {
-            window.ANGLES = data;
-            _anglesLoaded = true;
-            _anglesPending.forEach(function(fn) { fn(); });
-            _anglesPending = [];
-          })
-          .catch(function(err2) {
-            console.error('Failed to load angles:', err2);
-            _anglesLoading = false;
-            _anglesPending.forEach(function(fn) { fn(); });
-            _anglesPending = [];
-          });
+        console.error('Failed to load angles:', err);
+        _anglesLoading = false;
+        _anglesPending.forEach(function(fn) { fn(); });
+        _anglesPending = [];
       });
   }
 
@@ -5387,7 +5291,7 @@ function copyDemotion(entity) {
 <script>
 // Chat Widget Controller
 const ChatWidget = {
-  apiUrl: BACKEND_API + '/api',
+  apiUrl: 'https://keywordit-api-production.up.railway.app/api',
   isLoggedIn: false,
   
   _storageKey: 'keywordit_chat_history',
