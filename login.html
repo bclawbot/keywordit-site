@@ -331,27 +331,9 @@ body::before {
 
 <script src="shared/theme.js"></script>
 <script src="shared/palette.js"></script>
+<script src="shared/auth.js"></script>
 <script>
-/**
- * AUTH SYSTEM
- * 
- * Uses localStorage for session tokens and a users.json-based credential store.
- * In production, the dashboard_builder.py generates the users database.
- * 
- * Storage keys:
- *   keywordit_session   - { user, token, loginAt }
- *   keywordit_users     - [{ username, passwordHash, role, status, name, email }]
- *   keywordit_requests  - [{ name, email, company, reason, username, requestedAt, status }]
- */
-
-// Simple hash (not cryptographic — use bcrypt in production)
-async function hashStr(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-// Init default admin if no users exist
-// No local init needed — auth is handled by the backend
+// Auth is handled by shared/auth.js (JWT backend)
 
 function switchTab(tab) {
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
