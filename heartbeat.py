@@ -118,45 +118,47 @@ _atexit.register(_release_lock)
 # Prevent macOS idle sleep while pipeline is running
 _CAFF_PROC = None
 try:
-    _CAFF_PROC = subprocess.Popen(["caffeinate", "-i", "-w", str(_MY_PID)])
+    _CAFF_PROC = subprocess.Popen(["caffeinate", "-s", "-w", str(_MY_PID)])
     _atexit.register(lambda: _CAFF_PROC.terminate() if _CAFF_PROC else None)
 except FileNotFoundError:
     pass  # non-macOS or caffeinate missing — no-op
 
-# ── Stage checkpoint (resume after sleep/crash) ───────────────────────────────
-CHECKPOINT_FILE = Path("/tmp/openclaw_run_checkpoint.json")
+# ── Run-slot checkpoint (per-stage marker files) ─────────────────────────────
+CHECKPOINT_DIR = Path("/tmp/openclaw_checkpoints")
 
-def _load_checkpoint() -> set:
-    """Return set of stage names completed today. Resets checkpoint if new day."""
-    today = datetime.now().strftime("%Y-%m-%d")
-    try:
-        data = json.loads(CHECKPOINT_FILE.read_text())
-        if data.get("run_date") == today:
-            completed = set(data.get("completed", []))
-            if completed:
-                print(f"  [Checkpoint] Resuming — {len(completed)} stages already done: {', '.join(sorted(completed))}")
-            return completed
-    except Exception:
-        pass
-    CHECKPOINT_FILE.write_text(json.dumps({
-        "run_date": today,
-        "started_at": datetime.now().isoformat(),
-        "completed": []
-    }))
-    return set()
+def _current_run_id() -> str:
+    """Derive run_id from the current 6h schedule slot (00, 06, 12, 18).
 
-def _mark_stage_done(script_name: str):
-    today = datetime.now().strftime("%Y-%m-%d")
-    try:
-        data = json.loads(CHECKPOINT_FILE.read_text())
-        if data.get("run_date") == today:
-            completed = data.get("completed", [])
-            if script_name not in completed:
-                completed.append(script_name)
-                data["completed"] = completed
-                CHECKPOINT_FILE.write_text(json.dumps(data))
-    except Exception:
-        pass
+    Any run within the same 6h window gets the same ID, so a crashed
+    process that restarts within the same slot resumes correctly.
+    The next scheduled slot gets a fresh ID automatically.
+    """
+    now = datetime.now()
+    slot_hour = (now.hour // 6) * 6
+    return now.strftime(f"%Y-%m-%dT{slot_hour:02d}")
+
+def _is_stage_done(script_name: str, run_id: str) -> bool:
+    """Check if a stage has already completed for this run slot."""
+    marker = CHECKPOINT_DIR / f"{run_id}_{script_name}.done"
+    return marker.exists()
+
+def _mark_stage_done(script_name: str, run_id: str):
+    """Mark a stage as completed for this run slot. No shared state — no race."""
+    CHECKPOINT_DIR.mkdir(exist_ok=True)
+    marker = CHECKPOINT_DIR / f"{run_id}_{script_name}.done"
+    marker.write_text(datetime.now().isoformat())
+
+def _cleanup_old_checkpoints():
+    """Remove marker files older than 24h."""
+    if not CHECKPOINT_DIR.exists():
+        return
+    cutoff = datetime.now().timestamp() - 86400
+    for f in CHECKPOINT_DIR.iterdir():
+        try:
+            if f.stat().st_mtime < cutoff:
+                f.unlink()
+        except Exception:
+            pass
 
 # Per-stage timeouts (seconds)
 STAGE_TIMEOUTS = {
@@ -198,6 +200,54 @@ print("  OpenClaw Heartbeat — Full Pipeline Run")
 print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print("=" * 56)
 
+# ── Post-stage assertions & funnel tracking ──────────────────────────────────
+# Maps stage script → primary output file(s) to validate after each stage
+_STAGE_OUTPUTS = {
+    "subreddit_discovery.py":             [BASE / "subreddit_registry.json"],
+    "reddit_intelligence.py":             [BASE / "reddit_intelligence.json"],
+    "trends_scraper.py":                  [BASE / "latest_trends.json"],
+    "trends_postprocess.py":              [BASE / "explosive_trends.json"],
+    "keyword_expander.py":                [BASE / "expanded_keywords.json"],
+    "commercial_keyword_transformer.py":  [BASE / "transformed_keywords.json"],
+    "keyword_extractor.py":              [BASE / "commercial_keywords.json"],
+    "vetting.py":                        [BASE / "vetted_opportunities.json"],
+    "validation.py":                     [BASE / "validated_opportunities.json",
+                                          BASE / "golden_opportunities.json"],
+    "angle_engine.py":                   [BASE / "angle_candidates.json"],
+    "dashboard_builder.py":              [BASE / "dashboard.html"],
+}
+_funnel_counts: dict = {}  # stage_name -> record count
+
+def _stage_outputs_valid(script_name: str) -> bool:
+    """Self-healing: re-run stage if its output files are missing or empty."""
+    outputs = _STAGE_OUTPUTS.get(script_name, [])
+    if not outputs:
+        return True  # stages without defined outputs pass by default
+    return all(p.exists() and p.stat().st_size > 0 for p in outputs)
+
+def _assert_stage_output(script_name: str):
+    """Check output files exist and are non-empty after a stage. Log funnel counts."""
+    outputs = _STAGE_OUTPUTS.get(script_name, [])
+    for out_path in outputs:
+        if not out_path.exists():
+            print(f"  ⚠️  [Assert] {script_name} → {out_path.name} NOT FOUND")
+            continue
+        size = out_path.stat().st_size
+        if size == 0:
+            print(f"  ⚠️  [Assert] {script_name} → {out_path.name} is EMPTY (0 bytes)")
+            continue
+        # Count records in JSON array files
+        try:
+            data = json.loads(out_path.read_text(encoding="utf-8"))
+            if isinstance(data, list):
+                count = len(data)
+                _funnel_counts[out_path.name] = count
+                print(f"  📊 [Funnel] {out_path.name}: {count} records")
+                if count == 0:
+                    print(f"  ⚠️  [Assert] {script_name} → {out_path.name} has 0 records")
+        except Exception:
+            pass  # non-JSON or HTML — size check is enough
+
 errors = []
 dashboard_ok = False
 
@@ -232,11 +282,12 @@ def _exec_stage(stage_num, script_name) -> bool:
                         "stage": str(stage_num), "error": msg})
         return False
     if rc == 0:
-        _mark_stage_done(script_name)
+        _mark_stage_done(script_name, _run_id)
         print(f"[Stage {stage_num}] ✅ Done")
         if stdout.strip():
             for line in stdout.strip().splitlines():
                 print(f"           {line}")
+        _assert_stage_output(script_name)
         return script_name == "dashboard_builder.py"
     else:
         stderr_out = stderr.strip() or stdout.strip() or "non-zero exit"
@@ -246,7 +297,10 @@ def _exec_stage(stage_num, script_name) -> bool:
                         "stage": str(stage_num), "error": stderr_out})
         return False
 
-_completed_stages = _load_checkpoint()
+_run_id = _current_run_id()
+_started_at = datetime.now().isoformat()
+_cleanup_old_checkpoints()
+print(f"  [Run ID] {_run_id}")
 
 # Remove Ollama from LiteLLM fallbacks to prevent contention during pipeline
 _litellm_swapped = _strip_ollama_from_litellm()
@@ -256,8 +310,8 @@ try:
     for stage_num, script_name in stages_iter:
         if script_name in PARALLEL_WITH:
             next_stage_num, next_script = next(stages_iter)
-            skip_a = script_name in _completed_stages
-            skip_b = next_script in _completed_stages
+            skip_a = _is_stage_done(script_name, _run_id) and _stage_outputs_valid(script_name)
+            skip_b = _is_stage_done(next_script, _run_id) and _stage_outputs_valid(next_script)
             if skip_a and skip_b:
                 print(f"[Parallel] ⏭  {script_name} + {next_script} (checkpoint)")
             elif skip_a:
@@ -278,8 +332,8 @@ try:
                     if fut_b.result():
                         dashboard_ok = True
         else:
-            if script_name in _completed_stages:
-                print(f"[Stage {stage_num}] ⏭  Skipped (checkpoint)")
+            if _is_stage_done(script_name, _run_id) and _stage_outputs_valid(script_name):
+                print(f"[Stage {stage_num}] ⏭  Skipped (already done)")
                 continue
             if _exec_stage(stage_num, script_name):
                 dashboard_ok = True
@@ -289,9 +343,37 @@ finally:
 
 # ── Log errors ───────────────────────────────────────────────────────────────
 if errors:
-    with ERROR_LOG.open("a") as f:
-        for e in errors:
-            f.write(json.dumps(e) + "\n")
+    try:
+        with ERROR_LOG.open("a") as f:
+            for e in errors:
+                f.write(json.dumps(e) + "\n")
+    except Exception as _log_err:
+        print(f"  [Error Log] Failed to write error log: {_log_err}")
+
+# ── Data flow funnel summary ─────────────────────────────────────────────────
+if _funnel_counts:
+    print()
+    print("=" * 56)
+    print("  DATA FLOW FUNNEL")
+    print("=" * 56)
+    funnel_order = [
+        "subreddit_registry.json", "reddit_intelligence.json",
+        "latest_trends.json", "explosive_trends.json",
+        "expanded_keywords.json", "transformed_keywords.json",
+        "commercial_keywords.json", "vetted_opportunities.json",
+        "validated_opportunities.json", "golden_opportunities.json",
+        "angle_candidates.json",
+    ]
+    for name in funnel_order:
+        if name in _funnel_counts:
+            print(f"  {name:<40} {_funnel_counts[name]:>6} records")
+    # Stage timing summary
+    if _stage_durations:
+        print()
+        print("  STAGE TIMING")
+        for stage, dur in sorted(_stage_durations.items(), key=lambda x: -x[1]):
+            print(f"  {stage:<40} {dur:>8.1f}s")
+        print(f"  {'TOTAL':<40} {sum(_stage_durations.values()):>8.1f}s")
 
 # ── Golden summary ────────────────────────────────────────────────────────────
 print()
@@ -385,6 +467,31 @@ if _PROM_AVAILABLE and _stage_durations:
         print(f"  [Prometheus] Metrics updated ({len(_stage_durations)} stage durations recorded)")
     except Exception as _prom_err:
         print(f"  [Prometheus] Metrics update failed: {_prom_err}")
+
+# ── Sync to backend ─────────────────────────────────────────────────────────
+print()
+print("=" * 56)
+print("  BACKEND SYNC")
+print("=" * 56)
+try:
+    _sync_script = BASE / "sync_to_backend.py"
+    if _sync_script.exists():
+        _sync_env = {**os.environ, "RUN_ID": _run_id, "STARTED_AT": _started_at}
+        _sync_proc = subprocess.run(
+            [sys.executable, str(_sync_script),
+             "--run-id", _run_id, "--started-at", _started_at],
+            env=_sync_env, capture_output=True, text=True, timeout=300
+        )
+        for _line in _sync_proc.stdout.strip().splitlines():
+            print(f"  {_line}")
+        if _sync_proc.returncode != 0:
+            print(f"  ⚠️  sync_to_backend.py exited {_sync_proc.returncode}")
+            if _sync_proc.stderr.strip():
+                print(f"  {_sync_proc.stderr.strip()[:200]}")
+    else:
+        print("  sync_to_backend.py not found — skipping")
+except Exception as _sync_err:
+    print(f"  ⚠️  Backend sync failed: {_sync_err}")
 
 print()
 status = f"{len(errors)} error(s)" if errors else "all stages OK"
