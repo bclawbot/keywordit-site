@@ -107,6 +107,11 @@
   window.checkSession = function() {
     var sess = getSession();
     if (!sess || !sess.token) return { valid: false };
+    // Reject old non-JWT tokens (JWTs have 3 dot-separated base64 parts starting with eyJ)
+    if (typeof sess.token !== 'string' || sess.token.split('.').length !== 3 || sess.token.indexOf('eyJ') !== 0) {
+      localStorage.removeItem(SESSION_KEY);
+      return { valid: false, reason: 'invalid_token' };
+    }
     if (sess.expiresAt && Date.now() > sess.expiresAt) {
       localStorage.removeItem(SESSION_KEY);
       return { valid: false, reason: 'expired' };
