@@ -1518,19 +1518,30 @@ window.OPPORTUNITIES = [];
 window.PIPELINE_META = {"generated_at": "2026-04-08T13:43:42.832439", "total_validated": 6286, "total_scored": 5935, "total_golden": 613, "total_emerging": 3858, "total_unscored": 351, "countries_covered": 47, "last_run_at": "2026-04-08T11:42:12.106066", "run_id": "run_20260408_1343", "metrics_from_google_kp": 5513, "metrics_from_dataforseo": 188, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08"], "accumulated_runs": 16};
 window.ANGLES = {};
 
+var BACKEND_API = 'https://keywordit-api-production.up.railway.app';
 (function() {
-  var meta = window.PIPELINE_META || {};
-  var ver = '?v=' + (meta.run_id || Date.now());
-  fetch('data/opportunities.json' + ver)
+  var headers = (window.auth && auth.getHeaders) ? auth.getHeaders() : {};
+  fetch(BACKEND_API + '/api/opportunities/export', { headers: headers })
     .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function(data) {
       window.OPPORTUNITIES = data;
       document.dispatchEvent(new CustomEvent('opportunities-loaded'));
     })
     .catch(function(err) {
-      console.error('Failed to load opportunities:', err);
-      var el = document.querySelector('#data-loading .load-text');
-      if (el) el.textContent = 'Failed to load data. Try refreshing.';
+      console.warn('API unavailable, falling back to static data:', err);
+      var meta = window.PIPELINE_META || {};
+      var ver = '?v=' + (meta.run_id || Date.now());
+      fetch('data/opportunities.json' + ver)
+        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function(data) {
+          window.OPPORTUNITIES = data;
+          document.dispatchEvent(new CustomEvent('opportunities-loaded'));
+        })
+        .catch(function(err2) {
+          console.error('Failed to load opportunities:', err2);
+          var el = document.querySelector('#data-loading .load-text');
+          if (el) el.textContent = 'Failed to load data. Try refreshing.';
+        });
     });
 })();
 
@@ -3064,7 +3075,7 @@ var _localAvail = null, _localProbeAt = 0;
 function _probeLocal() {
   var now = Date.now();
   if (_localAvail !== null && now - _localProbeAt < 30000) return Promise.resolve(_localAvail);
-  return fetch("http://127.0.0.1:5555/api/health", {signal: AbortSignal.timeout(1500)})
+  return fetch(BACKEND_API + "/api/health", {signal: AbortSignal.timeout(3000)})
     .then(function(r) { _localAvail = r.ok; _localProbeAt = Date.now(); return _localAvail; })
     .catch(function()  { _localAvail = false; _localProbeAt = Date.now(); return false; });
 }
@@ -3119,8 +3130,9 @@ function _generateLocal(btn, aid, textEl, key) {
     angle_title: btn.dataset.angleTitle, rsoc_score: parseFloat(btn.dataset.rsoc)||0,
     discovery_signal_text: btn.dataset.signal||""
   };
-  fetch("http://127.0.0.1:5555/api/generate-article", {
-    method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
+  var artHeaders = (window.auth && auth.getHeaders) ? auth.getHeaders() : {"Content-Type":"application/json"};
+  fetch(BACKEND_API + "/api/generate-article", {
+    method:"POST", headers:artHeaders, body:JSON.stringify(payload)
   }).then(function(resp) {
     var reader = resp.body.getReader(), dec = new TextDecoder(), buf = "";
     function pump() {
@@ -4205,8 +4217,7 @@ function _initIntel() {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\'/g,'&#39;');
   }
 
-  var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:5555/api/intel' : window.location.origin + '/api/intel';
+  var API = BACKEND_API + '/api/intel';
 
   var loaded = {};
   var actPage = 1, actPeriod = '7';
@@ -4877,20 +4888,39 @@ function copyDemotion(entity) {
     _anglesPending.push(cb);
     if (_anglesLoading) return;
     _anglesLoading = true;
-    var ver = '?v=' + ((window.PIPELINE_META || {}).run_id || Date.now());
-    fetch('data/angles.json' + ver)
-      .then(function(r) { return r.json(); })
+    var aHeaders = (window.auth && auth.getHeaders) ? auth.getHeaders() : {};
+    fetch(BACKEND_API + '/api/angles/export', { headers: aHeaders })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function(data) {
-        window.ANGLES = data;
+        // Convert array to keyed object (keyword|country) for backward compat
+        var keyed = {};
+        if (Array.isArray(data)) {
+          data.forEach(function(c) { keyed[c.keyword + '|' + c.country] = c; });
+        } else {
+          keyed = data;
+        }
+        window.ANGLES = keyed;
         _anglesLoaded = true;
         _anglesPending.forEach(function(fn) { fn(); });
         _anglesPending = [];
       })
       .catch(function(err) {
-        console.error('Failed to load angles:', err);
-        _anglesLoading = false;
-        _anglesPending.forEach(function(fn) { fn(); });
-        _anglesPending = [];
+        console.warn('API angles unavailable, falling back to static:', err);
+        var ver = '?v=' + ((window.PIPELINE_META || {}).run_id || Date.now());
+        fetch('data/angles.json' + ver)
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            window.ANGLES = data;
+            _anglesLoaded = true;
+            _anglesPending.forEach(function(fn) { fn(); });
+            _anglesPending = [];
+          })
+          .catch(function(err2) {
+            console.error('Failed to load angles:', err2);
+            _anglesLoading = false;
+            _anglesPending.forEach(function(fn) { fn(); });
+            _anglesPending = [];
+          });
       });
   }
 
@@ -5289,7 +5319,7 @@ function copyDemotion(entity) {
 <script>
 // Chat Widget Controller
 const ChatWidget = {
-  apiUrl: (window.location.origin || 'http://localhost:5555') + '/api',
+  apiUrl: BACKEND_API + '/api',
   isLoggedIn: false,
   
   _storageKey: 'keywordit_chat_history',

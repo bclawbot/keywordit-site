@@ -477,10 +477,8 @@ body {
 <script src="shared/auth.js"></script>
 <script src="shared/palette.js"></script>
 <script>
-async function hashStr(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
+var ADMIN_API = 'https://keywordit-api-production.up.railway.app';
+var _allUsers = [];
 
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -489,10 +487,17 @@ function toast(msg) {
   setTimeout(() => el.classList.remove('visible'), 2500);
 }
 
-function getUsers() { return JSON.parse(localStorage.getItem('keywordit_users') || '[]'); }
-function setUsers(u) { localStorage.setItem('keywordit_users', JSON.stringify(u)); }
-function getRequests() { return JSON.parse(localStorage.getItem('keywordit_requests') || '[]'); }
-function setRequests(r) { localStorage.setItem('keywordit_requests', JSON.stringify(r)); }
+function adminHeaders() {
+  return (window.auth && auth.getHeaders) ? auth.getHeaders() : {};
+}
+
+async function apiFetch(path, opts) {
+  opts = opts || {};
+  opts.headers = adminHeaders();
+  const r = await fetch(ADMIN_API + path, opts);
+  if (r.status === 401 || r.status === 403) { signOut(); return null; }
+  return r;
+}
 
 // ═══ AUTH CHECK ═══
 requireAuth({ requireAdmin: true, onSuccess: function(s) {
@@ -506,156 +511,95 @@ Palette.register([
   { id: 'admin-add-user', label: 'Add New User', category: 'Admin', action: function() { document.getElementById('add-username').focus(); } },
 ]);
 
-function renderAll() {
-  renderRequests();
+async function renderAll() {
+  try {
+    const r = await apiFetch('/api/admin/users');
+    if (!r) return;
+    _allUsers = await r.json();
+  } catch(e) { _allUsers = []; }
   renderUsers();
   renderStats();
 }
 
 function renderStats() {
-  const users = getUsers();
-  const requests = getRequests();
-  const pending = requests.filter(r => r.status === 'pending');
+  const users = _allUsers;
+  const pending = users.filter(u => u.status === 'pending');
+  const active = users.filter(u => u.status === 'active');
+  const suspended = users.filter(u => u.status === 'suspended');
   document.getElementById('stat-total').textContent = users.length;
   document.getElementById('stat-pending').textContent = pending.length;
-  document.getElementById('stat-approved').textContent = users.filter(u => u.status === 'approved').length;
-  document.getElementById('stat-declined').textContent = requests.filter(r => r.status === 'declined').length;
+  document.getElementById('stat-approved').textContent = active.length;
+  document.getElementById('stat-declined').textContent = suspended.length;
   document.getElementById('pending-badge').textContent = pending.length + ' pending';
 }
 
 function renderRequests() {
-  const requests = getRequests().filter(r => r.status === 'pending');
-  const tbody = document.getElementById('requests-body');
-  if (requests.length === 0) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No pending requests</td></tr>';
-    return;
-  }
-  tbody.innerHTML = requests.map((r, i) => `
-    <tr>
-      <td>${esc(r.name)}</td>
-      <td class="mono dim">${esc(r.email)}</td>
-      <td class="dim">${esc(r.company || '—')}</td>
-      <td class="mono">${esc(r.username)}</td>
-      <td class="dim" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.reason)}">${esc(r.reason || '—')}</td>
-      <td class="muted">${r.requestedAt ? new Date(r.requestedAt).toLocaleDateString() : '—'}</td>
-      <td>
-        <div class="action-group">
-          <button class="btn-approve" onclick="approveRequest(${i})">Approve</button>
-          <button class="btn-decline" onclick="declineRequest(${i})">Decline</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-}
-
-function showPasswordModal(username) {
-  return new Promise((resolve) => {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;align-items:center;justify-content:center;';
-    overlay.innerHTML = `
-      <div style="background:var(--surface,#0a0a0c);border:1px solid var(--border,#141418);border-radius:12px;padding:24px;max-width:380px;width:90%;font-family:inherit;">
-        <h3 style="color:var(--text,#e8e8f0);margin-bottom:16px;font-size:15px;">Set password for "${username}"</h3>
-        <div style="position:relative;margin-bottom:12px;">
-          <input type="password" id="modal-pass" placeholder="Enter password" autofocus
-            style="width:100%;padding:10px 40px 10px 12px;background:var(--bg,#020203);border:1px solid var(--border,#141418);border-radius:8px;color:var(--text,#e8e8f0);font-size:14px;font-family:inherit;">
-          <button type="button" onclick="var i=document.getElementById('modal-pass');i.type=i.type==='password'?'text':'password';"
-            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim,#3a3a48);cursor:pointer;font-size:16px;">&#128065;</button>
-        </div>
-        <div id="modal-strength" style="font-size:11px;margin-bottom:16px;color:var(--text-dim,#3a3a48);"></div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button id="modal-cancel" style="padding:8px 16px;border:1px solid var(--border,#141418);border-radius:8px;background:none;color:var(--text,#e8e8f0);cursor:pointer;">Cancel</button>
-          <button id="modal-ok" style="padding:8px 16px;border:none;border-radius:8px;background:var(--teal,#2dd4bf);color:#000;cursor:pointer;font-weight:600;">Approve</button>
-        </div>
-      </div>`;
-    document.body.appendChild(overlay);
-    const inp = document.getElementById('modal-pass');
-    const str = document.getElementById('modal-strength');
-    inp.addEventListener('input', () => {
-      const v = inp.value;
-      if (v.length < 6) str.textContent = 'Too short (min 6 chars)';
-      else if (v.length < 8) { str.textContent = 'Weak'; str.style.color = '#f59e0b'; }
-      else { str.textContent = 'Strong'; str.style.color = '#22c55e'; }
-    });
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && inp.value.length >= 6) { overlay.remove(); resolve(inp.value); } });
-    document.getElementById('modal-ok').onclick = () => { if (inp.value.length < 6) { str.textContent = 'Password must be at least 6 characters'; str.style.color = '#ef4444'; return; } overlay.remove(); resolve(inp.value); };
-    document.getElementById('modal-cancel').onclick = () => { overlay.remove(); resolve(null); };
-    overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(null); } });
-    inp.focus();
-  });
-}
-
-async function approveRequest(idx) {
-  const requests = getRequests();
-  const pending = requests.filter(r => r.status === 'pending');
-  const req = pending[idx];
-  if (!req) return;
-
-  const pass = await showPasswordModal(req.username);
-  if (!pass) return;
-
-  const users = getUsers();
-  const existing = users.find(u => u.username === req.username);
-  if (existing) {
-    toast('User "' + req.username + '" already exists');
-    return;
-  }
-
-  const passHash = await hashStr(pass);
-  users.push({
-    username: req.username,
-    passwordHash: passHash,
-    role: 'user',
-    status: 'approved',
-    name: req.name,
-    email: req.email,
-    createdAt: new Date().toISOString()
-  });
-  setUsers(users);
-
-  // Update request status
-  const fullIdx = requests.findIndex(r => r.username === req.username && r.status === 'pending');
-  if (fullIdx >= 0) requests[fullIdx].status = 'approved';
-  setRequests(requests);
-
-  toast(`Approved: ${req.username}`);
-  renderAll();
-}
-
-function declineRequest(idx) {
-  const requests = getRequests();
-  const pending = requests.filter(r => r.status === 'pending');
-  const req = pending[idx];
-  if (!req) return;
-  if (!confirm(`Decline access for "${req.username}"?`)) return;
-
-  const fullIdx = requests.findIndex(r => r.username === req.username && r.status === 'pending');
-  if (fullIdx >= 0) requests[fullIdx].status = 'declined';
-  setRequests(requests);
-
-  toast(`Declined: ${req.username}`);
-  renderAll();
+  // Pending users from the backend (status=pending)
+  renderUsers();
 }
 
 function renderUsers() {
-  const users = getUsers();
+  const pending = _allUsers.filter(u => u.status === 'pending');
+  const reqTbody = document.getElementById('requests-body');
+  if (pending.length === 0) {
+    reqTbody.innerHTML = '<tr class="empty-row"><td colspan="7">No pending requests</td></tr>';
+  } else {
+    reqTbody.innerHTML = pending.map(u => `
+      <tr>
+        <td>${esc(u.name || '—')}</td>
+        <td class="mono dim">${esc(u.email || '—')}</td>
+        <td class="dim">—</td>
+        <td class="mono">${esc(u.username)}</td>
+        <td class="dim">—</td>
+        <td class="muted">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+        <td>
+          <div class="action-group">
+            <button class="btn-approve" onclick="approveUser('${u.id}')">Approve</button>
+            <button class="btn-decline" onclick="suspendUser('${u.id}')">Decline</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  const active = _allUsers.filter(u => u.status !== 'pending');
   const tbody = document.getElementById('users-body');
-  if (!users.length) {
+  if (!active.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;opacity:.5;">No users</td></tr>';
     return;
   }
-  tbody.innerHTML = users.map((u, i) => `
+  tbody.innerHTML = active.map(u => `
     <tr>
       <td class="mono">${esc(u.username)}</td>
       <td>${esc(u.name || '—')}</td>
       <td class="mono dim">${esc(u.email || '—')}</td>
-      <td><span class="status-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${u.role.toUpperCase()}</span></td>
-      <td><span class="status-badge status-${u.status}">${u.status.toUpperCase()}</span></td>
-      <td class="muted">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
+      <td><span class="status-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${(u.role||'viewer').toUpperCase()}</span></td>
+      <td><span class="status-badge status-${u.status === 'active' ? 'approved' : u.status}">${(u.status||'').toUpperCase()}</span></td>
+      <td class="muted">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
       <td>
-        ${u.username !== 'admin' ? `<button class="btn-delete" onclick="deleteUser('${esc(u.username)}')">Remove</button>` : '<span class="muted">protected</span>'}
+        ${u.role !== 'admin' ? `<button class="btn-delete" onclick="suspendUser('${u.id}')">Suspend</button>` : '<span class="muted">protected</span>'}
       </td>
     </tr>
   `).join('');
+}
+
+async function approveUser(userId) {
+  try {
+    const r = await apiFetch('/api/admin/users/' + userId + '/approve', { method: 'POST' });
+    if (!r || !r.ok) { toast('Failed to approve'); return; }
+    toast('User approved');
+    renderAll();
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+async function suspendUser(userId) {
+  if (!confirm('Suspend this user?')) return;
+  try {
+    const r = await apiFetch('/api/admin/users/' + userId + '/suspend', { method: 'POST' });
+    if (!r || !r.ok) { toast('Failed to suspend'); return; }
+    toast('User suspended');
+    renderAll();
+  } catch(e) { toast('Error: ' + e.message); }
 }
 
 async function addUser() {
@@ -667,40 +611,38 @@ async function addUser() {
 
   if (!username || !password) { toast('Username and password required'); return; }
   if (username.length < 3) { toast('Username too short'); return; }
+  if (password.length < 8) { toast('Password must be at least 8 characters'); return; }
 
-  const users = getUsers();
-  if (users.find(u => u.username === username)) { toast('Username already exists'); return; }
-
-  const passHash = await hashStr(password);
-  users.push({
-    username, passwordHash: passHash, role, status: 'approved',
-    name, email, createdAt: new Date().toISOString()
-  });
-  setUsers(users);
-
-  // Clear form
-  document.getElementById('add-username').value = '';
-  document.getElementById('add-password').value = '';
-  document.getElementById('add-name').value = '';
-  document.getElementById('add-email').value = '';
-  document.getElementById('add-role').value = 'user';
-
-  toast(`User "${username}" created`);
-  renderAll();
-}
-
-function deleteUser(username) {
-  if (!confirm('Remove user "' + username + '"?')) return;
-  let users = getUsers();
-  users = users.filter(u => u.username !== username);
-  localStorage.setItem('keywordit_users', JSON.stringify(users));
-  renderUsers();
-  toast('User removed');
+  try {
+    // Register user via API
+    await auth.register({ username, password, email: email || undefined, name: name || undefined });
+    // Then find user and approve + set role
+    const r = await apiFetch('/api/admin/users');
+    if (r) {
+      const users = await r.json();
+      const newUser = users.find(u => u.username === username);
+      if (newUser) {
+        await apiFetch('/api/admin/users/' + newUser.id + '/approve', { method: 'POST' });
+        if (role !== 'viewer') {
+          await apiFetch('/api/admin/users/' + newUser.id + '/role', {
+            method: 'PUT',
+            body: JSON.stringify({ role })
+          });
+        }
+      }
+    }
+    document.getElementById('add-username').value = '';
+    document.getElementById('add-password').value = '';
+    document.getElementById('add-name').value = '';
+    document.getElementById('add-email').value = '';
+    document.getElementById('add-role').value = 'user';
+    toast('User "' + username + '" created');
+    renderAll();
+  } catch(e) { toast('Error: ' + e.message); }
 }
 
 function logout() {
-  localStorage.removeItem('keywordit_session');
-  window.location.href = 'login.html';
+  signOut();
 }
 
 function esc(s) {
