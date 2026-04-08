@@ -572,7 +572,7 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-const API = 'http://localhost:5555/api/intel';
+const API = 'https://keywordit-api-production.up.railway.app/api/intel';
 const loaded = {};       // track which tabs have been fetched
 let actPage = 1;
 let actPeriod = '7';

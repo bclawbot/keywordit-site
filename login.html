@@ -315,6 +315,10 @@ body::before {
       <label class="form-label">Preferred Username</label>
       <input class="form-input" type="text" id="req-username" placeholder="Choose a username">
     </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="req-pass" placeholder="Min 8 characters" autocomplete="new-password">
+    </div>
     <button class="btn-submit" id="request-btn" onclick="doRequest()">Submit Request</button>
   </div>
 </div>
@@ -347,20 +351,7 @@ async function hashStr(str) {
 }
 
 // Init default admin if no users exist
-async function initDefaults() {
-  let users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-  if (users.length === 0) {
-    const adminHash = await hashStr('admin123');
-    users = [
-      { username: 'admin', passwordHash: adminHash, role: 'admin', status: 'approved', name: 'Admin', email: 'admin@keywordit.xyz', createdAt: new Date().toISOString() }
-    ];
-    localStorage.setItem('keywordit_users', JSON.stringify(users));
-  }
-  if (!localStorage.getItem('keywordit_requests')) {
-    localStorage.setItem('keywordit_requests', '[]');
-  }
-}
-(async () => { await initDefaults(); })();
+// No local init needed — auth is handled by the backend
 
 function switchTab(tab) {
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -385,42 +376,14 @@ async function doLogin() {
   const pass = document.getElementById('login-pass').value;
   if (!user || !pass) { showMsg('login-msg', 'error', 'Please enter both fields.'); return; }
 
-  const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-  const passHash = await hashStr(pass);
-  const found = users.find(u => u.username === user && u.passwordHash === passHash);
-
-  if (!found) {
-    showMsg('login-msg', 'error', 'Invalid username or password.');
-    return;
+  showMsg('login-msg', 'info', 'Signing in...');
+  try {
+    await auth.login(user, pass);
+    showMsg('login-msg', 'success', 'Authenticated. Redirecting...');
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 600);
+  } catch(e) {
+    showMsg('login-msg', 'error', e.message || 'Login failed.');
   }
-  if (found.status === 'pending') {
-    showMsg('login-msg', 'info', 'Your account is pending approval. Please check back later.');
-    return;
-  }
-  if (found.status === 'declined') {
-    showMsg('login-msg', 'error', 'Your access request was declined.');
-    return;
-  }
-
-  // Create session with 24-hour expiry
-  const session = {
-    user: found.username,
-    role: found.role,
-    token: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2),
-    loginAt: new Date().toISOString(),
-    expiresAt: Date.now() + 24 * 60 * 60 * 1000
-  };
-  localStorage.setItem('keywordit_session', JSON.stringify(session));
-  showMsg('login-msg', 'success', 'Authenticated. Redirecting...');
-
-  setTimeout(() => {
-    if (found.role === 'admin') {
-      // Admin can choose
-      window.location.href = 'dashboard.html';
-    } else {
-      window.location.href = 'dashboard.html';
-    }
-  }, 600);
 }
 
 async function doRequest() {
@@ -439,31 +402,28 @@ async function doRequest() {
     return;
   }
 
-  const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-  const requests = JSON.parse(localStorage.getItem('keywordit_requests') || '[]');
-
-  if (users.find(u => u.username === username) || requests.find(r => r.username === username && r.status === 'pending')) {
-    showMsg('request-msg', 'error', 'That username is already taken or pending.');
+  // Password required for registration (min 8 chars)
+  const pass = document.getElementById('req-pass') ? document.getElementById('req-pass').value : '';
+  if (!pass || pass.length < 8) {
+    showMsg('request-msg', 'error', 'Password must be at least 8 characters.');
     return;
   }
 
-  requests.push({
-    name, email, company, reason, username,
-    requestedAt: new Date().toISOString(),
-    status: 'pending'
-  });
-  localStorage.setItem('keywordit_requests', JSON.stringify(requests));
-
-  showMsg('request-msg', 'success', 'Access request submitted! You will be notified when approved.');
-  document.getElementById('request-btn').disabled = true;
-  document.getElementById('request-btn').textContent = 'Submitted';
-
-  // Clear form fields after successful submission
-  document.getElementById('req-name').value = '';
-  document.getElementById('req-email').value = '';
-  document.getElementById('req-company').value = '';
-  document.getElementById('req-reason').value = '';
-  document.getElementById('req-username').value = '';
+  showMsg('request-msg', 'info', 'Submitting...');
+  try {
+    await auth.register({ username: username, password: pass, email: email, name: name });
+    showMsg('request-msg', 'success', 'Account created! Please wait for admin approval.');
+    document.getElementById('request-btn').disabled = true;
+    document.getElementById('request-btn').textContent = 'Submitted';
+    document.getElementById('req-name').value = '';
+    document.getElementById('req-email').value = '';
+    document.getElementById('req-company').value = '';
+    document.getElementById('req-reason').value = '';
+    document.getElementById('req-username').value = '';
+    if (document.getElementById('req-pass')) document.getElementById('req-pass').value = '';
+  } catch(e) {
+    showMsg('request-msg', 'error', e.message || 'Registration failed.');
+  }
 }
 
 // Password visibility toggle
@@ -473,20 +433,12 @@ function togglePassVis(inputId, btn) {
   else { inp.type = 'password'; btn.title = 'Show password'; }
 }
 
-// Auto-redirect if already authenticated (with expiry check)
+// Auto-redirect if already authenticated
 (function() {
-  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
-  if (session && session.token) {
-    // Check expiry
-    if (session.expiresAt && Date.now() > session.expiresAt) {
-      localStorage.removeItem('keywordit_session');
-      return; // expired — stay on login
-    }
-    const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-    const user = users.find(u => u.username === session.user && u.status === 'approved');
-    if (user) {
-      window.location.href = 'dashboard.html';
-    }
+  var sess = checkSession();
+  if (sess.valid) {
+    window.location.href = 'dashboard.html';
+    return;
   }
 
   // Auto-select tab from URL param (?tab=request)
