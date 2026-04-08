@@ -843,6 +843,23 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
 .df-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--font-mono); margin-bottom: 2px; }
 .df-value { font-size: 12px; color: var(--text-secondary); word-break: break-word; }
 .drawer-divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+.drawer-details { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 6px; }
+.drawer-section-title {
+  font-size: 10px; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.08em; font-family: var(--font-mono); font-weight: 600;
+  cursor: pointer; padding: 4px 0; list-style: none;
+}
+.drawer-section-title::-webkit-details-marker { display: none; }
+.drawer-section-title::before { content: '\25B6'; margin-right: 6px; font-size: 8px; transition: transform 0.15s; display: inline-block; }
+details[open] > .drawer-section-title::before { transform: rotate(90deg); }
+.serp-badge {
+  display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 3px;
+  font-family: var(--font-mono); text-transform: capitalize;
+}
+.serp-green { background: rgba(34,197,94,0.15); color: #22c55e; }
+.serp-amber { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.serp-red   { background: rgba(239,68,68,0.15); color: #ef4444; }
+.sparkline-container { height: 80px; position: relative; }
 
 /* ============================================================
    DROPDOWN MENUS (export, columns)
@@ -1498,7 +1515,7 @@ function signOut() {
 
 <script>
 window.OPPORTUNITIES = [];
-window.PIPELINE_META = {"generated_at": "2026-04-08T02:13:15.829273", "total_validated": 5775, "total_scored": 5424, "total_golden": 603, "total_emerging": 3649, "total_unscored": 351, "countries_covered": 47, "last_run_at": "2026-04-08T00:46:11.001382", "run_id": "run_20260408_0213", "metrics_from_google_kp": 5001, "metrics_from_dataforseo": 189, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08"], "accumulated_runs": 16};
+window.PIPELINE_META = {"generated_at": "2026-04-08T13:43:42.832439", "total_validated": 6286, "total_scored": 5935, "total_golden": 613, "total_emerging": 3858, "total_unscored": 351, "countries_covered": 47, "last_run_at": "2026-04-08T11:42:12.106066", "run_id": "run_20260408_1343", "metrics_from_google_kp": 5513, "metrics_from_dataforseo": 188, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08"], "accumulated_runs": 16};
 window.ANGLES = {};
 
 (function() {
@@ -1542,6 +1559,7 @@ const S = {
   renderOffset: 0,
   pageSize: 60,
   drawerItem: null,
+  drawerChart: null,
   filterPanelOpen: false,
   chartsOpen: false,
   groupBySeed: false,
@@ -1580,7 +1598,12 @@ const COLUMNS = [
   { key: 'kvsi',            label: 'KVSI',         sortKey: 'kvsi',              defaultVisible: false, filterable: false },
   { key: 'emerging_tag',    label: 'Emerging',     sortKey: 'emerging_tag',      defaultVisible: false, filterable: true, filterType: 'set' },
   { key: 'scoring_profile', label: 'Profile',      sortKey: 'scoring_profile',   defaultVisible: false, filterable: true, filterType: 'set' },
-  { key: 'cpc_high_usd',   label: 'CPC High',     sortKey: 'cpc_high_usd',      defaultVisible: false, filterable: false }
+  { key: 'cpc_high_usd',   label: 'CPC High',     sortKey: 'cpc_high_usd',      defaultVisible: false, filterable: false },
+  { key: 'cpc_low_usd',    label: 'CPC Low',      sortKey: 'cpc_low_usd',       defaultVisible: false, filterable: false },
+  { key: 'cpc_spread',     label: 'Spread',       sortKey: 'cpc_spread',        defaultVisible: false, filterable: false },
+  { key: 'competition_index', label: 'Comp Idx',   sortKey: 'competition_index', defaultVisible: false, filterable: false },
+  { key: 'predicted_halflife_days', label: 'Halflife', sortKey: 'predicted_halflife_days', defaultVisible: false, filterable: false },
+  { key: 'ad_age_days',    label: 'Ad Age',       sortKey: 'ad_age_days',       defaultVisible: false, filterable: false }
 ];
 
 // ===== HELPERS =====
@@ -2284,6 +2307,30 @@ function buildRow(item, idx) {
         return '<td style="color:var(--text-muted);font-size:11px">No</td>';
       }
       case 'cpc_high_usd': return `<td class="td-mono" style="font-size:11px">${fmtCpc(item.cpc_high_usd)}</td>`;
+      case 'cpc_low_usd': return `<td class="td-mono" style="font-size:11px">${fmtCpc(item.cpc_low_usd)}</td>`;
+      case 'cpc_spread': {
+        const sp = parseFloat(item.cpc_spread);
+        if (isNaN(sp)) return '<td class="td-mono" style="color:var(--text-muted)">—</td>';
+        const spColor = sp >= 2 ? '#22c55e' : sp >= 0.5 ? '#f59e0b' : 'var(--text-muted)';
+        return `<td class="td-mono" style="font-size:11px;color:${spColor}">${fmtCpc(sp)}</td>`;
+      }
+      case 'competition_index': {
+        const ci = item.competition_index;
+        if (ci == null) return '<td class="td-mono" style="color:var(--text-muted)">—</td>';
+        const ciColor = ci >= 70 ? '#ef4444' : ci >= 30 ? '#f59e0b' : '#22c55e';
+        return `<td class="td-mono" style="font-size:11px;color:${ciColor}">${ci}</td>`;
+      }
+      case 'predicted_halflife_days': {
+        const hl = item.predicted_halflife_days;
+        if (hl == null) return '<td class="td-mono" style="color:var(--text-muted)">—</td>';
+        const hlColor = hl >= 30 ? '#22c55e' : hl >= 7 ? '#f59e0b' : '#ef4444';
+        return `<td class="td-mono" style="font-size:11px;color:${hlColor}">${Math.round(hl)}d</td>`;
+      }
+      case 'ad_age_days': {
+        const aa = item.ad_age_days;
+        if (aa == null) return '<td class="td-mono" style="color:var(--text-muted)">—</td>';
+        return `<td class="td-mono" style="font-size:11px">${aa}d</td>`;
+      }
       case 'rpc_display': {
         const rpc = parseFloat(item.rpc_display);
         if (isNaN(rpc) || item.rpc_display == null) return '<td class="td-mono" style="color:var(--text-muted)">—</td>';
@@ -2440,12 +2487,108 @@ function openDrawer(item) {
     ${item.persistence_score != null ? `<div class="drawer-field"><div class="df-label">Persistence</div><div class="df-value">${fmtScore(item.persistence_score)}</div></div>` : ''}
     ${item.validated_at ? `<div class="drawer-field"><div class="df-label">Validated</div><div class="df-value" style="font-family:var(--font-mono);font-size:11px;">${item.validated_at.split('T')[0]}</div></div>` : ''}
     ${item.run_date ? `<div class="drawer-field"><div class="df-label">Run Date</div><div class="df-value" style="font-family:var(--font-mono);font-size:11px;">${esc(item.run_date)}</div></div>` : ''}
+
+    <details class="drawer-details" open>
+      <summary class="drawer-section-title">Bid Intelligence</summary>
+      <div class="drawer-metrics" style="margin-top:8px">
+        <div class="drawer-metric"><div class="dm-label">CPC Low</div><div class="dm-value">${fmtCpc(item.cpc_low_usd)}</div></div>
+        <div class="drawer-metric"><div class="dm-label">Spread</div><div class="dm-value" style="color:${parseFloat(item.cpc_spread)>=2?'#22c55e':parseFloat(item.cpc_spread)>=0.5?'#f59e0b':'var(--text-muted)'}">${item.cpc_spread != null ? fmtCpc(item.cpc_spread) : '—'}</div></div>
+        <div class="drawer-metric"><div class="dm-label">Comp Idx</div><div class="dm-value" style="color:${item.competition_index>=70?'#ef4444':item.competition_index>=30?'#f59e0b':'#22c55e'}">${item.competition_index != null ? item.competition_index : '—'}</div></div>
+        <div class="drawer-metric"><div class="dm-label">Has Ads</div><div class="dm-value">${item.has_paid_ads === true ? '<span style="color:#22c55e">Yes</span>' : item.has_paid_ads === false ? '<span style="color:var(--text-muted)">No</span>' : '—'}</div></div>
+        <div class="drawer-metric"><div class="dm-label">Ad Age</div><div class="dm-value">${item.ad_age_days != null ? item.ad_age_days + 'd' : '—'}</div></div>
+        ${item.predicted_halflife_days != null ? `<div class="drawer-metric"><div class="dm-label">Halflife</div><div class="dm-value" style="color:${item.predicted_halflife_days>=30?'#22c55e':item.predicted_halflife_days>=7?'#f59e0b':'#ef4444'}">${Math.round(item.predicted_halflife_days)}d</div></div>` : ''}
+        ${item.trend_quarterly != null ? `<div class="drawer-metric"><div class="dm-label">Trend QoQ</div><div class="dm-value" style="font-family:var(--font-mono);color:${parseFloat(item.trend_quarterly)>0?'#22c55e':'#ef4444'}">${parseFloat(item.trend_quarterly)>=0?'+':''}${Math.round(parseFloat(item.trend_quarterly))}%</div></div>` : ''}
+      </div>
+    </details>
+
+    ${(item.serp_item_types && item.serp_item_types.length > 0) ? `
+    <details class="drawer-details">
+      <summary class="drawer-section-title">SERP Features (${item.serp_item_types.length})</summary>
+      <div class="serp-badges" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
+        ${item.serp_item_types.map(function(t) {
+          var commerce = ['shopping','paid','local_pack','commercial_units','product_considerations'];
+          var hostile = ['featured_snippet','knowledge_graph','ai_overview','answer_box','instant_answer','math_solver'];
+          var cls = commerce.indexOf(t) >= 0 ? 'serp-green' : hostile.indexOf(t) >= 0 ? 'serp-red' : 'serp-amber';
+          return '<span class="serp-badge '+cls+'">'+t.replace(/_/g,' ')+'</span>';
+        }).join('')}
+      </div>
+    </details>` : ''}
+
+    ${(item.rpc_expected != null || item.rpc_actual != null) ? `
+    <details class="drawer-details">
+      <summary class="drawer-section-title">RPC Model</summary>
+      <div class="drawer-metrics" style="margin-top:8px">
+        ${item.rpc_expected != null ? `<div class="drawer-metric"><div class="dm-label">Expected</div><div class="dm-value">${fmtCpc(item.rpc_expected)}</div></div>` : ''}
+        ${item.rpc_expected_p25 != null && item.rpc_expected_p75 != null ? `<div class="drawer-metric"><div class="dm-label">Range</div><div class="dm-value" style="font-size:11px">${fmtCpc(item.rpc_expected_p25)}-${fmtCpc(item.rpc_expected_p75)}</div></div>` : ''}
+        ${item.rpc_base != null ? `<div class="drawer-metric"><div class="dm-label">Base</div><div class="dm-value">${fmtCpc(item.rpc_base)}</div></div>` : ''}
+        ${item.rpc_ratio != null ? `<div class="drawer-metric"><div class="dm-label">RPC/CPC</div><div class="dm-value">${fmtScore(item.rpc_ratio)}</div></div>` : ''}
+        ${item.rpc_vertical ? `<div class="drawer-metric"><div class="dm-label">Vertical</div><div class="dm-value" style="font-size:10px">${esc(item.rpc_vertical)}</div></div>` : ''}
+        ${item.rpc_intent_modifier != null ? `<div class="drawer-metric"><div class="dm-label">Intent Mod</div><div class="dm-value">${fmtScore(item.rpc_intent_modifier)}</div></div>` : ''}
+      </div>
+      ${item.rpc_actual != null ? `
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <div class="drawer-metrics">
+          <div class="drawer-metric"><div class="dm-label">Actual RPC</div><div class="dm-value" style="color:#22c55e">${fmtCpc(item.rpc_actual)}</div></div>
+          ${item.rpc_actual_clicks ? `<div class="drawer-metric"><div class="dm-label">Clicks</div><div class="dm-value">${fmtNum(item.rpc_actual_clicks)}</div></div>` : ''}
+          ${item.rpc_actual_confidence ? `<div class="drawer-metric"><div class="dm-label">Conf</div><div class="dm-value">${esc(item.rpc_actual_confidence)}</div></div>` : ''}
+        </div>
+      </div>` : ''}
+      ${item.rpc_outlier_flag ? `<div style="margin-top:6px;font-size:10px;color:#f59e0b">&#9888; Outlier flagged</div>` : ''}
+    </details>` : ''}
+
+    ${(item.monthly_searches && item.monthly_searches.length > 0) ? `
+    <details class="drawer-details" open>
+      <summary class="drawer-section-title">Monthly Search Volume</summary>
+      <div class="sparkline-container" style="margin-top:8px">
+        <canvas id="drawer-sparkline" width="280" height="80"></canvas>
+      </div>
+    </details>` : ''}
   `;
   document.getElementById('drawer-x-btn').addEventListener('click', closeDrawer);
   document.getElementById('drawer-copy-btn').onclick = () => { if(S.drawerItem) copyToClipboard(S.drawerItem.keyword); };
+
+  // Monthly search sparkline
+  if (S.drawerChart) { S.drawerChart.destroy(); S.drawerChart = null; }
+  var sparkCanvas = document.getElementById('drawer-sparkline');
+  if (sparkCanvas && item.monthly_searches && item.monthly_searches.length > 0) {
+    var sorted = item.monthly_searches.slice().sort(function(a,b) {
+      return (a.year*100+a.month) - (b.year*100+b.month);
+    });
+    var labels = sorted.map(function(m) {
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return months[m.month-1] + ' ' + String(m.year).slice(2);
+    });
+    var values = sorted.map(function(m) { return m.search_volume || 0; });
+    S.drawerChart = new Chart(sparkCanvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          borderColor: 'rgba(59,130,246,0.8)',
+          backgroundColor: 'rgba(59,130,246,0.1)',
+          borderWidth: 1.5,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+          pointHoverRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return fmtNum(ctx.raw); } } } },
+        scales: {
+          x: { ticks: { font: { size: 9 }, color: 'rgba(255,255,255,0.4)', maxRotation: 45 }, grid: { display: false } },
+          y: { ticks: { font: { size: 9 }, color: 'rgba(255,255,255,0.4)', callback: function(v) { return fmtNum(v); } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+  }
 }
 
 function closeDrawer() {
+  if (S.drawerChart) { S.drawerChart.destroy(); S.drawerChart = null; }
   document.getElementById('detail-drawer').classList.remove('open');
   document.getElementById('table-body').querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
   S.drawerItem = null;
@@ -2790,8 +2933,8 @@ Palette.register([
 <div id="tab-content" class="tab-content">
 <div style="padding:16px">
 <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px">
-<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Keywords Processed</div><div style="font-size:24px;font-weight:700;color:#4caf50">4749</div></div>
-<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Angles Selected</div><div style="font-size:24px;font-weight:700;color:#2196f3">23745</div></div>
+<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Keywords Processed</div><div style="font-size:24px;font-weight:700;color:#4caf50">5249</div></div>
+<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Angles Selected</div><div style="font-size:24px;font-weight:700;color:#2196f3">26245</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Articles Generated</div><div style="font-size:24px;font-weight:700;color:#ff9800">4</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">RAF Compliant</div><div style="font-size:24px;font-weight:700;color:#4caf50">4/4</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Avg Quality Score</div><div style="font-size:24px;font-weight:700;color:#9c27b0">0.78</div></div>
@@ -2811,7 +2954,7 @@ Palette.register([
 <tr style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="生命保険">生命保険</td><td style="padding:6px 7px;color:#aaa">hidden_costs</td><td style="padding:6px 7px;color:#aaa">EN</td><td style="padding:6px 7px;text-align:right;color:#ccc">673</td><td style="padding:6px 7px;text-align:right;color:#ff9800">0.62</td><td style="padding:6px 7px;text-align:right;color:#4caf50">LOW</td><td style="padding:6px 7px;color:#888;font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="articles/2026-04-01/生命保険_hidden_costs_1.md">生命保険_hidden_costs_1.md</td></tr>
 <tr style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="生命保険">生命保険</td><td style="padding:6px 7px;color:#aaa">hidden_costs</td><td style="padding:6px 7px;color:#aaa">EN</td><td style="padding:6px 7px;text-align:right;color:#ccc">755</td><td style="padding:6px 7px;text-align:right;color:#4caf50">0.75</td><td style="padding:6px 7px;text-align:right;color:#4caf50">LOW</td><td style="padding:6px 7px;color:#888;font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="articles/2026-04-01/生命保険_hidden_costs.md">生命保険_hidden_costs.md</td></tr>
 </tbody></table>
-<h3 style="margin:24px 0 8px;color:#e0e0e0">Angles Ready to Generate (23742)</h3>
+<h3 style="margin:24px 0 8px;color:#e0e0e0">Angles Ready to Generate (26242)</h3>
 <table style="width:100%;border-collapse:collapse;font-size:12px">
 <thead><tr style="background:#2a2a3e;color:#aaa"><th style="padding:7px;text-align:left">Keyword</th><th style="padding:7px;text-align:left">Angle Type</th><th style="padding:7px;text-align:left">Title</th><th style="padding:7px;text-align:right">CPC</th><th style="padding:7px;text-align:right">Score</th><th style="padding:7px;text-align:left">Signal</th><th style="padding:7px;text-align:center">Generate</th></tr></thead><tbody>
 <tr id="angle-row-ashar-hari-ini_eligibility_explainer" style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ashar hari ini">ashar hari ini</td><td style="padding:6px 7px;color:#90caf9">eligibility_explainer</td><td style="padding:6px 7px;color:#aaa;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ashar hari ini – 2026">ashar hari ini – 2026</td><td style="padding:6px 7px;text-align:right;color:#ccc">$4.12</td><td style="padding:6px 7px;text-align:right;color:#ccc">0.51</td><td style="padding:6px 7px;color:#607d8b">keyword_expansion</td><td style="padding:6px 7px;text-align:center"><button id="gen-btn-ashar-hari-ini_eligibility_explainer" class="gen-btn" data-angle-id="ashar-hari-ini_eligibility_explainer" data-keyword="ashar hari ini" data-vertical="unknown" data-language="id" data-country="ID" data-cpc="4.12" data-angle-type="eligibility_explainer" data-angle-title="ashar hari ini – 2026" data-rsoc="0.5147" data-signal="" onclick="generateArticle(this)" style="cursor:pointer;background:#1565c0;color:#fff;border:none;border-radius:4px;padding:4px 10px;font-size:11px;white-space:nowrap">Generate</button></td></tr><tr id="article-row-ashar-hari-ini_eligibility_explainer" style="display:none"><td colspan="7" style="padding:0"><details open style="background:#111;padding:12px;border-left:3px solid #1565c0"><summary style="cursor:pointer;color:#90caf9;font-size:12px;user-select:none">Article: ashar hari ini – 2026</summary><pre id="article-text-ashar-hari-ini_eligibility_explainer" style="color:#ccc;white-space:pre-wrap;font-size:12px;margin:8px 0 0;font-family:monospace">Waiting...</pre></details></td></tr>
@@ -3103,9 +3246,9 @@ document.addEventListener("click", function(e) {
 <div class="exp-header">
 <h2>Experimental — Template Multiplier Output</h2>
 <div class="exp-stats">
-This cycle: <span>209</span> expansions from <span>46</span> source keywords<br>
-CPC Confirmed: <span>42</span> (20.1%) | CPC Inherited: <span>167</span> (79.9%)<br>
-Expansion budget used: <span>209</span>/500
+This cycle: <span>313</span> expansions from <span>60</span> source keywords<br>
+CPC Confirmed: <span>67</span> (21.4%) | CPC Inherited: <span>246</span> (78.6%)<br>
+Expansion budget used: <span>313</span>/500
 </div></div>
 <div class="exp-filters">
 <button class="exp-filter-btn active" data-exp-filter="all">All</button>
@@ -3498,29 +3641,158 @@ Expansion budget used: <span>209</span>/500
 <li data-cpc-track="confirmed"><span class="kw-name">VA good insurance</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
 <li data-cpc-track="inherited"><span class="kw-name">Medicaid good insurance</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$0.37e</span></li>
 </ul></div>
+<div class="tmpl-group">
+<div class="tmpl-pattern">TEMPLATE: {membership_retailer} credit card sign in</div>
+<div class="tmpl-source">Source: sam&#39;s club credit card sign in — <span class="revenue">— proven revenue</span></div>
+<ul class="tmpl-expansions" data-template="{membership_retailer} credit card sign in">
+<li data-cpc-track="confirmed"><span class="kw-name">Sam&#39;s credit card sign in</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">BJ&#39;s Wholesale credit card sign in</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$1.60e</span></li>
+</ul></div>
+<div class="tmpl-group">
+<div class="tmpl-pattern">TEMPLATE: {insurance_carrier} life insurance login</div>
+<div class="tmpl-source">Source: bestow life insurance login — <span class="revenue">— proven revenue</span></div>
+<ul class="tmpl-expansions" data-template="{insurance_carrier} life insurance login">
+<li data-cpc-track="inherited"><span class="kw-name">State Farm life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$5.28e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">USAA life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$5.28e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance login</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance login</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+</ul></div>
+<div class="tmpl-group">
+<div class="tmpl-pattern">TEMPLATE: {insurance_carrier} life insurance payment online</div>
+<div class="tmpl-source">Source: aarp life insurance payment online — <span class="revenue">— proven revenue</span></div>
+<ul class="tmpl-expansions" data-template="{insurance_carrier} life insurance payment online">
+<li data-cpc-track="confirmed"><span class="kw-name">State Farm life insurance payment online</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="confirmed"><span class="kw-name">USAA life insurance payment online</span><span class="badge-confirmed">CONFIRMED</span><span class="cpc-val">$0.00</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">GEICO life insurance payment online</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Progressive life insurance payment online</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Allstate life insurance payment online</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Liberty Mutual life insurance payment online</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Nationwide life insurance payment online</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+<li data-cpc-track="inherited"><span class="kw-name">Travelers life insurance payment online</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$3.52e</span></li>
+</ul></div>
+<div class="tmpl-group">
+<div class="tmpl-pattern">TEMPLATE: cupones {gig_platform} colombia</div>
+<div class="tmpl-source">Source: cupones mercado libre colombia — <span class="revenue">— proven revenue</span></div>
+<ul class="tmpl-expansions" data-template="cupones {gig_platform} colombia">
+<li data-cpc-track="inherited"><span class="kw-name">cupones Rappi colombia</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$0.39e</span></li>
+</ul></div>
+<div class="tmpl-group">
+<div class="tmpl-pattern">TEMPLATE: cupón {gig_platform} colombia hoy</div>
+<div class="tmpl-source">Source: cupón mercado libre colombia hoy — <span class="revenue">— proven revenue</span></div>
+<ul class="tmpl-expansions" data-template="cupón {gig_platform} colombia hoy">
+<li data-cpc-track="inherited"><span class="kw-name">cupón Rappi colombia hoy</span><span class="badge-inherited">INHERITED</span><span class="cpc-val">$0.39e</span></li>
+</ul></div>
 </div>
 <div class="exp-section"><div class="exp-section-title">Entity Scoreboard</div>
 <table class="entity-table"><thead><tr><th>Entity</th><th>Type</th><th>Status</th><th>Expansions</th><th>Est. Rev</th></tr></thead><tbody>
 <tr><td>VA</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>4</td><td>—</td></tr>
 <tr><td>Sam&#39;s Club</td><td>membership_retailer</td><td><span class="entity-status-proven">PROVEN</span></td><td>16</td><td>—</td></tr>
-<tr><td>Sam&#39;s</td><td>membership_retailer</td><td><span class="entity-status-proven">PROVEN</span></td><td>16</td><td>—</td></tr>
+<tr><td>Sam&#39;s</td><td>membership_retailer</td><td><span class="entity-status-proven">PROVEN</span></td><td>17</td><td>—</td></tr>
 <tr><td>Costco</td><td>membership_retailer</td><td><span class="entity-status-proven">PROVEN</span></td><td>14</td><td>—</td></tr>
 <tr><td>Amazon</td><td>membership_retailer</td><td><span class="entity-status-proven">PROVEN</span></td><td>8</td><td>—</td></tr>
-<tr><td>USAA</td><td>insurance_carrier</td><td><span class="entity-status-proven">PROVEN</span></td><td>5</td><td>—</td></tr>
-<tr><td>State Farm</td><td>insurance_carrier</td><td><span class="entity-status-proven">PROVEN</span></td><td>1</td><td>—</td></tr>
+<tr><td>USAA</td><td>insurance_carrier</td><td><span class="entity-status-proven">PROVEN</span></td><td>18</td><td>—</td></tr>
+<tr><td>State Farm</td><td>insurance_carrier</td><td><span class="entity-status-proven">PROVEN</span></td><td>14</td><td>—</td></tr>
 <tr><td>DVA</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>4</td><td>—</td></tr>
 <tr><td>Walmart</td><td>membership_retailer</td><td><span class="entity-status-proven">PROVEN</span></td><td>13</td><td>—</td></tr>
 <tr><td>SSI</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>4</td><td>—</td></tr>
 <tr><td>Medicare</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>6</td><td>—</td></tr>
 <tr><td>Section 8</td><td>government_program</td><td><span class="entity-status-proven">PROVEN</span></td><td>4</td><td>—</td></tr>
 <tr><td>HUD VASH</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>5</td><td>—</td></tr>
-<tr><td>BJ&#39;s Wholesale</td><td>membership_retailer</td><td><span class="entity-status-test">TEST</span></td><td>9</td><td>—</td></tr>
-<tr><td>GEICO</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>3</td><td>—</td></tr>
-<tr><td>Progressive</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>3</td><td>—</td></tr>
-<tr><td>Allstate</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>3</td><td>—</td></tr>
-<tr><td>Liberty Mutual</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>3</td><td>—</td></tr>
-<tr><td>Nationwide</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>3</td><td>—</td></tr>
-<tr><td>Travelers</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>3</td><td>—</td></tr>
+<tr><td>BJ&#39;s Wholesale</td><td>membership_retailer</td><td><span class="entity-status-test">TEST</span></td><td>10</td><td>—</td></tr>
+<tr><td>GEICO</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>16</td><td>—</td></tr>
+<tr><td>Progressive</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>16</td><td>—</td></tr>
+<tr><td>Allstate</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>15</td><td>—</td></tr>
+<tr><td>Liberty Mutual</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>15</td><td>—</td></tr>
+<tr><td>Nationwide</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>15</td><td>—</td></tr>
+<tr><td>Travelers</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>15</td><td>—</td></tr>
 <tr><td>Lemonade</td><td>insurance_carrier</td><td><span class="entity-status-test">TEST</span></td><td>2</td><td>—</td></tr>
 <tr><td>Centrelink</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>4</td><td>—</td></tr>
 <tr><td>NDIS</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>4</td><td>—</td></tr>
@@ -3533,7 +3805,7 @@ Expansion budget used: <span>209</span>/500
 <tr><td>SNAP</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>2</td><td>—</td></tr>
 <tr><td>WIC</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>2</td><td>—</td></tr>
 <tr><td>CHIP</td><td>government_program</td><td><span class="entity-status-test">TEST</span></td><td>1</td><td>—</td></tr>
-<tr><td>Rappi</td><td>gig_platform</td><td><span class="entity-status-test">TEST</span></td><td>4</td><td>—</td></tr>
+<tr><td>Rappi</td><td>gig_platform</td><td><span class="entity-status-test">TEST</span></td><td>6</td><td>—</td></tr>
 <tr><td>DiDi</td><td>gig_platform</td><td><span class="entity-status-test">TEST</span></td><td>4</td><td>—</td></tr>
 <tr><td>Publix</td><td>membership_retailer</td><td><span class="entity-status-test">TEST</span></td><td>1</td><td>—</td></tr>
 </tbody></table>
@@ -4486,36 +4758,34 @@ function _initIntel() {
 <div class="pipeline-grid">
 <div class="pipeline-card">
 <div class="pipeline-card-title">Pipeline Status</div>
-<div class="pipeline-status-value error">Error</div>
+<div class="pipeline-status-value warn">Partial (0/12)</div>
 <div class="pipeline-meta">
-<div>Last run: <span>2026-04-08T00:14:14</span></div>
+<div>Last run: <span>Never</span></div>
 <div>Duration: <span>—</span></div>
-<div>Next scheduled: <span>2026-04-08 06:00</span></div>
+<div>Next scheduled: <span>—</span></div>
 </div>
-<div class="pipeline-status-explain">6x LanceDBConnection.create_table() got an unexpected keyword a<br>2x Traceback (most recent call last):
-  File "/Users/newmac/.op<br>1x [angle_engine] Stage 3a started at 2026-04-07T07:59:42.71135<br>1x 402 Client Error: Unknown for url: https://api.dataforseo.co</div>
 <button class="btn-run-now" id="btn-run-now" onclick="triggerPipeline()">Run Now</button>
 </div>
 <div class="pipeline-card">
 <div class="pipeline-card-title">Stage Timeline</div>
 <ul class="stage-timeline">
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Subreddit Discovery</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Reddit Intelligence</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Trends Scraper</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Trends Postprocess</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Keyword Expander</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Keyword Extractor</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Commercial Keyword Transformer</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Vetting</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Validation</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Angle Engine</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Subreddit Discovery</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Reddit Intelligence</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Trends Scraper</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Trends Postprocess</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Keyword Expander</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Keyword Extractor</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Commercial Keyword Transformer</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Vetting</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Validation</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Angle Engine</span></li>
 <li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Dashboard Builder</span></li>
 <li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Reflection</span></li>
 </ul></div>
 <div class="pipeline-card" style="grid-column:span 2;">
 <div class="pipeline-card-title">Last 7 Runs</div>
 <div class="run-history">
-<div class="run-card"><div class="run-card-date">2026-04-08</div><div class="run-card-golden">0</div><div class="run-card-total">32 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-08</div><div class="run-card-golden">23</div><div class="run-card-total">667 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-07</div><div class="run-card-golden">134</div><div class="run-card-total">596 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-06</div><div class="run-card-golden">139</div><div class="run-card-total">599 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-05</div><div class="run-card-golden">166</div><div class="run-card-total">675 total</div></div>
@@ -4526,34 +4796,25 @@ function _initIntel() {
 <div class="pipeline-card" style="grid-column:span 2;">
 <div class="pipeline-card-title">Recent Errors</div>
 <div class="error-list">
-<div class="error-item"><span class="error-timestamp">2026-04-08T00:14:41</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T12:00:50</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
 </div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T00:14:41</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T12:00:50</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
 </div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T00:14:41</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T12:00:50</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
 </div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T00:00:38</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:12</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;経理代行 サービス&#39; [JP]: navigational_intent</div>
 </div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T00:00:38</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:12</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;経理代行 サービス&#39; [JP]: navigational_intent</div>
 </div>
-<div class="error-item"><span class="error-timestamp">2026-04-08T00:00:38</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:11</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;cincinnati food festival&#39; [US]: navigational_intent</div>
 </div>
-<div class="error-item"><span class="error-timestamp">2026-04-07T18:00:18</span><span class="error-stage">1b</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Traceback (most recent call last):
-  File &quot;/Users/newmac/.openclaw/workspace/trends_postprocess.py&quot;, line 264, in &lt;module&gt;
-    main()
-    ~~~~^^
-  File &quot;/Users/newmac/.openclaw/workspace/trends_postpr</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:06</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;cbils loan&#39; [GB]: navigational_intent</div>
 </div>
-<div class="error-item"><span class="error-timestamp">2026-04-07T15:13:25</span><span class="error-stage">1b</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Traceback (most recent call last):
-  File &quot;/Users/newmac/.openclaw/workspace/trends_postprocess.py&quot;, line 264, in &lt;module&gt;
-    main()
-    ~~~~^^
-  File &quot;/Users/newmac/.openclaw/workspace/trends_postpr</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:06</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;cbils loan&#39; [GB]: navigational_intent</div>
 </div>
-<div class="error-item"><span class="error-timestamp">2026-04-07T09:46:36</span><span class="error-stage">3a</span><div class="error-msg" onclick="this.classList.toggle('expanded')">[angle_engine] Stage 3a started at 2026-04-07T07:59:42.711354
-[angle_engine] 5724 total opportunities (all history), 5682 tag-eligible (GOLDEN_OPPORTUNITY, WATCH, EMERGING_HIGH, EMERGING, LOW, UNSCORE</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:05</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;ファクタリング 手数料 安い&#39; [JP]: navigational_intent</div>
 </div>
-<div class="error-item"><span class="error-timestamp">2026-04-07T06:07:54</span><span class="error-stage">keyword_extractor/keyword_overview</span><div class="error-msg" onclick="this.classList.toggle('expanded')">402 Client Error: Unknown for url: https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_overview/live</div>
+<div class="error-item"><span class="error-timestamp">2026-04-08T11:42:04</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;meilleur compte pro en ligne&#39; [FR]: navigational_intent</div>
 </div>
 </div></div>
 </div><!-- /pipeline-grid -->
