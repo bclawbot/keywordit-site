@@ -1073,6 +1073,20 @@ details[open] > .drawer-section-title::before { transform: rotate(90deg); }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
+/* ── GLOBAL DATE FILTER BAR ── */
+#global-date-bar { display:flex; align-items:center; gap:16px; padding:6px 24px; background:var(--bg-surface); border-bottom:1px solid var(--border); font-family:var(--font-mono); font-size:11px; }
+.gdb-presets { display:flex; gap:4px; }
+.gdb-btn { padding:4px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); background:transparent; color:var(--text-secondary); font-family:var(--font-mono); font-size:10px; cursor:pointer; text-transform:uppercase; letter-spacing:0.04em; transition:all var(--transition-fast); }
+.gdb-btn:hover { background:var(--bg-hover); color:var(--text-primary); }
+.gdb-btn.active { background:var(--accent-dim); border-color:var(--accent); color:var(--accent-text); }
+.gdb-custom { display:flex; align-items:center; gap:6px; margin-left:8px; padding-left:16px; border-left:1px solid var(--border); }
+.gdb-label { color:var(--text-muted); font-size:10px; text-transform:uppercase; }
+.gdb-date-input { background:var(--bg-input); border:1px solid var(--border); color:var(--text-primary); padding:3px 8px; border-radius:var(--radius-sm); font-size:11px; font-family:var(--font-mono); }
+[data-theme="dark"] .gdb-date-input { color-scheme:dark; }
+[data-theme="light"] .gdb-date-input { color-scheme:light; }
+.gdb-date-input:focus { border-color:var(--accent); outline:none; }
+.gdb-status { color:var(--text-secondary); font-size:10px; margin-left:auto; }
+
 /* ── EXPERIMENTAL TAB ── */
 .exp-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
 .exp-header h2 { margin: 0 0 6px; font-family: var(--font-mono); font-size: 14px; color: var(--accent-text); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -1322,6 +1336,22 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 </script>
+<div id="global-date-bar">
+  <div class="gdb-presets">
+    <button class="gdb-btn active" data-preset="all">All Time</button>
+    <button class="gdb-btn" data-preset="today">Today</button>
+    <button class="gdb-btn" data-preset="yesterday">Yesterday</button>
+    <button class="gdb-btn" data-preset="7d">7 Days</button>
+    <button class="gdb-btn" data-preset="30d">1 Month</button>
+  </div>
+  <div class="gdb-custom">
+    <label class="gdb-label">From</label>
+    <input type="date" id="gdb-from" class="gdb-date-input">
+    <label class="gdb-label">To</label>
+    <input type="date" id="gdb-to" class="gdb-date-input">
+  </div>
+  <span class="gdb-status" id="gdb-status">Showing all dates</span>
+</div>
 <div id="tab-discovery" class="tab-content active">
 
 <!-- ═══════ KPI STRIP ═══════ -->
@@ -1553,7 +1583,7 @@ function signOut() {
 
 <script>
 window.OPPORTUNITIES = [];
-window.PIPELINE_META = {"generated_at": "2026-04-10T14:03:21.170651", "total_validated": 7566, "total_scored": 6980, "total_golden": 602, "total_emerging": 4353, "total_unscored": 586, "countries_covered": 47, "last_run_at": "2026-04-10T12:37:10.646426", "run_id": "run_20260410_1403", "metrics_from_google_kp": 6472, "metrics_from_dataforseo": 239, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10"], "accumulated_runs": 18};
+window.PIPELINE_META = {"generated_at": "2026-04-10T19:46:12.150123", "total_validated": 7639, "total_scored": 6994, "total_golden": 601, "total_emerging": 4369, "total_unscored": 645, "countries_covered": 47, "last_run_at": "2026-04-10T18:39:35.526457", "run_id": "run_20260410_1946", "metrics_from_google_kp": 6470, "metrics_from_dataforseo": 232, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10"], "accumulated_runs": 18};
 window.ANGLES = {};
 
 (function() {
@@ -1605,6 +1635,95 @@ const S = {
   charts: {},
   openHeaderFilter: null,
   sliderMax: { cpc: 0, vol: 0, score: 0 }
+};
+
+// ===== GLOBAL DATE FILTER =====
+window.GlobalDateFilter = {
+  dateFrom: '',
+  dateTo: '',
+  activePreset: 'all',
+
+  presetDates: function(preset) {
+    var today = new Date();
+    var yyyy = function(d) { return d.toISOString().slice(0, 10); };
+    switch (preset) {
+      case 'today': return { from: yyyy(today), to: yyyy(today) };
+      case 'yesterday':
+        var y = new Date(today); y.setDate(y.getDate() - 1);
+        return { from: yyyy(y), to: yyyy(y) };
+      case '7d':
+        var w = new Date(today); w.setDate(w.getDate() - 6);
+        return { from: yyyy(w), to: yyyy(today) };
+      case '30d':
+        var m = new Date(today); m.setDate(m.getDate() - 29);
+        return { from: yyyy(m), to: yyyy(today) };
+      case 'all': return { from: '', to: '' };
+      default: return { from: '', to: '' };
+    }
+  },
+
+  set: function(from, to, preset) {
+    this.dateFrom = from || '';
+    this.dateTo = to || '';
+    this.activePreset = preset || 'custom';
+    this._updateUI();
+    this._broadcast();
+  },
+
+  _updateUI: function() {
+    var self = this;
+    document.querySelectorAll('.gdb-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.preset === self.activePreset);
+    });
+    document.getElementById('gdb-from').value = this.dateFrom;
+    document.getElementById('gdb-to').value = this.dateTo;
+    var status = document.getElementById('gdb-status');
+    if (!this.dateFrom && !this.dateTo) {
+      status.textContent = 'Showing all dates';
+    } else if (this.dateFrom && this.dateTo) {
+      status.textContent = this.dateFrom + ' \u2192 ' + this.dateTo;
+    } else if (this.dateFrom) {
+      status.textContent = 'From ' + this.dateFrom;
+    } else {
+      status.textContent = 'Until ' + this.dateTo;
+    }
+  },
+
+  _broadcast: function() {
+    this._applyToDiscovery();
+    this._applyToExperimental();
+    this._applyToIntel();
+  },
+
+  _applyToDiscovery: function() {
+    S.filters.dateFrom = this.dateFrom;
+    S.filters.dateTo = this.dateTo;
+    document.getElementById('filter-date-from').value = this.dateFrom;
+    document.getElementById('filter-date-to').value = this.dateTo;
+    if (typeof applyFilters === 'function') {
+      applyFilters(); renderTable(); updateFilterBadge(); renderActiveFilters();
+      if (typeof updateCharts === 'function') updateCharts();
+      if (typeof saveToHash === 'function') saveToHash();
+    }
+  },
+
+  _applyToExperimental: function() {
+    if (typeof filterExperimental === 'function') filterExperimental();
+  },
+
+  _applyToIntel: function() {
+    document.dispatchEvent(new CustomEvent('global-date-change', {
+      detail: { from: this.dateFrom, to: this.dateTo }
+    }));
+  },
+
+  matchesDate: function(dateStr) {
+    if (!dateStr) return (!this.dateFrom && !this.dateTo);
+    var d = dateStr.slice(0, 10);
+    if (this.dateFrom && d < this.dateFrom) return false;
+    if (this.dateTo && d > this.dateTo) return false;
+    return true;
+  }
 };
 
 // ===== COLUMNS =====
@@ -2773,7 +2892,10 @@ function saveToHash() {
     sort: S.sortCol !== 'opportunity_score' ? S.sortCol : undefined,
     dir: S.sortDir !== 'desc' ? S.sortDir : undefined,
     cf: Object.keys(S.colFilters).length ? S.colFilters : undefined,
-    cols: [...S.visibleCols].join(',')
+    cols: [...S.visibleCols].join(','),
+    df: GlobalDateFilter.dateFrom || undefined,
+    dt: GlobalDateFilter.dateTo || undefined,
+    dp: GlobalDateFilter.activePreset !== 'all' ? GlobalDateFilter.activePreset : undefined
   };
   const clean = Object.fromEntries(Object.entries(state).filter(([,v]) => v !== undefined));
   window.location.hash = encodeURIComponent(JSON.stringify(clean));
@@ -2788,6 +2910,9 @@ function restoreFromHash() {
     if (state.dir) S.sortDir = state.dir;
     if (state.cf) S.colFilters = state.cf;
     if (state.cols) S.visibleCols = new Set(state.cols.split(','));
+    if (state.dp || state.df || state.dt) {
+      GlobalDateFilter.set(state.df || '', state.dt || '', state.dp || 'custom');
+    }
   } catch(e) {}
 }
 
@@ -2811,11 +2936,10 @@ function resetFilters() {
   document.querySelectorAll('#filter-panel input[type="checkbox"]').forEach(c => c.checked = false);
   document.getElementById('conf-all').checked = true;
   ['slider-cpc','slider-volume','slider-score'].forEach(id => { const el = document.getElementById(id); if (el.noUiSlider) el.noUiSlider.reset(); });
-  document.getElementById('filter-date-from').value = '';
-  document.getElementById('filter-date-to').value = '';
   S.filters = { tags: [], verticals: [], countries: [], tiers: [], cpcRange: [0, Infinity], volRange: [0, Infinity], scoreRange: [0, Infinity], confidence: 'all', sources: [], metricsSources: [], dateFrom: '', dateTo: '', showTransformedOnly: false };
   S.colFilters = {};
   document.querySelectorAll('#table-head th').forEach(th => th.classList.remove('has-filter'));
+  GlobalDateFilter.set('', '', 'all');
   onFilterChange();
   renderActiveFilters();
 }
@@ -2939,9 +3063,36 @@ function bindEvents() {
   });
   document.getElementById('ft-transformed')?.addEventListener('change', onFilterChange);
   document.querySelectorAll('input[name="conf"]').forEach(el => { el.addEventListener('change', onFilterChange); });
-  document.getElementById('filter-date-from').addEventListener('change', onFilterChange);
-  document.getElementById('filter-date-to').addEventListener('change', onFilterChange);
+  document.getElementById('filter-date-from').addEventListener('change', function() {
+    GlobalDateFilter.set(this.value, document.getElementById('filter-date-to').value, 'custom');
+  });
+  document.getElementById('filter-date-to').addEventListener('change', function() {
+    GlobalDateFilter.set(document.getElementById('filter-date-from').value, this.value, 'custom');
+  });
   document.getElementById('reset-filters-btn').addEventListener('click', resetFilters);
+
+  // Global date bar events
+  document.querySelectorAll('.gdb-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var dates = GlobalDateFilter.presetDates(btn.dataset.preset);
+      GlobalDateFilter.set(dates.from, dates.to, btn.dataset.preset);
+    });
+  });
+  document.getElementById('gdb-from').addEventListener('change', function() {
+    GlobalDateFilter.set(this.value, document.getElementById('gdb-to').value, 'custom');
+  });
+  document.getElementById('gdb-to').addEventListener('change', function() {
+    GlobalDateFilter.set(document.getElementById('gdb-from').value, this.value, 'custom');
+  });
+
+  // Set min/max on global date inputs
+  if (typeof runDates !== 'undefined' && runDates.length) {
+    ['gdb-from','gdb-to'].forEach(function(id) {
+      var el = document.getElementById(id);
+      el.min = runDates[0];
+      el.max = runDates[runDates.length - 1];
+    });
+  }
 
   // Active filters bar clear
   document.getElementById('af-clear-all').addEventListener('click', resetFilters);
@@ -4614,7 +4765,12 @@ function _initIntel() {
   }
 
   function fetchKeywords() {
-    api('/keywords?vertical=' + kwVert + '&sort=' + kwSort + '&dir=' + kwDir + '&page=' + kwPage).then(function(d) {
+    var dateParams = '';
+    if (window.GlobalDateFilter) {
+      if (GlobalDateFilter.dateFrom) dateParams += '&date_from=' + GlobalDateFilter.dateFrom;
+      if (GlobalDateFilter.dateTo) dateParams += '&date_to=' + GlobalDateFilter.dateTo;
+    }
+    api('/keywords?vertical=' + kwVert + '&sort=' + kwSort + '&dir=' + kwDir + '&page=' + kwPage + dateParams).then(function(d) {
       var tbody = document.getElementById('intel-kw-body');
       var empty = document.getElementById('intel-kw-empty');
       if (d && d.error) {
@@ -4896,6 +5052,11 @@ function _initIntel() {
   window.intel_loaded = loaded;
   window.intel_loaders = intelLoaders;
 
+  // Listen for global date filter changes
+  document.addEventListener('global-date-change', function() {
+    if (loaded.keywords) { kwPage = 1; fetchKeywords(); }
+  });
+
   // Load War Room + Health on init
   loadWarRoom(); loaded.warroom = true;
   loadHealth();
@@ -4921,26 +5082,26 @@ function _initIntel() {
 <div class="pipeline-grid">
 <div class="pipeline-card">
 <div class="pipeline-card-title">Pipeline Status</div>
-<div class="pipeline-status-value warn">Partial (0/12)</div>
+<div class="pipeline-status-value warn">Partial (9/12)</div>
 <div class="pipeline-meta">
-<div>Last run: <span>Never</span></div>
+<div>Last run: <span>2026-04-10T18:00:05</span></div>
 <div>Duration: <span>—</span></div>
-<div>Next scheduled: <span>—</span></div>
+<div>Next scheduled: <span>2026-04-11 00:00</span></div>
 </div>
 <button class="btn-run-now" id="btn-run-now" onclick="triggerPipeline()">Run Now</button>
 </div>
 <div class="pipeline-card">
 <div class="pipeline-card-title">Stage Timeline</div>
 <ul class="stage-timeline">
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Subreddit Discovery</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Reddit Intelligence</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Trends Scraper</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Trends Postprocess</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Keyword Expander</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Keyword Extractor</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Commercial Keyword Transformer</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Vetting</span></li>
-<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Validation</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Subreddit Discovery</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Reddit Intelligence</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Trends Scraper</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Trends Postprocess</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Keyword Expander</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Keyword Extractor</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Commercial Keyword Transformer</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Vetting</span></li>
+<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Validation</span></li>
 <li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Angle Engine</span></li>
 <li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Dashboard Builder</span></li>
 <li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Reflection</span></li>
@@ -4948,17 +5109,23 @@ function _initIntel() {
 <div class="pipeline-card" style="grid-column:span 2;">
 <div class="pipeline-card-title">Last 7 Runs</div>
 <div class="run-history">
-<div class="run-card"><div class="run-card-date">2026-04-10</div><div class="run-card-golden">9</div><div class="run-card-total">869 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-10</div><div class="run-card-golden">9</div><div class="run-card-total">985 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-09</div><div class="run-card-golden">22</div><div class="run-card-total">690 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-08</div><div class="run-card-golden">23</div><div class="run-card-total">667 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-07</div><div class="run-card-golden">134</div><div class="run-card-total">596 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-06</div><div class="run-card-golden">139</div><div class="run-card-total">599 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-05</div><div class="run-card-golden">166</div><div class="run-card-total">675 total</div></div>
-<div class="run-card"><div class="run-card-date">2026-04-04</div><div class="run-card-golden">102</div><div class="run-card-total">904 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-04</div><div class="run-card-golden">98</div><div class="run-card-total">788 total</div></div>
 </div></div>
 <div class="pipeline-card" style="grid-column:span 2;">
 <div class="pipeline-card-title">Recent Errors</div>
 <div class="error-list">
+<div class="error-item"><span class="error-timestamp">2026-04-10T18:00:42</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-10T18:00:41</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-10T18:00:41</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
+</div>
 <div class="error-item"><span class="error-timestamp">2026-04-10T12:00:42</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
 </div>
 <div class="error-item"><span class="error-timestamp">2026-04-10T12:00:42</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">LanceDBConnection.create_table() got an unexpected keyword argument &#39;metric&#39;</div>
@@ -4973,12 +5140,6 @@ function _initIntel() {
 <div class="error-item"><span class="error-timestamp">2026-04-10T07:41:00</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;cna chile&#39; [CL]: wrong_language</div>
 </div>
 <div class="error-item"><span class="error-timestamp">2026-04-10T07:40:58</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;ad india&#39; [IN]: wrong_language</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-10T07:40:57</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;草加市 商工会議所&#39; [JP]: navigational_intent</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-10T07:40:57</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;que se necesita para sacar una tarjeta de credito bbva&#39; [MX]: navigational_intent</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-10T07:40:57</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;law firm&#39; [DE]: wrong_language</div>
 </div>
 </div></div>
 </div><!-- /pipeline-grid -->
