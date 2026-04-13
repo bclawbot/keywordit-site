@@ -572,7 +572,7 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-const API = 'https://keywordit-api-production.up.railway.app/api/intel';
+const API = 'data/intel';
 const loaded = {};       // track which tabs have been fetched
 let actPage = 1;
 let actPeriod = '7';
@@ -650,14 +650,18 @@ function fmtUsd(n) { return n == null ? '--' : '$' + n.toFixed(2); }
 
 async function api(path) {
   try {
-    const sess = JSON.parse(localStorage.getItem('keywordit_session') || '{}');
-    const headers = {};
-    if (sess.token) headers['Authorization'] = 'Bearer ' + sess.token;
-    const r = await fetch(API + path, { headers });
-    if (!r.ok) return { error: true, message: 'API error: ' + r.status + ' ' + r.statusText };
+    let file;
+    const m = path.startsWith('/keywords') && path.match(/[?&]page=(\d+)/);
+    if (m) {
+      file = '/keywords_p' + m[1] + '.json';
+    } else {
+      file = path.split('?')[0] + '.json';
+    }
+    const r = await fetch(API + file);
+    if (!r.ok) return { error: true, message: 'Failed to load data: ' + r.status };
     return await r.json();
   } catch(e) {
-    return { error: true, message: 'Network error — check if the API is running' };
+    return { error: true, message: 'Network error — data files may not be deployed yet' };
   }
 }
 

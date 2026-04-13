@@ -1583,7 +1583,7 @@ function signOut() {
 
 <script>
 window.OPPORTUNITIES = [];
-window.PIPELINE_META = {"generated_at": "2026-04-13T05:18:38.249218", "total_validated": 9125, "total_scored": 7931, "total_golden": 582, "total_emerging": 4792, "total_unscored": 1194, "countries_covered": 47, "last_run_at": "2026-04-13T03:15:52.102402", "run_id": "run_20260413_0518", "metrics_from_google_kp": 7241, "metrics_from_dataforseo": 308, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-12", "2026-04-13"], "accumulated_runs": 21};
+window.PIPELINE_META = {"generated_at": "2026-04-13T08:02:03.568239", "total_validated": 9125, "total_scored": 7931, "total_golden": 582, "total_emerging": 4792, "total_unscored": 1194, "countries_covered": 47, "last_run_at": "2026-04-13T03:15:52.102402", "run_id": "run_20260413_0802", "metrics_from_google_kp": 7241, "metrics_from_dataforseo": 308, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-12", "2026-04-13"], "accumulated_runs": 21};
 window.ANGLES = {};
 
 (function() {
@@ -6275,11 +6275,11 @@ function _initIntel() {
 <div class="pipeline-grid">
 <div class="pipeline-card">
 <div class="pipeline-card-title">Pipeline Status</div>
-<div class="pipeline-status-value warn">Partial (10/12)</div>
+<div class="pipeline-status-value warn">Running</div>
 <div class="pipeline-meta">
-<div>Last run: <span>2026-04-13T00:00:04</span></div>
+<div>Last run: <span>2026-04-13T06:00:04</span></div>
 <div>Duration: <span>—</span></div>
-<div>Next scheduled: <span>2026-04-13 06:00</span></div>
+<div>Next scheduled: <span>2026-04-13 12:00</span></div>
 </div>
 <button class="btn-run-now" id="btn-run-now" onclick="triggerPipeline()">Run Now</button>
 </div>
@@ -6291,11 +6291,11 @@ function _initIntel() {
 <li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Trends Scraper</span></li>
 <li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Trends Postprocess</span></li>
 <li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Keyword Expander</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Keyword Extractor</span></li>
+<li class="stage-item"><span class="stage-icon running">⏳</span><span class="stage-name">Keyword Extractor</span></li>
 <li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Commercial Keyword Transformer</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Vetting</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Validation</span></li>
-<li class="stage-item"><span class="stage-icon done">✓</span><span class="stage-name">Angle Engine</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Vetting</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Validation</span></li>
+<li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Angle Engine</span></li>
 <li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Dashboard Builder</span></li>
 <li class="stage-item"><span class="stage-icon pending">—</span><span class="stage-name">Reflection</span></li>
 </ul></div>
@@ -6313,6 +6313,12 @@ function _initIntel() {
 <div class="pipeline-card" style="grid-column:span 2;">
 <div class="pipeline-card-title">Recent Errors</div>
 <div class="error-list">
+<div class="error-item"><span class="error-timestamp">2026-04-13T06:34:59</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-13T06:34:59</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-13T06:34:58</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
+</div>
 <div class="error-item"><span class="error-timestamp">2026-04-13T00:06:06</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
 </div>
 <div class="error-item"><span class="error-timestamp">2026-04-13T00:06:06</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
@@ -6327,16 +6333,6 @@ function _initIntel() {
 <div class="error-item"><span class="error-timestamp">2026-04-12T18:28:57</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
 </div>
 <div class="error-item"><span class="error-timestamp">2026-04-12T18:28:57</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-12T16:08:04</span><span class="error-stage">5</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Traceback (most recent call last):
-  File &quot;/Users/newmac/.openclaw/workspace/reflection.py&quot;, line 53, in &lt;module&gt;
-    st = rec.get(&quot;source_trend&quot;, &quot;&quot;).lower()
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</div>
-<div class="error-explain">DataForSEO returned an empty response for this batch. The keywords may not exist in their index.</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-12T13:52:56</span><span class="error-stage">keyword_extractor/llm_deadline</span><div class="error-msg" onclick="this.classList.toggle('expanded')">2h deadline at batch 34/56</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-12T10:54:03</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
 </div>
 </div></div>
 </div><!-- /pipeline-grid -->
