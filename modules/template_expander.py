@@ -70,6 +70,7 @@ def expand_batch(
     registry: dict,
     country: str,
     source_quality_scores: dict = None,
+    source_trends: dict = None,
 ) -> list:
     """
     Generate expanded keyword variants from decomposed keywords.
@@ -87,6 +88,8 @@ def expand_batch(
     """
     if source_quality_scores is None:
         source_quality_scores = {}
+    if source_trends is None:
+        source_trends = {}
 
     cycle_total   = 0
     entity_counts = {}   # new_value -> count  (per-entity cap)
@@ -162,6 +165,7 @@ def expand_batch(
                 "vertical_match":       decomp.get("vertical", "general"),
                 "plausible":            None,  # filled by plausibility_checker
                 "cpc_track":            None,  # filled by cpc_router
+                "source_trend":         source_trends.get(keyword, ""),
             }
             expansions.append(expansion)
             kw_count              += 1

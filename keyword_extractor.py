@@ -50,6 +50,7 @@ from cpc_cache import (
     init_db, cleanup,
     normalize_and_dedupe,
     batch_cache_lookup, cache_write_back,
+    labs_cache_write_batch,
     get_today_usage, increment_usage,
     get_today_expand_results, increment_expand_results,
     budget_gate,
@@ -82,7 +83,7 @@ def _normalize_for_dfs(keyword: str) -> str:
 
 
 # ── LLM — centralized client ───────────────────────────────────────────────────
-LLM_BATCH_SIZE = 8    # trends per LLM call
+LLM_BATCH_SIZE = 16   # trends per LLM call (doubled from 8 — fits within 32k context)
 
 from llm_client import call as _llm_call, LLMError
 
@@ -111,7 +112,7 @@ GEO_MAP = {
     "DE": (2276, "de"), "FR": (2250, "fr"), "ES": (2724, "es"),
     "IT": (2380, "it"), "NL": (2528, "nl"), "BR": (2076, "pt"),
     "JP": (2392, "ja"), "KR": (2410, "ko"), "MX": (2484, "es"),
-    "PL": (2616, "pl"), "SE": (2752, "sv"), "NO": (2578, "no"),
+    "PL": (2616, "pl"), "SE": (2752, "sv"),
     "DK": (2208, "da"), "FI": (2246, "fi"), "AT": (2040, "de"),
     "BE": (2056, "nl"), "CH": (2756, "de"), "IE": (2372, "en"),
     "ZA": (2710, "en"), "SG": (2702, "en"), "NZ": (2554, "en"),
@@ -409,7 +410,7 @@ def dfs_batch_lookup(keywords: list) -> dict:
                 "keywords":                 batch,
                 "location_code":            loc_code,
                 "language_code":            lang_code,
-                "include_serp_info":        False,
+                "include_serp_info":        True,
                 "include_clickstream_data": False,
             }]
 
@@ -433,6 +434,7 @@ def dfs_batch_lookup(keywords: list) -> dict:
                           f"{tasks[0].get('status_message') if tasks else 'no tasks'}")
                     continue
 
+                batch_enrichments = {}
                 for idx, item in enumerate(tasks[0].get("result") or []):
                     kw_text = item.get("keyword", "")
                     # Positional fallback: DFS keyword_overview/live preserves input order.
@@ -441,18 +443,46 @@ def dfs_batch_lookup(keywords: list) -> dict:
                         kw_text = batch[idx]
                     if not kw_text:
                         continue
-                    ki      = item.get("keyword_info", {}) or {}
+                    ki    = item.get("keyword_info", {}) or {}
+                    kp    = item.get("keyword_properties", {}) or {}
+                    si    = item.get("search_intent_info", {}) or {}
+                    sinfo = item.get("serp_info", {}) or {}
+                    trend = ki.get("search_volume_trend", {}) or {}
+
                     cpc_val = float(ki.get("cpc") or 0)
                     sv_val  = int(ki.get("search_volume") or 0)
                     comp    = float(ki.get("competition") or 0)
 
                     key = (kw_text.lower(), country)
+                    # Core metrics (used by this stage for scoring)
                     results[key] = {
                         "cpc_usd":       round(cpc_val, 2),
                         "search_volume": sv_val,
                         "competition":   round(comp, 2),
                         "source":        "dataforseo_labs",
                     }
+                    # Full enrichment blob — cached so Stage 3 gets it for free
+                    batch_enrichments[key] = {
+                        "cpc_usd":              round(cpc_val, 2),
+                        "search_volume":        sv_val,
+                        "competition":          round(comp, 2),
+                        "cpc_low_usd":          round(float(ki.get("low_top_of_page_bid") or 0), 2),
+                        "cpc_high_usd":         round(float(ki.get("high_top_of_page_bid") or 0), 2),
+                        "competition_index":    int(ki.get("competition_index") or 0) if ki.get("competition_index") is not None else None,
+                        "kd":                   int(kp.get("keyword_difficulty") or 0),
+                        "main_intent":          si.get("main_intent", ""),
+                        "secondary_intents":    si.get("secondary_keyword_intents", []),
+                        "serp_item_types":      sinfo.get("serp_item_types", []),
+                        "trend_monthly":        float(trend.get("monthly") or 0),
+                        "trend_quarterly":      float(trend.get("quarterly") or 0),
+                        "trend_yearly":         float(trend.get("yearly") or 0),
+                        "monthly_searches":     ki.get("monthly_searches", []),
+                        "is_another_language":  bool(kp.get("is_another_language")),
+                        "source":               "dataforseo_labs",
+                    }
+                # Write full blobs to labs_enrichment_cache (Stage 3 gets free cache hits)
+                if batch_enrichments:
+                    labs_cache_write_batch(batch_enrichments)
 
                 print(f"  [{country}] batch {chunk_start // DFS_OVERVIEW_BATCH_SIZE + 1}: "
                       f"{len(batch)} sent, {sum(1 for k in batch if (k.lower(), country) in results)} matched")
@@ -549,21 +579,31 @@ def dfs_labs_keyword_ideas(seed_objects: list) -> list:
                     result_cost = DFS_ENDPOINT_COSTS["keyword_ideas_per_result"] * len(task_items)
                     increment_usd_spent(result_cost, "keyword_ideas_results")
 
+                ideas_enrichments = {}
                 for item in task_items:
-                    intent = item.get("search_intent_info", {}).get("main_intent", "")
+                    if item is None:
+                        continue
+                    si_info = item.get("search_intent_info", {}) or {}
+                    intent  = si_info.get("main_intent", "")
                     # Client-side safety net (server filter already excludes informational)
                     if intent == "informational":
                         continue
-                    ki      = item.get("keyword_info", {})
+                    ki      = item.get("keyword_info", {}) or {}
+                    kp      = item.get("keyword_properties", {}) or {}
+                    sinfo   = item.get("serp_info", {}) or {}
+                    trend   = ki.get("search_volume_trend", {}) or {}
                     ci      = ki.get("competition_index", 0) or 0
-                    has_ads = bool((item.get("serp_info") or {}).get("se_results_count"))
+                    cpc_val = float(ki.get("cpc", 0) or 0)
+                    sv_val  = int(ki.get("search_volume", 0) or 0)
+                    has_ads = bool(sinfo.get("se_results_count"))
+                    kw_text = item.get("keyword", "")
                     results.append({
-                        "keyword":             item.get("keyword", ""),
+                        "keyword":             kw_text,
                         "country":             country,
                         "location_code":       loc_code,
                         "language_code":       lang_code,
-                        "cpc_usd":             round(float(ki.get("cpc", 0) or 0), 2),
-                        "search_volume":       int(ki.get("search_volume", 0) or 0),
+                        "cpc_usd":             round(cpc_val, 2),
+                        "search_volume":       sv_val,
                         "competition":         round(ci / 100, 2),
                         "competition_index":   ci,
                         "commercial_category": chunk[0].get("commercial_category", "general"),
@@ -571,11 +611,34 @@ def dfs_labs_keyword_ideas(seed_objects: list) -> list:
                         "trend_source":        chunk[0].get("trend_source", ""),
                         "confidence":          "high",
                         "metrics_source":      "dataforseo_labs_ideas",
-                        "original_keyword":    item.get("keyword", ""),
+                        "original_keyword":    kw_text,
                         "search_intent":       intent,
                         "has_paid_ads":        has_ads,
                         "seed_keyword":        first_seed,
                     })
+                    # Full enrichment blob for labs_enrichment_cache
+                    if kw_text:
+                        ideas_enrichments[(kw_text.lower(), country)] = {
+                            "cpc_usd":              round(cpc_val, 2),
+                            "search_volume":        sv_val,
+                            "competition":          round(ci / 100, 2),
+                            "cpc_low_usd":          round(float(ki.get("low_top_of_page_bid") or 0), 2),
+                            "cpc_high_usd":         round(float(ki.get("high_top_of_page_bid") or 0), 2),
+                            "competition_index":    ci,
+                            "kd":                   int(kp.get("keyword_difficulty") or 0),
+                            "main_intent":          intent,
+                            "secondary_intents":    si_info.get("secondary_keyword_intents", []),
+                            "serp_item_types":      sinfo.get("serp_item_types", []),
+                            "trend_monthly":        float(trend.get("monthly") or 0),
+                            "trend_quarterly":      float(trend.get("quarterly") or 0),
+                            "trend_yearly":         float(trend.get("yearly") or 0),
+                            "monthly_searches":     ki.get("monthly_searches", []),
+                            "is_another_language":  bool(kp.get("is_another_language")),
+                            "source":               "dataforseo_labs_ideas",
+                        }
+                # Write full blobs to labs_enrichment_cache
+                if ideas_enrichments:
+                    labs_cache_write_batch(ideas_enrichments)
 
                 # Record expansion cache for each seed in chunk
                 for s in chunk:
@@ -636,21 +699,74 @@ def main():
 
     raw_trends = raw_trends + reddit_seeds
 
+    # Reorder trends: commercial-signal trends first (higher LLM priority)
+    _COMMERCIAL_SIGNALS = {
+        "insurance", "loan", "mortgage", "refinance", "attorney", "lawyer",
+        "price", "cost", "buy", "deal", "discount", "rate", "quote",
+        "repair", "install", "service", "treatment", "medication",
+        "software", "subscription", "plan", "provider", "credit", "debt",
+        "invest", "savings", "tax", "salary", "hire", "rent", "lease",
+    }
+
+    def _commercial_priority(trend):
+        term = (trend.get("term") or trend.get("title") or "").lower()
+        return 0 if any(s in term for s in _COMMERCIAL_SIGNALS) else 1
+
+    raw_trends.sort(key=_commercial_priority)
+    _n_commercial = sum(1 for t in raw_trends if _commercial_priority(t) == 0)
+
     total_batches = (len(raw_trends) + LLM_BATCH_SIZE - 1) // LLM_BATCH_SIZE
     print(f"[Pipeline] Received {len(raw_trends)} raw trends "
           f"({len(raw_trends) - len(reddit_seeds)} from explosive_trends, "
           f"{len(reddit_seeds)} from reddit_intel) across "
-          f"{len(set(t.get('geo','US') for t in raw_trends))} countries")
+          f"{len(set(t.get('geo','US') for t in raw_trends))} countries"
+          f" — {_n_commercial} with commercial signals prioritized first")
 
     # ── Step 1: LLM extraction → seed concepts ────────────────────────────────
     _LLM_PHASE_DEADLINE = time.time() + 7200  # 2h hard cap for LLM extraction phase
-    seed_objects: list = []
-    for i in range(0, len(raw_trends), LLM_BATCH_SIZE):
+
+    # Batch-level checkpoint: resume from where previous run stopped
+    import hashlib as _hashlib
+    _BATCH_CHECKPOINT = BASE / ".keyword_extractor_llm_checkpoint.json"
+    _input_hash = _hashlib.md5(json.dumps(
+        [t.get("term", "") for t in raw_trends], sort_keys=True
+    ).encode()).hexdigest()
+    _llm_partial = False
+
+    def _load_batch_checkpoint():
+        try:
+            cp = json.loads(_BATCH_CHECKPOINT.read_text())
+            if cp.get("input_hash") == _input_hash:
+                print(f"  [Checkpoint] Resuming LLM extraction from batch "
+                      f"{cp['next_batch'] + 1}/{total_batches} "
+                      f"({len(cp['seeds'])} seeds from previous run)")
+                return cp["next_batch"] * LLM_BATCH_SIZE, cp["seeds"]
+        except Exception:
+            pass
+        return 0, []
+
+    def _save_batch_checkpoint(next_i, seeds):
+        try:
+            _BATCH_CHECKPOINT.write_text(json.dumps({
+                "input_hash": _input_hash,
+                "next_batch": next_i // LLM_BATCH_SIZE,
+                "seeds": seeds,
+                "saved_at": datetime.now().isoformat(),
+            }))
+        except Exception:
+            pass
+
+    _start_i, seed_objects = _load_batch_checkpoint()
+
+    for i in range(_start_i, len(raw_trends), LLM_BATCH_SIZE):
         if time.time() > _LLM_PHASE_DEADLINE:
             remaining = total_batches - (i // LLM_BATCH_SIZE)
-            print(f"  ⚠️  LLM deadline (2h) reached — skipping {remaining} remaining batches")
+            print(f"  ⚠️  LLM deadline (2h) reached — saving checkpoint, "
+                  f"skipping {remaining} remaining batches")
             _log_error("keyword_extractor/llm_deadline",
                        f"2h deadline at batch {i // LLM_BATCH_SIZE}/{total_batches}")
+            _save_batch_checkpoint(i, seed_objects)
+            _llm_partial = True
             break
         batch     = raw_trends[i : i + LLM_BATCH_SIZE]
         batch_num = i // LLM_BATCH_SIZE + 1
@@ -665,9 +781,17 @@ def main():
                     raw_term = (kw.get("source_trend") or "").lower()
                     kw["trend_source"] = term_to_source.get(raw_term, "")
             seed_objects.extend(extracted)
+            if batch_num % 5 == 0:
+                _save_batch_checkpoint(i + LLM_BATCH_SIZE, seed_objects)
         except Exception as e:
             _log_error("keyword_extractor/llm_batch", str(e), {"batch": batch_num})
             print(f"  ⚠️  Batch {batch_num} failed — skipping")
+    else:
+        # All batches completed — clear checkpoint
+        try:
+            _BATCH_CHECKPOINT.unlink(missing_ok=True)
+        except Exception:
+            pass
 
     seed_count = len(seed_objects)
     print(f"[Pipeline] LLM produced {seed_count} seed concepts")
@@ -927,6 +1051,32 @@ def main():
         budget_used = today_usage_b + len(to_lookup)
         print(f"[Pipeline] Daily budget usage: {budget_used}/{DAILY_API_BUDGET} "
               f"({budget_used / DAILY_API_BUDGET * 100:.0f}%)")
+
+        # Pre-enrich zero-CPC Bucket B keywords via search_volume/live.
+        # Saves validation.py from making the same call later (cross-stage batching).
+        from modules.dfs_client import search_volume_batch
+        from country_config import SV_DAILY_COUNTRIES
+        _zero_cpc_by_country = {}
+        for (kw, country), metrics in fresh_cpc_data.items():
+            if float(metrics.get("cpc_usd") or 0) == 0 and country in SV_DAILY_COUNTRIES:
+                _zero_cpc_by_country.setdefault(country, []).append(kw)
+        if _zero_cpc_by_country:
+            _sv_total = sum(len(v) for v in _zero_cpc_by_country.values())
+            print(f"[Pipeline] SV pre-enrichment: {_sv_total} zero-CPC keywords across "
+                  f"{len(_zero_cpc_by_country)} countries")
+            _sv_results = search_volume_batch(_zero_cpc_by_country)
+            if _sv_results:
+                labs_cache_write_batch(_sv_results)
+                for key, sv_data in _sv_results.items():
+                    if sv_data.get("cpc_usd", 0) > 0:
+                        fresh_cpc_data[key] = {
+                            "cpc_usd": sv_data["cpc_usd"],
+                            "search_volume": sv_data.get("search_volume", 0),
+                            "competition": sv_data.get("competition", 0),
+                            "source": "dataforseo_gads",
+                        }
+                _sv_priced = sum(1 for v in _sv_results.values() if v.get("cpc_usd", 0) > 0)
+                print(f"[Pipeline] SV pre-enrichment: {_sv_priced}/{_sv_total} got real CPC data")
     elif unique_b:
         print("[Pipeline] DataForSEO: 0 Bucket B lookups (all served from cache or budget exhausted)")
     else:
@@ -1115,6 +1265,7 @@ def main():
             _all_decomposed = []
             _raw_expansions = []
             _quality_map = {}
+            _trends_map = {}
 
             for _ctry, _ctry_kws in _by_country.items():
                 _decomposed = _decompose([kw["keyword"] for kw in _ctry_kws],
@@ -1122,7 +1273,9 @@ def main():
                 _all_decomposed.extend(_decomposed)
                 for _kw in _ctry_kws:
                     _quality_map[_kw["keyword"]] = _kw.get("_quality_score", 0)
-                _expansions = _expand(_decomposed, _registry, _ctry, _quality_map)
+                    _trends_map[_kw["keyword"]] = _kw.get("source_trend", "")
+                _expansions = _expand(_decomposed, _registry, _ctry,
+                                      _quality_map, _trends_map)
                 _raw_expansions.extend(_expansions)
 
             _exp_stats["decomposed"]  = len(_all_decomposed)
@@ -1137,6 +1290,10 @@ def main():
                 _plausible = [e for e in _raw_expansions if e.get("plausible") is not False]
                 _exp_stats["passed_plausibility"] = len(_plausible)
                 print(f"[Experimental] {len(_plausible)}/{len(_raw_expansions)} expansions passed plausibility")
+
+                # Enrich source_revenue from proven data
+                for _exp in _plausible:
+                    _exp["source_revenue"] = _get_source_revenue(_exp.get("source_keyword", ""))
 
                 # Step 5: Check for unknown entities → discovered_entities.jsonl
                 _DISCOVERED_PATH = BASE / "data" / "discovered_entities.jsonl"
@@ -1208,6 +1365,12 @@ def main():
                     for _exp in _plausible:
                         _ef.write(json.dumps(_exp) + "\n")
 
+                # Run daily analyzer (non-fatal)
+                try:
+                    _run_daily_analyzer()
+                except Exception as _da_err:
+                    print(f"[Experimental] Daily analyzer skipped: {_da_err}")
+
         # Write expansion log (one entry per run)
         _EXP_LOG_PATH = BASE / "data" / "expansion_log.jsonl"
         _run_log = {
@@ -1251,5 +1414,56 @@ def main():
     print(f"✅ Keyword extraction complete: {len(passed)} commercial keywords → {OUTPUT.name}")
 
 
+# ─── DAILY ANALYZER INTEGRATION (added by experimental_overhaul installer) ───
+
+def _run_daily_analyzer():
+    """Run the daily analyzer after experimental pipeline completes."""
+    try:
+        from modules.daily_analyzer import DailyAnalyzer
+        data_dir = str(Path(__file__).parent / "data")
+        analyzer = DailyAnalyzer(data_dir)
+        scored = analyzer.analyze_expansions()
+        snapshot = analyzer.generate_snapshot()
+        logger.info(f"Daily analyzer: scored {len(scored)} expansions, snapshot saved")
+
+        # Log quality distribution
+        dist = snapshot.get("quality_distribution", {})
+        logger.info(f"Quality: high_priority={dist.get('high_priority', 0)}, "
+                     f"promising={dist.get('promising', 0)}, "
+                     f"speculative={dist.get('speculative', 0)}, "
+                     f"low_value={dist.get('low_value', 0)}")
+    except ImportError:
+        logger.warning("daily_analyzer module not found, skipping daily analysis")
+    except Exception as e:
+        logger.error(f"Daily analyzer error (non-fatal): {e}")
+
+# ─── END DAILY ANALYZER PATCH ───
+
+
+# ─── PROVEN REVENUE ATTRIBUTION (added by experimental_overhaul installer) ───
+
+def _get_source_revenue(keyword: str) -> float:
+    """Look up proven revenue for a source keyword."""
+    try:
+        proven_path = Path(__file__).parent / "data" / "proven_rpc_lookup.json"
+        if not proven_path.exists():
+            return 0.0
+        if not hasattr(_get_source_revenue, '_cache'):
+            import json
+            with open(proven_path) as f:
+                _get_source_revenue._cache = json.load(f)
+        data = _get_source_revenue._cache.get(keyword, {})
+        return data.get("revenue", 0.0)
+    except Exception:
+        return 0.0
+
+# ─── END PROVEN REVENUE PATCH ───
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ENTRY POINT — Do NOT add function definitions below this line.
+# All functions must be defined ABOVE this block so they are available
+# when main() is called.
+# ═══════════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     main()
