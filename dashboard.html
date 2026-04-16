@@ -6723,16 +6723,15 @@ function _initIntel() {
             var vLabel = isV2 ? 'Updated CCD' : 'CCD (Beta)';
             var tip = vLabel + ': ' + ccd.normalized + ' (' + t.label + ')\n'
               + '━━━━━━━━━━━━━━━━━━━━\n'
-              + 'Networks:         ' + bd.networks.count + ' \u00d7 25 = ' + bd.networks.contrib + '\n';
+              + 'Networks:         ' + bd.networks.count + ' \u00d7 30 = ' + bd.networks.contrib + '\n';
             if (isV2 && bd.avg_ad_duration) {
               tip += 'Avg Ad Duration:  ' + bd.avg_ad_duration.days + 'd \u00d7 20 = ' + bd.avg_ad_duration.contrib + '\n'
                 + 'Max Ad Duration:  ' + bd.max_ad_duration.days + 'd \u00d7 10 = ' + bd.max_ad_duration.contrib + '\n';
             } else {
-              tip += 'Vert. Durability: ' + bd.vert_durability.avg + ' \u00d7 20 = ' + bd.vert_durability.contrib + '\n'
-                + 'Max Net. Durab.:  ' + bd.net_durability.max + ' \u00d7 10 = ' + bd.net_durability.contrib + '\n';
+              tip += 'Vert. Durability: ' + bd.vert_durability.avg + ' \u00d7 25 = ' + bd.vert_durability.contrib + '\n';
             }
-            tip += 'Velocity:         ' + bd.velocity.sum + ' \u00d7 0.01 = ' + bd.velocity.contrib + '\n'
-              + 'Consensus:        ' + bd.consensus.avg + ' \u00d7 15 = ' + bd.consensus.contrib + '\n'
+            tip += 'Velocity:         ' + bd.velocity.sum + ' \u00d7 0.015 = ' + bd.velocity.contrib + '\n'
+              + 'Consensus:        ' + bd.consensus.avg + ' \u00d7 20 = ' + bd.consensus.contrib + '\n'
               + '━━━━━━━━━━━━━━━━━━━━\n'
               + 'Raw: ' + ccd.raw + ' \u2192 Normalized: ' + ccd.normalized + '\n'
               + 'Confidence: ' + ccd.confidence.charAt(0).toUpperCase() + ccd.confidence.slice(1);

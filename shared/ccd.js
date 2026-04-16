@@ -23,7 +23,6 @@ var CCD = {
   verticalMap: {},
   networkMap: {},
   cache: {},
-  _maxNetDurability: 0,
   activeVersion: 'v1',
 
   /**
@@ -34,7 +33,6 @@ var CCD = {
     this.verticalMap = {};
     this.networkMap = {};
     this.cache = {};
-    this._maxNetDurability = 0;
 
     var i;
     if (verticals && verticals.length) {
@@ -52,15 +50,11 @@ var CCD = {
     if (networks && networks.length) {
       for (i = 0; i < networks.length; i++) {
         var n = networks[i];
-        var dur = n.avg_durability || 0;
         this.networkMap[n.name] = {
-          avg_durability: dur,
+          avg_durability: n.avg_durability || 0,
           active_ads: n.active_ads || 0,
           velocity_7d: n.velocity_7d || 0,
         };
-        if (dur > this._maxNetDurability) {
-          this._maxNetDurability = dur;
-        }
       }
     }
 
@@ -119,12 +113,12 @@ var CCD = {
         vertDurabilities.push(vData.avg_durability);
       }
     }
+    // Fallback: 4.5 when verticals exist but none match verticalMap,
+    // 0 when keyword has no verticals at all (truly unknown competition)
     var avgVertDurability =
       vertDurabilities.length > 0
         ? vertDurabilities.reduce(function (a, b) { return a + b; }, 0) / vertDurabilities.length
-        : 4.5;
-
-    var maxNetDurability = this._maxNetDurability;
+        : (verts.length > 0 ? 4.5 : 0);
 
     var velocity = 0;
     for (j = 0; j < verts.length; j++) {
@@ -143,13 +137,13 @@ var CCD = {
     }
     var avgConsensus = consensusCount > 0 ? consensusSum / consensusCount : 0;
 
-    var networksContrib = 25 * networkCount;
-    var vertDurContrib = 20 * avgVertDurability;
-    var netDurContrib = 10 * maxNetDurability;
-    var velocityContrib = 0.01 * velocity;
-    var consensusContrib = 15 * avgConsensus;
+    // v1 weights (hotfix: removed maxNetDurability global constant)
+    var networksContrib = 30 * networkCount;
+    var vertDurContrib = 25 * avgVertDurability;
+    var velocityContrib = 0.015 * velocity;
+    var consensusContrib = 20 * avgConsensus;
 
-    var raw = networksContrib + vertDurContrib + netDurContrib + velocityContrib + consensusContrib;
+    var raw = networksContrib + vertDurContrib + velocityContrib + consensusContrib;
 
     var confidence =
       vertDurabilities.length >= 2 ? 'high'
@@ -164,7 +158,6 @@ var CCD = {
       breakdown: {
         networks: { count: networkCount, contrib: _r(networksContrib) },
         vert_durability: { avg: _r(avgVertDurability), matched: vertDurabilities.length, contrib: _r(vertDurContrib) },
-        net_durability: { max: _r(maxNetDurability), contrib: _r(netDurContrib) },
         velocity: { sum: _r(velocity), contrib: _r(velocityContrib) },
         consensus: { avg: _r(avgConsensus), contrib: _r(consensusContrib) },
       },
@@ -311,8 +304,8 @@ var CCD = {
   // ── Shared utilities ──────────────────────────────────────────────────────
 
   normalize: function (raw) {
-    var MIN = 50;
-    var MAX = 350;
+    var MIN = 40;
+    var MAX = 300;
     return Math.round(
       Math.max(0, Math.min(100, ((raw - MIN) / (MAX - MIN)) * 100))
     );
