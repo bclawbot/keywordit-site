@@ -1583,7 +1583,7 @@ function signOut() {
 
 <script>
 window.OPPORTUNITIES = [];
-window.PIPELINE_META = {"generated_at": "2026-04-16T10:49:49.985675", "total_validated": 11510, "total_scored": 9916, "total_golden": 672, "total_emerging": 5675, "total_unscored": 1594, "countries_covered": 47, "last_run_at": "2026-04-16T07:29:11.971153", "run_id": "run_20260416_1049", "metrics_from_google_kp": 9127, "metrics_from_dataforseo": 360, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-12", "2026-04-13", "2026-04-14", "2026-04-15", "2026-04-16"], "accumulated_runs": 24};
+window.PIPELINE_META = {"generated_at": "2026-04-16T11:35:07.866702", "total_validated": 11510, "total_scored": 9916, "total_golden": 672, "total_emerging": 5675, "total_unscored": 1594, "countries_covered": 47, "last_run_at": "2026-04-16T07:29:11.971153", "run_id": "run_20260416_1135", "metrics_from_google_kp": 9127, "metrics_from_dataforseo": 360, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-12", "2026-04-13", "2026-04-14", "2026-04-15", "2026-04-16"], "accumulated_runs": 24};
 window.ANGLES = {};
 
 (function() {
@@ -5594,6 +5594,74 @@ Total keywords in dataset: <span>174,631</span> | Matched to pipeline: <span>0</
   #tab-intel .intel-health-bar { flex-wrap:wrap; height:auto; padding:8px 16px; gap:8px; }
 }
 
+/* ── Per-column filter & sort enhancements ── */
+#tab-intel .th-filter-icon {
+  display:inline-block; margin-left:3px; font-size:9px; opacity:0;
+  cursor:pointer; vertical-align:middle; transition:opacity 0.15s;
+}
+#tab-intel .data-table th:hover .th-filter-icon { opacity:0.7; }
+#tab-intel .th-filter-icon.has-filter { opacity:1; color:var(--accent-text); }
+
+#tab-intel .ikw-col-dropdown {
+  position:absolute; top:100%; left:0; z-index:100;
+  background:var(--bg-raised); border:1px solid var(--border);
+  border-radius:var(--radius-sm); box-shadow:0 4px 16px rgba(0,0,0,0.3);
+  max-height:300px; overflow-y:auto; min-width:180px;
+  padding:6px 0; font-size:11px;
+}
+#tab-intel .ikw-col-dropdown .cfd-search {
+  display:block; width:calc(100% - 16px); margin:4px 8px;
+  padding:4px 8px; border:1px solid var(--border); border-radius:var(--radius-sm);
+  background:var(--bg-input); color:var(--text-primary);
+  font-family:var(--font-mono); font-size:11px; outline:none;
+}
+#tab-intel .ikw-col-dropdown .cfd-option {
+  display:flex; align-items:center; gap:6px; padding:3px 10px;
+  cursor:pointer; white-space:nowrap; color:var(--text-primary);
+}
+#tab-intel .ikw-col-dropdown .cfd-option:hover { background:var(--bg-hover); }
+#tab-intel .ikw-col-dropdown .cfd-option label { cursor:pointer; flex:1; display:flex; align-items:center; gap:6px; }
+#tab-intel .ikw-col-dropdown .cfd-option .cfd-count {
+  margin-left:auto; font-size:9px; color:var(--text-tertiary);
+}
+#tab-intel .ikw-col-dropdown .cfd-actions {
+  display:flex; gap:6px; padding:6px 10px 4px; border-top:1px solid var(--border); margin-top:4px;
+}
+#tab-intel .ikw-col-dropdown .cfd-actions button {
+  flex:1; padding:3px 8px; border:1px solid var(--border); border-radius:var(--radius-sm);
+  background:var(--bg-surface); color:var(--text-secondary);
+  font-family:var(--font-mono); font-size:10px; cursor:pointer;
+}
+#tab-intel .ikw-col-dropdown .cfd-actions button:hover { border-color:var(--accent); color:var(--accent-text); }
+
+#tab-intel .ikw-range-btn {
+  display:inline-block; padding:3px 10px; margin:2px 4px;
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  background:var(--bg-surface); color:var(--text-secondary);
+  font-family:var(--font-mono); font-size:10px; cursor:pointer;
+  transition:all var(--transition-fast);
+}
+#tab-intel .ikw-range-btn:hover { border-color:var(--accent); color:var(--text-primary); }
+#tab-intel .ikw-range-btn.active { border-color:var(--accent); color:var(--accent-text); background:var(--accent-dim); }
+
+#tab-intel #ikw-filter-pills { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+#tab-intel .ikw-pill {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:2px 8px; border-radius:3px;
+  background:var(--accent-dim); color:var(--accent-text);
+  font-family:var(--font-mono); font-size:10px;
+}
+#tab-intel .ikw-pill .ikw-pill-x {
+  cursor:pointer; font-size:12px; line-height:1; opacity:0.7;
+  margin-left:2px;
+}
+#tab-intel .ikw-pill .ikw-pill-x:hover { opacity:1; }
+
+#tab-intel #intel-kw-table th.ikw-sorted .sort-arrow { opacity:1; color:var(--accent-text); }
+#tab-intel #intel-kw-table th.ikw-sorted.ikw-sort-asc .sort-arrow { display:inline-block; transform:rotate(0deg); }
+#tab-intel #intel-kw-table th.ikw-sorted.ikw-sort-desc .sort-arrow { display:inline-block; transform:rotate(180deg); }
+#tab-intel #intel-kw-table th { position:relative; }
+
 </style>
 
 <!-- Intel Sub-Tab Nav -->
@@ -5644,29 +5712,25 @@ Total keywords in dataset: <span>174,631</span> | Matched to pipeline: <span>0</
 <!-- C: Keyword Intelligence Table -->
 <div id="intel-keywords" class="intel-subtab-content">
   <div class="filter-bar">
-    <select id="intel-kw-vert-filter" style="background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);font-family:var(--font-mono);font-size:11px;padding:5px 10px;border-radius:var(--radius-sm)">
-      <option value="">All Verticals</option>
-    </select>
-    <select id="intel-kw-angle-filter" style="background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);font-family:var(--font-mono);font-size:11px;padding:5px 10px;border-radius:var(--radius-sm)">
-      <option value="">All Angle Types</option>
-    </select>
-    <button class="filter-btn" id="intel-kw-fb-filter" style="font-size:11px">Has AD</button>
+    <input type="text" id="ikw-search" placeholder="Search keywords…"
+      style="background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);font-family:var(--font-mono);font-size:11px;padding:5px 10px;border-radius:var(--radius-sm);min-width:180px">
+    <div id="ikw-filter-pills"></div>
     <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);margin-left:auto">Showing <span id="intel-kw-showing">0</span> of <span id="intel-kw-total">0</span></span>
   </div>
   <div style="overflow-x:auto">
     <table class="data-table" id="intel-kw-table">
       <thead><tr>
-        <th data-col="keyword">Keyword <span class="sort-arrow">&#9650;</span></th>
-        <th data-col="network_count">Networks <span class="sort-arrow">&#9650;</span></th>
-        <th data-col="max_durability">Durability <span class="sort-arrow">&#9650;</span></th>
-        <th>Vertical</th>
-        <th data-col="volume">Volume <span class="sort-arrow">&#9650;</span></th>
-        <th data-col="cpc_usd">CPC <span class="sort-arrow">&#9650;</span></th>
-        <th data-col="kd">KD <span class="sort-arrow">&#9650;</span></th>
-        <th data-col="rsoc_score">RSOC Score <span class="sort-arrow">&#9650;</span></th>
-        <th>Status</th>
-        <th>Angles</th>
-        <th data-col="top_angle_type">Top Angle <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="keyword" data-type="string">Keyword <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9660;</span></th>
+        <th data-col="network_count" data-type="number">Networks <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9660;</span></th>
+        <th data-col="max_durability" data-type="number">Durability <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9660;</span></th>
+        <th data-col="verticals" data-type="array">Vertical <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9660;</span></th>
+        <th data-col="volume" data-type="number">Volume <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9660;</span></th>
+        <th data-col="cpc_usd" data-type="number">CPC <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9660;</span></th>
+        <th data-col="kd" data-type="number">KD <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9660;</span></th>
+        <th data-col="rsoc_score" data-type="number">RSOC Score <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9660;</span></th>
+        <th data-col="validation_status" data-type="enum">Status <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9660;</span></th>
+        <th data-col="angle_count" data-type="count">Angles <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9660;</span></th>
+        <th data-col="top_angle_type" data-type="angle">Top Angle <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9660;</span></th>
       </tr></thead>
       <tbody id="intel-kw-body"></tbody>
     </table>
@@ -5747,7 +5811,6 @@ function _initIntel() {
 
   var loaded = {};
   var actPage = 1, actPeriod = '7';
-  var kwPage = 1, kwSort = 'network_count', kwDir = 'desc', kwVert = '', kwAngleType = '', kwHasAd = false;
 
   function timeAgo(ts) {
     if (!ts) return '--';
@@ -5960,71 +6023,276 @@ function _initIntel() {
     });
   }
 
-  // ── C. Keyword Intelligence ────────────────────────────────────────────────
-  function loadKeywords() {
-    api('/keywords?page=1').then(function(d0) {
-      removeLoader('intel-keywords');
-      if (d0 && d0.error) {
-        document.getElementById('intel-kw-body').innerHTML = '';
+  // ── C. Keyword Intelligence (client-side filtering & sorting) ─────────────
+  var IKW_DATA = [];
+  var ikwState = {
+    filteredData: [],
+    currentPage: 0,
+    pageSize: 50,
+    sortCol: 'network_count',
+    sortAsc: false,
+    search: '',
+    colFilters: {},
+    numFilters: {}
+  };
+
+  function ikwColVal(k, col) {
+    if (col === 'verticals') return (k.verticals || []).join(', ');
+    if (col === 'validation_status') return k.validation_status || 'pending';
+    if (col === 'angle_count') return (k.angles || []).length;
+    if (col === 'top_angle_type') return k.angles && k.angles[0] ? k.angles[0].type : '';
+    return k[col];
+  }
+
+  function ikwColValRaw(k, col) {
+    if (col === 'verticals') return k.verticals || [];
+    if (col === 'validation_status') return k.validation_status || 'pending';
+    if (col === 'angle_count') return (k.angles || []).length;
+    if (col === 'top_angle_type') return k.angles && k.angles[0] ? k.angles[0].type || '' : '';
+    return k[col];
+  }
+
+  function ikwLoadData() {
+    var isLocal = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+    if (isLocal) {
+      var firstPage = api('/keywords?page=1');
+      firstPage.then(function(d0) {
+        removeLoader('intel-keywords');
+        if (d0 && d0.error) {
+          document.getElementById('intel-kw-body').innerHTML = '';
+          document.getElementById('intel-kw-empty').classList.add('hidden');
+          showError(document.getElementById('intel-kw-pagination'), d0.message, function() {
+            loaded.keywords = false; ikwLoadData(); loaded.keywords = true;
+          });
+          return;
+        }
+        if (!d0 || !d0.keywords || !d0.keywords.length) {
+          document.getElementById('intel-kw-empty').classList.remove('hidden');
+          return;
+        }
         document.getElementById('intel-kw-empty').classList.add('hidden');
-        showError(document.getElementById('intel-kw-pagination'), d0.message, function(){ loaded.keywords=false; loadKeywords(); loaded.keywords=true; });
-        return;
-      }
-      if (d0 && d0.verticals) {
-        var sel = document.getElementById('intel-kw-vert-filter');
-        d0.verticals.forEach(function(v) { var o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
-        sel.addEventListener('change', function() { kwVert = sel.value; kwPage = 1; fetchKeywords(); });
-      }
-      if (d0 && d0.angle_types) {
-        var aSel = document.getElementById('intel-kw-angle-filter');
-        d0.angle_types.forEach(function(a) { var o = document.createElement('option'); o.value = a; o.textContent = a.replace(/_/g,' '); aSel.appendChild(o); });
-        aSel.addEventListener('change', function() { kwAngleType = aSel.value; kwPage = 1; fetchKeywords(); });
-      }
-      var fbBtn = document.getElementById('intel-kw-fb-filter');
-      if (fbBtn) {
-        fbBtn.addEventListener('click', function() { kwHasAd = !kwHasAd; fbBtn.classList.toggle('active', kwHasAd); kwPage = 1; fetchKeywords(); });
-      }
-      document.querySelectorAll('#intel-kw-table th[data-col]').forEach(function(th) {
-        th.addEventListener('click', function() {
-          var col = th.dataset.col;
-          if (kwSort === col) kwDir = kwDir === 'desc' ? 'asc' : 'desc'; else { kwSort = col; kwDir = 'desc'; }
-          kwPage = 1;
-          fetchKeywords();
+
+        var allKw = d0.keywords.slice();
+        var totalItems = d0.total || d0.keywords.length;
+        var totalPages = Math.ceil(totalItems / 50);
+        if (totalPages <= 1) {
+          IKW_DATA = allKw;
+          ikwInitUI();
+          ikwApplyFilters();
+          return;
+        }
+
+        var fetches = [];
+        var maxPages = Math.min(totalPages, 20);
+        for (var p = 2; p <= maxPages; p++) {
+          fetches.push(api('/keywords?page=' + p));
+        }
+
+        Promise.all(fetches).then(function(results) {
+          results.forEach(function(d) {
+            if (d && d.keywords) {
+              allKw = allKw.concat(d.keywords);
+            }
+          });
+          IKW_DATA = allKw;
+          ikwInitUI();
+          ikwApplyFilters();
         });
       });
-      fetchKeywords();
+    } else {
+      fetch('data/intel/keywords_all.json')
+        .then(function(r) { return r.ok ? r.json() : { error: true, message: 'No data available' }; })
+        .catch(function() { return { error: true, message: 'No cached data' }; })
+        .then(function(d) {
+          removeLoader('intel-keywords');
+          if (d && d.error) {
+            document.getElementById('intel-kw-body').innerHTML = '';
+            document.getElementById('intel-kw-empty').classList.add('hidden');
+            showError(document.getElementById('intel-kw-pagination'), d.message || d.error, function() {
+              loaded.keywords = false; ikwLoadData(); loaded.keywords = true;
+            });
+            return;
+          }
+          var arr = Array.isArray(d) ? d : (d.keywords || []);
+          if (!arr.length) {
+            document.getElementById('intel-kw-empty').classList.remove('hidden');
+            return;
+          }
+          document.getElementById('intel-kw-empty').classList.add('hidden');
+          IKW_DATA = arr;
+          ikwInitUI();
+          ikwApplyFilters();
+        });
+    }
+  }
+
+  function ikwInitUI() {
+    document.querySelectorAll('#intel-kw-table th[data-col]').forEach(function(th) {
+      th.addEventListener('click', function(e) {
+        if (e.target.classList.contains('th-filter-icon')) return;
+        ikwSort(th.dataset.col);
+      });
+    });
+
+    document.querySelectorAll('#intel-kw-table th .th-filter-icon').forEach(function(icon) {
+      icon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var th = icon.closest('th');
+        ikwOpenColFilter(th);
+      });
+    });
+
+    var searchInput = document.getElementById('ikw-search');
+    if (searchInput) {
+      var _searchTimer = null;
+      searchInput.addEventListener('input', function() {
+        clearTimeout(_searchTimer);
+        _searchTimer = setTimeout(function() {
+          ikwState.search = searchInput.value.trim().toLowerCase();
+          ikwState.currentPage = 0;
+          ikwApplyFilters();
+        }, 200);
+      });
+    }
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.ikw-col-dropdown') && !e.target.classList.contains('th-filter-icon')) {
+        ikwCloseAllFilters();
+      }
     });
   }
 
-  function fetchKeywords() {
-    var dateParams = '';
-    if (window.GlobalDateFilter) {
-      if (GlobalDateFilter.dateFrom) dateParams += '&date_from=' + GlobalDateFilter.dateFrom;
-      if (GlobalDateFilter.dateTo) dateParams += '&date_to=' + GlobalDateFilter.dateTo;
+  function ikwApplyFilters() {
+    var filtered = IKW_DATA.slice();
+    var search = ikwState.search;
+    var colFilters = ikwState.colFilters;
+    var numFilters = ikwState.numFilters;
+
+    if (search) {
+      filtered = filtered.filter(function(k) {
+        var kw = (k.keyword || '').toLowerCase();
+        var verts = (k.verticals || []).join(' ').toLowerCase();
+        var topAngle = k.angles && k.angles[0] ? (k.angles[0].type || '').toLowerCase() : '';
+        return kw.indexOf(search) !== -1 || verts.indexOf(search) !== -1 || topAngle.indexOf(search) !== -1;
+      });
     }
-    // Show loading state
-    var _tbody = document.getElementById('intel-kw-body');
-    if (_tbody) _tbody.style.opacity = '0.4';
-    document.querySelectorAll('#intel-kw-table th.sorted').forEach(function(th){ th.classList.remove('sorted'); });
-    var _sortTh = document.querySelector('#intel-kw-table th[data-col="'+kwSort+'"]');
-    if (_sortTh) _sortTh.classList.add('sorted');
-    api('/keywords?vertical=' + kwVert + '&sort=' + kwSort + '&dir=' + kwDir + '&page=' + kwPage + (kwAngleType ? '&angle_type=' + kwAngleType : '') + (kwHasAd ? '&has_original=1' : '') + dateParams).then(function(d) {
-      var tbody = document.getElementById('intel-kw-body');
-      if (tbody) tbody.style.opacity = '1';
-      var empty = document.getElementById('intel-kw-empty');
-      if (d && d.error) {
-        tbody.innerHTML = '';
-        empty.classList.add('hidden');
-        showError(document.getElementById('intel-kw-pagination'), d.message, function(){ fetchKeywords(); });
-        return;
+
+    if (window.GlobalDateFilter && (GlobalDateFilter.dateFrom || GlobalDateFilter.dateTo)) {
+      var df = GlobalDateFilter.dateFrom || '';
+      var dt = GlobalDateFilter.dateTo || '';
+      filtered = filtered.filter(function(k) {
+        var kDate = (k.first_seen || k.created_at || '').slice(0, 10);
+        if (!kDate) return true;
+        if (df && kDate < df) return false;
+        if (dt && kDate > dt) return false;
+        return true;
+      });
+    }
+
+    var colKeys = Object.keys(colFilters);
+    for (var ci = 0; ci < colKeys.length; ci++) {
+      var cKey = colKeys[ci];
+      var allowed = colFilters[cKey];
+      if (!allowed || !allowed.length) continue;
+      filtered = filtered.filter(function(k) {
+        var raw = ikwColValRaw(k, cKey);
+        if (Array.isArray(raw)) {
+          if (!raw.length) return allowed.indexOf('') !== -1;
+          for (var ai = 0; ai < raw.length; ai++) {
+            if (allowed.indexOf(String(raw[ai])) !== -1) return true;
+          }
+          return false;
+        }
+        return allowed.indexOf(String(raw)) !== -1;
+      });
+    }
+
+    var numKeys = Object.keys(numFilters);
+    for (var ni = 0; ni < numKeys.length; ni++) {
+      var nKey = numKeys[ni];
+      var range = numFilters[nKey];
+      if (!range) continue;
+      filtered = filtered.filter(function(k) {
+        var val = ikwColValRaw(k, nKey);
+        if (val == null) val = 0;
+        val = Number(val) || 0;
+        if (range.min != null && val < range.min) return false;
+        if (range.max != null && val > range.max) return false;
+        return true;
+      });
+    }
+
+    ikwState.filteredData = filtered;
+    ikwSortData();
+    ikwState.currentPage = 0;
+    ikwRender();
+    ikwUpdatePills();
+  }
+
+  function ikwSortData() {
+    var col = ikwState.sortCol;
+    var asc = ikwState.sortAsc;
+    ikwState.filteredData.sort(function(a, b) {
+      var va = ikwColVal(a, col);
+      var vb = ikwColVal(b, col);
+      if (va == null) va = '';
+      if (vb == null) vb = '';
+      if (typeof va === 'number' && typeof vb === 'number') {
+        return asc ? (va - vb) : (vb - va);
       }
-      if (!d || !d.keywords || !d.keywords.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
-      empty.classList.add('hidden');
+      if (typeof va === 'number') return asc ? -1 : 1;
+      if (typeof vb === 'number') return asc ? 1 : -1;
+      va = String(va).toLowerCase();
+      vb = String(vb).toLowerCase();
+      if (va < vb) return asc ? -1 : 1;
+      if (va > vb) return asc ? 1 : -1;
+      return 0;
+    });
+  }
 
-      document.getElementById('intel-kw-showing').textContent = d.keywords.length;
-      document.getElementById('intel-kw-total').textContent = d.total;
+  function ikwSort(col) {
+    if (ikwState.sortCol === col) {
+      ikwState.sortAsc = !ikwState.sortAsc;
+    } else {
+      ikwState.sortCol = col;
+      ikwState.sortAsc = false;
+    }
+    document.querySelectorAll('#intel-kw-table th').forEach(function(th) {
+      th.classList.remove('ikw-sorted', 'ikw-sort-asc', 'ikw-sort-desc');
+    });
+    var activeTh = document.querySelector('#intel-kw-table th[data-col="' + col + '"]');
+    if (activeTh) {
+      activeTh.classList.add('ikw-sorted');
+      activeTh.classList.add(ikwState.sortAsc ? 'ikw-sort-asc' : 'ikw-sort-desc');
+    }
+    ikwSortData();
+    ikwRender();
+  }
 
-      tbody.innerHTML = d.keywords.map(function(k) {
+  function ikwRender() {
+    var data = ikwState.filteredData;
+    var page = ikwState.currentPage;
+    var size = ikwState.pageSize;
+    var start = page * size;
+    var end = Math.min(start + size, data.length);
+    var pageData = data.slice(start, end);
+
+    document.getElementById('intel-kw-showing').textContent = data.length;
+    document.getElementById('intel-kw-total').textContent = IKW_DATA.length;
+
+    var tbody = document.getElementById('intel-kw-body');
+
+    if (!pageData.length) {
+      tbody.innerHTML = '';
+      document.getElementById('intel-kw-empty').classList.toggle('hidden', data.length > 0 || IKW_DATA.length > 0);
+      if (data.length === 0 && IKW_DATA.length > 0) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-tertiary);font-family:var(--font-mono);font-size:12px">No keywords match the current filters.</td></tr>';
+      }
+    } else {
+      document.getElementById('intel-kw-empty').classList.add('hidden');
+
+      tbody.innerHTML = pageData.map(function(k) {
         var angles = k.angles || [];
         var angleCount = angles.length;
         var anglesBadge = angleCount > 0
@@ -6035,47 +6303,45 @@ function _initIntel() {
         if (topAngle) {
           var conf = topAngle.confidence || 0;
           var qColor = conf >= 0.85 ? 'var(--c-green)' : conf >= 0.65 ? 'var(--c-yellow)' : 'var(--c-red)';
-          var adBadge = topAngle.source === 'original'
-            ? '<span style="color:var(--c-red);font-size:9px;margin-right:3px;font-weight:600">AD</span>'
+          var compBadge = topAngle.source === 'original'
+            ? '<span style="color:var(--c-red);font-size:9px;margin-right:3px;font-weight:600">COMP</span>'
             : '';
           topAngleTd = '<td>' +
-            '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+qColor+';margin-right:4px;vertical-align:middle" title="Confidence: '+conf.toFixed(2)+'"></span>' +
-            adBadge + '<span style="font-size:10px">'+esc(topAngle.type||'')+'</span></td>';
+            '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + qColor + ';margin-right:4px;vertical-align:middle" title="Confidence: ' + conf.toFixed(2) + '"></span>' +
+            compBadge + '<span style="font-size:10px">' + esc(topAngle.type || '') + '</span></td>';
         } else {
-          topAngleTd = '<td><span style="color:var(--text-secondary);font-size:10px">—</span></td>';
+          topAngleTd = '<td><span style="color:var(--text-secondary);font-size:10px">\u2014</span></td>';
         }
-        var row = '<tr class="expandable '+(k.highlight?'highlight':'')+'" data-kw-id="'+k.id+'" data-kw-text="'+esc(k.keyword)+'" data-kw-vert="'+(k.verticals&&k.verticals[0]?esc(k.verticals[0]):'general')+'" data-kw-top-angle="'+(topAngle?esc(topAngle.type||''):'')+'" data-kw-has-ad="'+(angles.some(function(a){return a.source==='original';})?'1':'0')+'">' +
-          '<td><strong>'+esc(k.keyword)+'</strong></td>' +
-          '<td>'+k.network_count+'</td>' +
-          '<td><span class="pill pill-'+(k.durability_class==='winner'||k.durability_class==='evergreen'?'green':k.durability_class==='validated'?'amber':'gray')+'">'+k.max_durability+'d</span></td>' +
-          '<td>'+(k.verticals||[]).map(function(v){return '<span class="pill pill-accent">'+esc(v)+'</span>';}).join(' ')+'</td>' +
-          '<td>'+fmt(k.volume)+'</td>' +
-          '<td>'+fmtUsd(k.cpc_usd)+'</td>' +
-          '<td>'+(k.kd!=null?k.kd:'--')+'</td>' +
-          '<td>'+(k.rsoc_score!=null?k.rsoc_score.toFixed(3):'--')+'</td>' +
-          '<td>'+(k.validation_status==='validated'?'<span class="pill pill-green">Validated</span>':'<span class="pill pill-amber">Pending</span>')+'</td>' +
-          '<td>'+anglesBadge+'</td>' +
+        var row = '<tr class="expandable ' + (k.highlight ? 'highlight' : '') + '" data-kw-id="' + k.id + '" data-kw-text="' + esc(k.keyword) + '" data-kw-vert="' + (k.verticals && k.verticals[0] ? esc(k.verticals[0]) : 'general') + '" data-kw-top-angle="' + (topAngle ? esc(topAngle.type || '') : '') + '" data-kw-has-ad="' + (angles.some(function(a) { return a.source === 'original'; }) ? '1' : '0') + '">' +
+          '<td><strong>' + esc(k.keyword) + '</strong></td>' +
+          '<td>' + k.network_count + '</td>' +
+          '<td><span class="pill pill-' + (k.durability_class === 'winner' || k.durability_class === 'evergreen' ? 'green' : k.durability_class === 'validated' ? 'amber' : 'gray') + '">' + k.max_durability + 'd</span></td>' +
+          '<td>' + (k.verticals || []).map(function(v) { return '<span class="pill pill-accent">' + esc(v) + '</span>'; }).join(' ') + '</td>' +
+          '<td>' + fmt(k.volume) + '</td>' +
+          '<td>' + fmtUsd(k.cpc_usd) + '</td>' +
+          '<td>' + (k.kd != null ? k.kd : '--') + '</td>' +
+          '<td>' + (k.rsoc_score != null ? k.rsoc_score.toFixed(3) : '--') + '</td>' +
+          '<td>' + (k.validation_status === 'validated' ? '<span class="pill pill-green">Validated</span>' : '<span class="pill pill-amber">Pending</span>') + '</td>' +
+          '<td>' + anglesBadge + '</td>' +
           topAngleTd + '</tr>';
-        // Detail row — always present, shows angles or generate button
-        row += '<tr class="detail-row hidden" data-kw-detail="'+k.id+'"><td colspan="11"><div class="kw-angles-container" data-kw-id="'+k.id+'" style="padding:4px 0">';
+        row += '<tr class="detail-row hidden" data-kw-detail="' + k.id + '"><td colspan="11"><div class="kw-angles-container" data-kw-id="' + k.id + '" style="padding:4px 0">';
         if (angleCount) {
           row += renderAngles(angles);
         } else {
           row += '<div style="display:flex;align-items:center;gap:12px;padding:12px 0">' +
             '<span style="font-size:12px;color:var(--text-tertiary)">No angles yet</span>' +
-            '<button class="filter-btn generate-angles-btn" data-kw-id="'+k.id+'" data-kw-text="'+esc(k.keyword)+'" data-kw-vert="'+(k.verticals&&k.verticals[0]?esc(k.verticals[0]):'general')+'">Generate Angles</button>' +
+            '<button class="filter-btn generate-angles-btn" data-kw-id="' + k.id + '" data-kw-text="' + esc(k.keyword) + '" data-kw-vert="' + (k.verticals && k.verticals[0] ? esc(k.verticals[0]) : 'general') + '">Generate Angles</button>' +
             '</div>';
         }
         row += '</div></td></tr>';
         return row;
       }).join('');
 
-      // Bind click-to-expand for ALL keyword rows
       tbody.querySelectorAll('tr.expandable').forEach(function(row) {
-        row.setAttribute('aria-expanded','false');
+        row.setAttribute('aria-expanded', 'false');
         row.style.cursor = 'pointer';
         row.addEventListener('click', function() {
-          var detail = tbody.querySelector('tr[data-kw-detail="'+row.dataset.kwId+'"]');
+          var detail = tbody.querySelector('tr[data-kw-detail="' + row.dataset.kwId + '"]');
           if (!detail) return;
           var expanded = row.getAttribute('aria-expanded') === 'true';
           row.setAttribute('aria-expanded', String(!expanded));
@@ -6083,28 +6349,312 @@ function _initIntel() {
         });
       });
 
-      // Bind generate-angles buttons
       tbody.querySelectorAll('.generate-angles-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
           var kwId = btn.dataset.kwId;
           var kwText = btn.dataset.kwText;
-          var kwVert = btn.dataset.kwVert;
+          var kwVertVal = btn.dataset.kwVert;
           btn.disabled = true;
           btn.textContent = 'Generating...';
-          generateAngles(kwId, kwText, kwVert);
+          generateAngles(kwId, kwText, kwVertVal);
+        });
+      });
+    }
+
+    var totalPages = Math.max(1, Math.ceil(data.length / size));
+    var pg = document.getElementById('intel-kw-pagination');
+    pg.innerHTML = '<button ' + (page <= 0 ? 'disabled' : '') + ' id="intel-kw-prev">Prev</button>' +
+      '<span>Page ' + (page + 1) + ' of ' + totalPages + '</span>' +
+      '<button ' + (page >= totalPages - 1 ? 'disabled' : '') + ' id="intel-kw-next">Next</button>';
+    document.getElementById('intel-kw-prev').addEventListener('click', function() {
+      if (ikwState.currentPage > 0) { ikwState.currentPage--; ikwRender(); }
+    });
+    document.getElementById('intel-kw-next').addEventListener('click', function() {
+      var maxP = Math.ceil(ikwState.filteredData.length / ikwState.pageSize) - 1;
+      if (ikwState.currentPage < maxP) { ikwState.currentPage++; ikwRender(); }
+    });
+
+    document.querySelectorAll('#intel-kw-table th').forEach(function(th) {
+      th.classList.remove('ikw-sorted', 'ikw-sort-asc', 'ikw-sort-desc');
+    });
+    var sortTh = document.querySelector('#intel-kw-table th[data-col="' + ikwState.sortCol + '"]');
+    if (sortTh) {
+      sortTh.classList.add('ikw-sorted');
+      sortTh.classList.add(ikwState.sortAsc ? 'ikw-sort-asc' : 'ikw-sort-desc');
+    }
+  }
+
+  function ikwGetUniqueValues(colKey) {
+    var counts = {};
+    for (var i = 0; i < IKW_DATA.length; i++) {
+      var raw = ikwColValRaw(IKW_DATA[i], colKey);
+      if (Array.isArray(raw)) {
+        if (!raw.length) {
+          counts[''] = (counts[''] || 0) + 1;
+        } else {
+          for (var ai = 0; ai < raw.length; ai++) {
+            var v = String(raw[ai]);
+            counts[v] = (counts[v] || 0) + 1;
+          }
+        }
+      } else {
+        var sv = String(raw == null ? '' : raw);
+        counts[sv] = (counts[sv] || 0) + 1;
+      }
+    }
+    return counts;
+  }
+
+  function ikwBuildCheckboxFilter(colKey, uniqueVals) {
+    var keys = Object.keys(uniqueVals).sort(function(a, b) {
+      return (uniqueVals[b] || 0) - (uniqueVals[a] || 0);
+    });
+    var currentFilter = ikwState.colFilters[colKey] || [];
+    var html = '<input class="cfd-search" type="text" placeholder="Search\u2026">';
+    html += '<div class="cfd-options" style="max-height:200px;overflow-y:auto">';
+    for (var i = 0; i < keys.length; i++) {
+      var val = keys[i];
+      var display = val || '(empty)';
+      var checked = currentFilter.length === 0 || currentFilter.indexOf(val) !== -1;
+      html += '<div class="cfd-option" data-val="' + esc(val) + '">' +
+        '<label><input type="checkbox" value="' + esc(val) + '"' + (checked ? ' checked' : '') + '>' +
+        '<span>' + esc(display) + '</span>' +
+        '<span class="cfd-count">' + uniqueVals[val] + '</span>' +
+        '</label></div>';
+    }
+    html += '</div>';
+    html += '<div class="cfd-actions">' +
+      '<button class="cfd-clear-btn">Clear</button>' +
+      '<button class="cfd-apply-btn">Apply</button>' +
+      '</div>';
+    return html;
+  }
+
+  function ikwBuildNumericFilter(colKey) {
+    var ranges = {
+      network_count: [
+        { label: '1+', min: 1, max: null },
+        { label: '2+', min: 2, max: null },
+        { label: '3+', min: 3, max: null },
+        { label: '5+', min: 5, max: null }
+      ],
+      max_durability: [
+        { label: '<7d', min: null, max: 6.999 },
+        { label: '7-14d', min: 7, max: 14 },
+        { label: '14-30d', min: 14, max: 30 },
+        { label: '30d+', min: 30, max: null }
+      ],
+      volume: [
+        { label: '<1K', min: null, max: 999 },
+        { label: '1K-10K', min: 1000, max: 10000 },
+        { label: '10K+', min: 10000, max: null }
+      ],
+      cpc_usd: [
+        { label: '<$1', min: null, max: 0.999 },
+        { label: '$1-5', min: 1, max: 5 },
+        { label: '$5+', min: 5, max: null }
+      ],
+      kd: [
+        { label: 'Easy (<30)', min: null, max: 29.999 },
+        { label: 'Medium (30-60)', min: 30, max: 60 },
+        { label: 'Hard (60+)', min: 60, max: null }
+      ],
+      rsoc_score: [
+        { label: '>0.5', min: 0.5, max: null },
+        { label: '>0.7', min: 0.7, max: null },
+        { label: '>0.9', min: 0.9, max: null }
+      ],
+      angle_count: [
+        { label: '0', min: 0, max: 0 },
+        { label: '1+', min: 1, max: null },
+        { label: '3+', min: 3, max: null }
+      ]
+    };
+
+    var presets = ranges[colKey] || [];
+    var currentRange = ikwState.numFilters[colKey] || null;
+    var html = '<div style="padding:8px 10px">';
+    for (var i = 0; i < presets.length; i++) {
+      var p = presets[i];
+      var isActive = false;
+      if (currentRange) {
+        isActive = (currentRange.min === p.min || (currentRange.min == null && p.min == null)) &&
+                   (currentRange.max === p.max || (currentRange.max == null && p.max == null));
+      }
+      html += '<span class="ikw-range-btn' + (isActive ? ' active' : '') + '" data-idx="' + i + '">' + esc(p.label) + '</span>';
+    }
+    html += '</div>';
+    html += '<div class="cfd-actions">' +
+      '<button class="cfd-clear-btn">Clear</button>' +
+      '<button class="cfd-apply-btn">Apply</button>' +
+      '</div>';
+    return { html: html, presets: presets };
+  }
+
+  function ikwOpenColFilter(th) {
+    var col = th.dataset.col;
+    var dtype = th.dataset.type;
+
+    ikwCloseAllFilters();
+
+    var dropdown = document.createElement('div');
+    dropdown.className = 'ikw-col-dropdown';
+    dropdown.setAttribute('data-filter-col', col);
+
+    if (dtype === 'number' || dtype === 'count') {
+      var numResult = ikwBuildNumericFilter(col);
+      dropdown.innerHTML = numResult.html;
+      var presets = numResult.presets;
+
+      dropdown.querySelectorAll('.ikw-range-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          dropdown.querySelectorAll('.ikw-range-btn').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.toggle('active');
         });
       });
 
-      var totalPages = Math.ceil(d.total / 50);
-      var pg = document.getElementById('intel-kw-pagination');
-      pg.innerHTML = '<button '+(kwPage<=1?'disabled':'')+' id="intel-kw-prev">Prev</button>' +
-        '<span>Page '+kwPage+' of '+totalPages+'</span>' +
-        '<button '+(kwPage>=totalPages?'disabled':'')+' id="intel-kw-next">Next</button>';
-      document.getElementById('intel-kw-prev').addEventListener('click', function(){ if(kwPage>1){kwPage--;fetchKeywords();} });
-      document.getElementById('intel-kw-next').addEventListener('click', function(){ kwPage++;fetchKeywords(); });
+      dropdown.querySelector('.cfd-apply-btn').addEventListener('click', function() {
+        var activeBtn = dropdown.querySelector('.ikw-range-btn.active');
+        if (activeBtn) {
+          var idx = parseInt(activeBtn.dataset.idx);
+          var preset = presets[idx];
+          ikwState.numFilters[col] = { min: preset.min, max: preset.max, label: preset.label };
+        } else {
+          delete ikwState.numFilters[col];
+        }
+        ikwCloseAllFilters();
+        ikwUpdateFilterIcons();
+        ikwState.currentPage = 0;
+        ikwApplyFilters();
+      });
+
+      dropdown.querySelector('.cfd-clear-btn').addEventListener('click', function() {
+        delete ikwState.numFilters[col];
+        ikwCloseAllFilters();
+        ikwUpdateFilterIcons();
+        ikwState.currentPage = 0;
+        ikwApplyFilters();
+      });
+    } else {
+      var uniqueVals = ikwGetUniqueValues(col);
+      dropdown.innerHTML = ikwBuildCheckboxFilter(col, uniqueVals);
+
+      var cfSearchInput = dropdown.querySelector('.cfd-search');
+      if (cfSearchInput) {
+        cfSearchInput.addEventListener('input', function() {
+          var q = cfSearchInput.value.toLowerCase();
+          dropdown.querySelectorAll('.cfd-option').forEach(function(opt) {
+            var val = (opt.dataset.val || '').toLowerCase();
+            opt.style.display = val.indexOf(q) !== -1 ? '' : 'none';
+          });
+        });
+      }
+
+      dropdown.querySelector('.cfd-apply-btn').addEventListener('click', function() {
+        var checked = [];
+        dropdown.querySelectorAll('.cfd-option input[type="checkbox"]:checked').forEach(function(cb) {
+          checked.push(cb.value);
+        });
+        var allChecked = dropdown.querySelectorAll('.cfd-option input[type="checkbox"]');
+        if (checked.length === allChecked.length || checked.length === 0) {
+          delete ikwState.colFilters[col];
+        } else {
+          ikwState.colFilters[col] = checked;
+        }
+        ikwCloseAllFilters();
+        ikwUpdateFilterIcons();
+        ikwState.currentPage = 0;
+        ikwApplyFilters();
+      });
+
+      dropdown.querySelector('.cfd-clear-btn').addEventListener('click', function() {
+        delete ikwState.colFilters[col];
+        ikwCloseAllFilters();
+        ikwUpdateFilterIcons();
+        ikwState.currentPage = 0;
+        ikwApplyFilters();
+      });
+    }
+
+    dropdown.addEventListener('click', function(e) { e.stopPropagation(); });
+
+    th.appendChild(dropdown);
+  }
+
+  function ikwCloseAllFilters() {
+    document.querySelectorAll('.ikw-col-dropdown').forEach(function(el) { el.remove(); });
+  }
+
+  function ikwUpdateFilterIcons() {
+    document.querySelectorAll('#intel-kw-table th .th-filter-icon').forEach(function(icon) {
+      var th = icon.closest('th');
+      var col = th.dataset.col;
+      var hasFilter = (ikwState.colFilters[col] && ikwState.colFilters[col].length > 0) ||
+                      (ikwState.numFilters[col] != null);
+      icon.classList.toggle('has-filter', hasFilter);
     });
   }
+
+  function ikwUpdatePills() {
+    var container = document.getElementById('ikw-filter-pills');
+    var html = '';
+
+    if (ikwState.search) {
+      html += '<span class="ikw-pill">Search: &quot;' + esc(ikwState.search) + '&quot; <span class="ikw-pill-x" data-pill-type="search">&times;</span></span>';
+    }
+
+    var colKeys = Object.keys(ikwState.colFilters);
+    for (var ci = 0; ci < colKeys.length; ci++) {
+      var ck = colKeys[ci];
+      var vals = ikwState.colFilters[ck];
+      if (!vals || !vals.length) continue;
+      var label = ck.replace(/_/g, ' ');
+      var valStr = vals.length <= 2 ? vals.join(', ') : vals.length + ' selected';
+      html += '<span class="ikw-pill">' + esc(label) + ': ' + esc(valStr) + ' <span class="ikw-pill-x" data-pill-type="col" data-pill-col="' + esc(ck) + '">&times;</span></span>';
+    }
+
+    var numKeys = Object.keys(ikwState.numFilters);
+    for (var ni = 0; ni < numKeys.length; ni++) {
+      var nk = numKeys[ni];
+      var nf = ikwState.numFilters[nk];
+      if (!nf) continue;
+      var nLabel = nk.replace(/_/g, ' ');
+      html += '<span class="ikw-pill">' + esc(nLabel) + ': ' + esc(nf.label || '') + ' <span class="ikw-pill-x" data-pill-type="num" data-pill-col="' + esc(nk) + '">&times;</span></span>';
+    }
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('.ikw-pill-x').forEach(function(x) {
+      x.addEventListener('click', function() {
+        var ptype = x.dataset.pillType;
+        if (ptype === 'search') {
+          ikwState.search = '';
+          var si = document.getElementById('ikw-search');
+          if (si) si.value = '';
+        } else if (ptype === 'col') {
+          delete ikwState.colFilters[x.dataset.pillCol];
+        } else if (ptype === 'num') {
+          delete ikwState.numFilters[x.dataset.pillCol];
+        }
+        ikwUpdateFilterIcons();
+        ikwState.currentPage = 0;
+        ikwApplyFilters();
+      });
+    });
+
+    ikwUpdateFilterIcons();
+  }
+
+  function ikwClearFilter(col) {
+    delete ikwState.colFilters[col];
+    delete ikwState.numFilters[col];
+    ikwUpdateFilterIcons();
+    ikwState.currentPage = 0;
+    ikwApplyFilters();
+  }
+
+  function loadKeywords() { ikwLoadData(); }
 
   // ── Angle helpers ───────────────────────────────────────────────────────────
   function renderAngles(angles) {
@@ -6308,7 +6858,7 @@ function _initIntel() {
 
   // Listen for global date filter changes
   document.addEventListener('global-date-change', function() {
-    if (loaded.keywords) { kwPage = 1; fetchKeywords(); }
+    if (loaded.keywords && IKW_DATA.length) { ikwApplyFilters(); }
   });
 
   // Load War Room + Health on init
@@ -6339,7 +6889,7 @@ function _initIntel() {
 <div class="pipeline-status-value ok">Idle</div>
 <div class="pipeline-meta">
 <div>Last run: <span>2026-04-16T06:00:06</span></div>
-<div>Duration: <span>289m 45s</span></div>
+<div>Duration: <span>335m 3s</span></div>
 <div>Next scheduled: <span>2026-04-16 12:00</span></div>
 </div>
 <button class="btn-run-now" id="btn-run-now" onclick="triggerPipeline()">Run Now</button>
