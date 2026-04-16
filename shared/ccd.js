@@ -113,40 +113,53 @@ var CCD = {
         vertDurabilities.push(vData.avg_durability);
       }
     }
-    // Fallback: 4.5 when verticals exist but none match verticalMap,
-    // 0 when keyword has no verticals at all (truly unknown competition)
-    var avgVertDurability =
-      vertDurabilities.length > 0
-        ? vertDurabilities.reduce(function (a, b) { return a + b; }, 0) / vertDurabilities.length
-        : (verts.length > 0 ? 4.5 : 0);
 
+    var avgVertDurability;
     var velocity = 0;
-    for (j = 0; j < verts.length; j++) {
-      var vd = this.verticalMap[verts[j]];
-      if (vd) velocity += vd.velocity_7d || 0;
+    var avgConsensus = 0;
+    var usedGlobalFallback = false;
+
+    if (verts.length === 0) {
+      // No vertical data at all — use global medians as weak signal
+      avgVertDurability = 1.0;
+      velocity = 100;
+      avgConsensus = 0.3;
+      usedGlobalFallback = true;
+    } else if (vertDurabilities.length > 0) {
+      avgVertDurability = vertDurabilities.reduce(function (a, b) { return a + b; }, 0) / vertDurabilities.length;
+    } else {
+      // Has verticals but none matched the map — use global median
+      avgVertDurability = 1.0;
     }
 
-    var consensusSum = 0;
-    var consensusCount = 0;
-    for (j = 0; j < verts.length; j++) {
-      var vc = this.verticalMap[verts[j]];
-      if (vc) {
-        consensusSum += (vc.network_count || 0) / 7;
-        consensusCount++;
+    if (!usedGlobalFallback) {
+      for (j = 0; j < verts.length; j++) {
+        var vd = this.verticalMap[verts[j]];
+        if (vd) velocity += vd.velocity_7d || 0;
       }
-    }
-    var avgConsensus = consensusCount > 0 ? consensusSum / consensusCount : 0;
 
-    // v1 weights (hotfix: removed maxNetDurability global constant)
-    var networksContrib = 30 * networkCount;
-    var vertDurContrib = 25 * avgVertDurability;
-    var velocityContrib = 0.015 * velocity;
+      var consensusSum = 0;
+      var consensusCount = 0;
+      for (j = 0; j < verts.length; j++) {
+        var vc = this.verticalMap[verts[j]];
+        if (vc) {
+          consensusSum += (vc.network_count || 0) / 7;
+          consensusCount++;
+        }
+      }
+      avgConsensus = consensusCount > 0 ? consensusSum / consensusCount : 0;
+    }
+
+    // v1 weights (tuned via 3,600-combo simulation)
+    var networksContrib = 35 * networkCount;
+    var vertDurContrib = 15 * avgVertDurability;
+    var velocityContrib = 0.03 * velocity;
     var consensusContrib = 20 * avgConsensus;
 
     var raw = networksContrib + vertDurContrib + velocityContrib + consensusContrib;
 
-    var confidence =
-      vertDurabilities.length >= 2 ? 'high'
+    var confidence = usedGlobalFallback ? 'low'
+      : vertDurabilities.length >= 2 ? 'high'
         : vertDurabilities.length === 1 ? 'medium'
           : 'low';
 
@@ -160,6 +173,7 @@ var CCD = {
         vert_durability: { avg: _r(avgVertDurability), matched: vertDurabilities.length, contrib: _r(vertDurContrib) },
         velocity: { sum: _r(velocity), contrib: _r(velocityContrib) },
         consensus: { avg: _r(avgConsensus), contrib: _r(consensusContrib) },
+        global_fallback: usedGlobalFallback,
       },
     };
   },
@@ -304,8 +318,8 @@ var CCD = {
   // ── Shared utilities ──────────────────────────────────────────────────────
 
   normalize: function (raw) {
-    var MIN = 40;
-    var MAX = 300;
+    var MIN = 10;
+    var MAX = 200;
     return Math.round(
       Math.max(0, Math.min(100, ((raw - MIN) / (MAX - MIN)) * 100))
     );
