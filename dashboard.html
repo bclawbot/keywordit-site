@@ -585,7 +585,7 @@ tr:hover .copy-btn { opacity: 1; }
 .rsoc-mid  { color: #f59e0b; }
 .rsoc-low  { color: var(--text-muted); }
 /* first .intent-badge block removed — duplicate of block at ~line 629 */
-.tag-UNSCORED { background: var(--bg-elevated); color: var(--text-tertiary); border: 1px solid var(--border); }
+.tag-UNSCORED { background: var(--bg-elevated); color: var(--text-tertiary); border: 1px dashed var(--border); }
 
 /* CPC coloring */
 .cpc-high { color: var(--c-green); font-family: var(--font-mono); }
@@ -1325,6 +1325,7 @@ details[open] > .drawer-section-title::before { transform: rotate(90deg); }
   <button class="tab-btn" data-tab="content">Content Engine</button>
   <button class="tab-btn" data-tab="intel">Intel</button>
   <button class="tab-btn" data-tab="pipeline">Pipeline</button>
+  <button class="tab-btn" data-tab="methodology">Methodology</button>
 </nav>
 <script>
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1396,6 +1397,18 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     <div class="kpi-value">—</div>
     <div class="kpi-sub">new today</div>
   </div>
+</div>
+
+<!-- ═══════ TAG LEGEND ═══════ -->
+<div id="tag-legend" style="padding:10px 24px; border-bottom:1px solid var(--border); display:flex; gap:14px; flex-wrap:wrap; align-items:center; font-size:11px; color:var(--text-secondary);">
+  <span style="font-weight:600;">Tag Legend:</span>
+  <span><span class="tag-badge tag-GOLDEN_OPPORTUNITY">GOLDEN</span> High CPC + low competition + high traffic</span>
+  <span><span class="tag-badge tag-EMERGING_HIGH">EMERGING HIGH</span> Strong early signal, growing fast</span>
+  <span><span class="tag-badge tag-EMERGING">EMERGING</span> Rising trend, not yet validated</span>
+  <span><span class="tag-badge tag-WATCH">WATCH</span> Monitoring for acceleration</span>
+  <span><span class="tag-badge tag-GATED">GATED</span> High CPC but saturated / locked market</span>
+  <span><span class="tag-badge tag-LOW">LOW</span> Scored below threshold</span>
+  <span><span class="tag-badge tag-UNSCORED">Pending</span> Not yet scored by pipeline</span>
 </div>
 
 <!-- ═══════ ACTIVE FILTERS BAR ═══════ -->
@@ -1583,7 +1596,7 @@ function signOut() {
 
 <script>
 window.OPPORTUNITIES = [];
-window.PIPELINE_META = {"generated_at": "2026-04-17T18:20:42.256250", "total_validated": 12114, "total_scored": 10422, "total_golden": 698, "total_emerging": 5958, "total_unscored": 1692, "countries_covered": 47, "last_run_at": "2026-04-17T18:19:14.985286", "run_id": "run_20260417_1820", "metrics_from_google_kp": 9581, "metrics_from_dataforseo": 394, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-12", "2026-04-13", "2026-04-14", "2026-04-15", "2026-04-16", "2026-04-17"], "accumulated_runs": 25};
+window.PIPELINE_META = {"generated_at": "2026-04-18T01:05:14.274547", "total_validated": 12206, "total_scored": 10452, "total_golden": 705, "total_emerging": 5974, "total_unscored": 1754, "countries_covered": 47, "last_run_at": "2026-04-18T01:01:03.785318", "run_id": "run_20260418_0105", "metrics_from_google_kp": 9580, "metrics_from_dataforseo": 416, "run_dates": ["2026-02-26", "2026-03-21", "2026-03-22", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-12", "2026-04-13", "2026-04-14", "2026-04-15", "2026-04-16", "2026-04-17", "2026-04-18"], "accumulated_runs": 26};
 window.ANGLES = {};
 
 (function() {
@@ -2379,7 +2392,10 @@ function buildRow(item, idx) {
           `<span class="transform-badge" data-original="${esc(item.original_keyword)}" data-relationship="${esc(item.transformation_relationship||'')}" data-confidence="${item.transformation_confidence||0}" title="Transformed from: ${esc(item.original_keyword)}">🔄 TRANSFORMED</span>` : '';
         return `<td class="td-keyword"><span class="keyword-text" title="${esc(item.keyword)}">${esc(item.keyword)}</span>${intentBadge}${transformBadge}<button class="copy-btn" data-kw="${esc(item.keyword)}" title="Copy">⎘</button></td>`;
       }
-      case 'tag': return `<td><span class="tag-badge tag-${tag}">${tag.replace('GOLDEN_OPPORTUNITY','GOLDEN')}</span></td>`;
+      case 'tag': {
+        const tagLabel = tag === 'UNSCORED' ? 'Pending' : tag.replace('GOLDEN_OPPORTUNITY','GOLDEN');
+        return `<td><span class="tag-badge tag-${tag}">${tagLabel}</span></td>`;
+      }
       case 'country': return `<td style="font-size:11px">${esc(item.country||'—')}</td>`;
       case 'vertical': return `<td style="font-size:11px;color:var(--text-secondary)">${esc(item.vertical||'—')}</td>`;
       case 'cpc_usd': return `<td class="${cpcCls}" style="font-size:12px">${fmtCpc(item.cpc_usd)}</td>`;
@@ -2609,7 +2625,7 @@ function openDrawer(item) {
     <div style="position:relative"><button class="drawer-close" id="drawer-x-btn" aria-label="Close">&times;</button></div>
     <div class="drawer-kw">${esc(item.keyword)}</div>
     <div class="drawer-tags">
-      <span class="tag-badge tag-${tag}">${tag.replace('GOLDEN_OPPORTUNITY','GOLDEN')}</span>
+      <span class="tag-badge tag-${tag}">${tag === 'UNSCORED' ? 'Pending' : tag.replace('GOLDEN_OPPORTUNITY','GOLDEN')}</span>
       ${item.vertical ? `<span class="vert-badge">${esc(item.vertical)}</span>` : ''}
       ${item.country ? `<span class="vert-badge">${esc(item.country)}${item.country_tier ? ' T'+item.country_tier : ''}</span>` : ''}
     </div>
@@ -3122,8 +3138,8 @@ Palette.register([
 <div id="tab-content" class="tab-content">
 <div style="padding:16px">
 <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px">
-<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Keywords Processed</div><div style="font-size:24px;font-weight:700;color:#4caf50">10017</div></div>
-<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Angles Selected</div><div style="font-size:24px;font-weight:700;color:#2196f3">50117</div></div>
+<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Keywords Processed</div><div style="font-size:24px;font-weight:700;color:#4caf50">10109</div></div>
+<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Angles Selected</div><div style="font-size:24px;font-weight:700;color:#2196f3">50578</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Articles Generated</div><div style="font-size:24px;font-weight:700;color:#ff9800">4</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">RAF Compliant</div><div style="font-size:24px;font-weight:700;color:#4caf50">4/4</div></div>
 <div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;padding:12px 18px;min-width:130px"><div style="font-size:11px;color:#888;text-transform:uppercase">Avg Quality Score</div><div style="font-size:24px;font-weight:700;color:#9c27b0">0.78</div></div>
@@ -3143,7 +3159,7 @@ Palette.register([
 <tr style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="生命保険">生命保険</td><td style="padding:6px 7px;color:#aaa">hidden_costs</td><td style="padding:6px 7px;color:#aaa">EN</td><td style="padding:6px 7px;text-align:right;color:#ccc">673</td><td style="padding:6px 7px;text-align:right;color:#ff9800">0.62</td><td style="padding:6px 7px;text-align:right;color:#4caf50">LOW</td><td style="padding:6px 7px;color:#888;font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="articles/2026-04-01/生命保険_hidden_costs_1.md">生命保険_hidden_costs_1.md</td></tr>
 <tr style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="生命保険">生命保険</td><td style="padding:6px 7px;color:#aaa">hidden_costs</td><td style="padding:6px 7px;color:#aaa">EN</td><td style="padding:6px 7px;text-align:right;color:#ccc">755</td><td style="padding:6px 7px;text-align:right;color:#4caf50">0.75</td><td style="padding:6px 7px;text-align:right;color:#4caf50">LOW</td><td style="padding:6px 7px;color:#888;font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="articles/2026-04-01/生命保険_hidden_costs.md">生命保険_hidden_costs.md</td></tr>
 </tbody></table>
-<h3 style="margin:24px 0 8px;color:#e0e0e0">Angles Ready to Generate (50114)</h3>
+<h3 style="margin:24px 0 8px;color:#e0e0e0">Angles Ready to Generate (50575)</h3>
 <table style="width:100%;border-collapse:collapse;font-size:12px">
 <thead><tr style="background:#2a2a3e;color:#aaa"><th style="padding:7px;text-align:left">Keyword</th><th style="padding:7px;text-align:left">Angle Type</th><th style="padding:7px;text-align:left">Title</th><th style="padding:7px;text-align:right">CPC</th><th style="padding:7px;text-align:right">Score</th><th style="padding:7px;text-align:left">Signal</th><th style="padding:7px;text-align:center">Generate</th></tr></thead><tbody>
 <tr id="angle-row-ashar-hari-ini_eligibility_explainer" style="border-bottom:1px solid #1e1e2e"><td style="padding:6px 7px;color:#ccc;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ashar hari ini">ashar hari ini</td><td style="padding:6px 7px;color:#90caf9">eligibility_explainer</td><td style="padding:6px 7px;color:#aaa;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ashar hari ini – 2026">ashar hari ini – 2026</td><td style="padding:6px 7px;text-align:right;color:#ccc">$4.12</td><td style="padding:6px 7px;text-align:right;color:#ccc">0.51</td><td style="padding:6px 7px;color:#607d8b">keyword_expansion</td><td style="padding:6px 7px;text-align:center"><button id="gen-btn-ashar-hari-ini_eligibility_explainer" class="gen-btn" data-angle-id="ashar-hari-ini_eligibility_explainer" data-keyword="ashar hari ini" data-vertical="unknown" data-language="id" data-country="ID" data-cpc="4.12" data-angle-type="eligibility_explainer" data-angle-title="ashar hari ini – 2026" data-rsoc="0.5147" data-signal="" onclick="generateArticle(this)" style="cursor:pointer;background:#1565c0;color:#fff;border:none;border-radius:4px;padding:4px 10px;font-size:11px;white-space:nowrap">Generate</button></td></tr><tr id="article-row-ashar-hari-ini_eligibility_explainer" style="display:none"><td colspan="7" style="padding:0"><details open style="background:#111;padding:12px;border-left:3px solid #1565c0"><summary style="cursor:pointer;color:#90caf9;font-size:12px;user-select:none">Article: ashar hari ini – 2026</summary><pre id="article-text-ashar-hari-ini_eligibility_explainer" style="color:#ccc;white-space:pre-wrap;font-size:12px;margin:8px 0 0;font-family:monospace">Waiting...</pre></details></td></tr>
@@ -5454,6 +5470,13 @@ Total keywords in dataset: <span>174,631</span> | Matched to pipeline: <span>0</
 #tab-intel .pill-red { background:var(--c-red-dim); color:var(--c-red); }
 #tab-intel .pill-gray { background:var(--c-gray-dim); color:var(--c-gray); }
 #tab-intel .pill-purple { background:var(--c-purple-dim); color:var(--c-purple); }
+#tab-intel .pill-pending { background:var(--bg-elevated); color:var(--text-tertiary); border:1px dashed var(--border); }
+#tab-intel th[title] { cursor:help; }
+#tab-intel th[title]:hover { text-decoration:underline dotted var(--text-tertiary); text-underline-offset:3px; }
+#tab-intel .explain-panel { padding:12px 16px; background:var(--bg-elevated); border-left:3px solid var(--accent); margin:8px 0; border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-size:11px; }
+#tab-intel .explain-panel .explain-tag { font-size:12px; margin-bottom:6px; }
+#tab-intel .explain-panel .explain-reason { color:var(--text-secondary); margin-bottom:8px; line-height:1.5; }
+#tab-intel .explain-panel .explain-metrics { font-family:var(--font-mono); font-size:10px; color:var(--text-tertiary); }
 
 /* Filter bar */
 #tab-intel .filter-bar { display:flex; gap:8px; padding:12px 24px; border-bottom:1px solid var(--border); flex-wrap:wrap; align-items:center; }
@@ -5596,6 +5619,17 @@ Total keywords in dataset: <span>174,631</span> | Matched to pipeline: <span>0</
 @media (max-width:480px) {
   #tab-intel .kpi-card { min-width:100%; }
   #tab-intel .intel-health-bar { flex-wrap:wrap; height:auto; padding:8px 16px; gap:8px; }
+  /* Discovery tab + shared mobile */
+  .kpi-card { flex:0 0 100%; }
+  .health-bar { flex-wrap:wrap; height:auto; padding:8px 16px; }
+  .data-table { font-size:11px; }
+  .data-table th, .data-table td { padding:4px 6px; white-space:nowrap; }
+  .filter-bar { flex-direction:column; gap:4px; }
+  .filter-btn { width:100%; text-align:left; }
+  .explain-panel { padding:8px 12px; font-size:10px; }
+  .data-table th:nth-child(n+6), .data-table td:nth-child(n+6) { display:none; }
+  .tab-bar, .tab-nav { flex-wrap:wrap; }
+  .tab-btn { flex:1 1 auto; font-size:10px; padding:6px 8px; }
 }
 
 /* ── Per-column filter & sort enhancements ── */
@@ -5724,14 +5758,14 @@ Total keywords in dataset: <span>174,631</span> | Matched to pipeline: <span>0</
   <div style="overflow-x:auto">
     <table class="data-table" id="intel-kw-table">
       <thead><tr>
-        <th data-col="keyword" data-type="string">Keyword <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
-        <th data-col="network_count" data-type="number">Networks <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
-        <th data-col="max_durability" data-type="number">Durability <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
-        <th data-col="verticals" data-type="array">Vertical <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
-        <th data-col="volume" data-type="number">Volume <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
-        <th data-col="cpc_usd" data-type="number">CPC <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
-        <th data-col="kd" data-type="number">KD <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
-        <th data-col="rsoc_score" data-type="number">RSOC Score <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
+        <th data-col="keyword" data-type="string" title="The search query or keyword phrase">Keyword <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
+        <th data-col="network_count" data-type="number" title="Number of ad networks running ads for this keyword">Networks <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
+        <th data-col="max_durability" data-type="number" title="Longest consecutive days an ad has been running (higher = more profitable for advertiser)">Durability <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
+        <th data-col="verticals" data-type="array" title="Industry vertical (e.g. Insurance, Finance, Health)">Vertical <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
+        <th data-col="volume" data-type="number" title="Estimated monthly search volume from Google/DataForSEO">Volume <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
+        <th data-col="cpc_usd" data-type="number" title="Cost Per Click in USD — what advertisers pay per click">CPC <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
+        <th data-col="kd" data-type="number" title="Keyword Difficulty (0-100) — how hard it is to rank organically. Lower = easier to rank.">KD <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
+        <th data-col="rsoc_score" data-type="number" title="Revenue-per-Session Opportunity Cost — composite score combining CPC, volume, competition, and content gap. Higher = better arbitrage opportunity.">RSOC Score <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
         <th data-col="validation_status" data-type="enum">Status <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
         <th data-col="angle_count" data-type="count">Angles <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
         <th data-col="top_angle_type" data-type="angle">Top Angle <span class="sort-arrow">&#9650;</span><span class="th-filter-icon">&#9881;</span></th>
@@ -5826,6 +5860,41 @@ function _initIntel() {
   }
   function fmt(n) { return n == null ? '--' : n.toLocaleString(); }
   function fmtUsd(n) { return n == null ? '--' : '$' + n.toFixed(2); }
+
+  function explainTag(opp) {
+    var parts = [];
+    if (opp.cpc_usd != null) parts.push('CPC: $' + opp.cpc_usd.toFixed(2));
+    if (opp.search_volume != null) parts.push('Volume: ' + opp.search_volume.toLocaleString());
+    if (opp.volume != null && opp.search_volume == null) parts.push('Volume: ' + opp.volume.toLocaleString());
+    if (opp.kd != null) parts.push('KD: ' + opp.kd);
+    if (opp.rsoc_score != null) parts.push('RSOC: ' + opp.rsoc_score.toFixed(3));
+    if (opp.arbitrage_index != null) parts.push('Arbitrage Index: ' + opp.arbitrage_index.toFixed(2));
+    if (opp.confidence != null) parts.push('Confidence: ' + opp.confidence);
+    if (opp.estimated_rpm != null) parts.push('Est. RPM: $' + opp.estimated_rpm.toFixed(2));
+    if (opp.persistence_score != null) parts.push('Persistence: ' + (opp.persistence_score * 100).toFixed(0) + '%');
+
+    var tag = opp.tag || opp.validation_status || 'UNSCORED';
+    var reason = '';
+    if (tag === 'GOLDEN_OPPORTUNITY') {
+      reason = 'High CPC ($' + (opp.cpc_usd||0).toFixed(2) + ') + low competition (KD ' + (opp.kd != null ? opp.kd : '?') + ') + strong traffic (' + ((opp.search_volume||opp.volume||0)).toLocaleString() + '/mo). Arbitrage index above golden threshold.';
+    } else if (tag === 'EMERGING' || tag === 'EMERGING_HIGH') {
+      reason = 'Traffic is growing but metrics are incomplete or CPC data is thin. Needs more validation runs to confirm opportunity.';
+    } else if (tag === 'GATED') {
+      reason = 'High CPC but saturated SERP — existing content dominates. Barrier to entry is high. Consider long-tail variants.';
+    } else if (tag === 'LOW_OPPORTUNITY' || tag === 'LOW') {
+      reason = 'Scored below minimum threshold. Low CPC, high competition, or insufficient search volume.';
+    } else if (tag === 'validated') {
+      reason = 'Validated in ad networks — proven keyword with live advertiser spend.';
+    } else {
+      reason = 'Not yet scored by the pipeline. Run validation (Stage 3) to assign a tag.';
+    }
+
+    return '<div class="explain-panel">' +
+      '<div class="explain-tag">Tag: <strong>' + esc(String(tag).replace(/_/g,' ')) + '</strong></div>' +
+      '<div class="explain-reason">' + reason + '</div>' +
+      '<div class="explain-metrics">' + parts.join(' &bull; ') + '</div>' +
+      '</div>';
+  }
 
   function api(path) {
     var sess = {};
@@ -6156,7 +6225,7 @@ function _initIntel() {
           ikwState.search = searchInput.value.trim().toLowerCase();
           ikwState.currentPage = 0;
           ikwApplyFilters();
-        }, 200);
+        }, 300);
       });
     }
 
@@ -6328,7 +6397,7 @@ function _initIntel() {
           '<td>' + (k.validation_status === 'validated' ? '<span class="pill pill-green">Validated</span>' : '<span class="pill pill-amber">Pending</span>') + '</td>' +
           '<td>' + anglesBadge + '</td>' +
           topAngleTd + '</tr>';
-        row += '<tr class="detail-row hidden" data-kw-detail="' + k.id + '"><td colspan="11"><div class="kw-angles-container" data-kw-id="' + k.id + '" style="padding:4px 0">';
+        row += '<tr class="detail-row hidden" data-kw-detail="' + k.id + '"><td colspan="11">' + explainTag(k) + '<div class="kw-angles-container" data-kw-id="' + k.id + '" style="padding:4px 0">';
         if (angleCount) {
           row += renderAngles(angles);
         } else {
@@ -6892,9 +6961,9 @@ function _initIntel() {
 <div class="pipeline-card-title">Pipeline Status</div>
 <div class="pipeline-status-value warn">Partial (10/12)</div>
 <div class="pipeline-meta">
-<div>Last run: <span>2026-04-17T18:00:05</span></div>
+<div>Last run: <span>2026-04-18T00:00:05</span></div>
 <div>Duration: <span>—</span></div>
-<div>Next scheduled: <span>2026-04-18 00:00</span></div>
+<div>Next scheduled: <span>2026-04-18 06:00</span></div>
 </div>
 <button class="btn-run-now" id="btn-run-now" onclick="triggerPipeline()">Run Now</button>
 </div>
@@ -6917,31 +6986,32 @@ function _initIntel() {
 <div class="pipeline-card" style="grid-column:span 2;">
 <div class="pipeline-card-title">Last 7 Runs</div>
 <div class="run-history">
+<div class="run-card"><div class="run-card-date">2026-04-18</div><div class="run-card-golden">7</div><div class="run-card-total">100 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-17</div><div class="run-card-golden">35</div><div class="run-card-total">711 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-16</div><div class="run-card-golden">72</div><div class="run-card-total">1104 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-15</div><div class="run-card-golden">17</div><div class="run-card-total">604 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-14</div><div class="run-card-golden">41</div><div class="run-card-total">748 total</div></div>
 <div class="run-card"><div class="run-card-date">2026-04-13</div><div class="run-card-golden">26</div><div class="run-card-total">1137 total</div></div>
-<div class="run-card"><div class="run-card-date">2026-04-12</div><div class="run-card-golden">5</div><div class="run-card-total">696 total</div></div>
+<div class="run-card"><div class="run-card-date">2026-04-12</div><div class="run-card-golden">5</div><div class="run-card-total">596 total</div></div>
 </div></div>
 <div class="pipeline-card" style="grid-column:span 2;">
 <div class="pipeline-card-title">Recent Errors</div>
 <div class="error-list">
+<div class="error-item"><span class="error-timestamp">2026-04-18T01:00:50</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;seguro de vida&#39; [CL]: navigational_intent</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-18T01:00:50</span><span class="error-stage">validation_hard_gate</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Hard gate rejected &#39;seguro de vida&#39; [CL]: navigational_intent</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-18T00:01:35</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-18T00:01:35</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
+</div>
+<div class="error-item"><span class="error-timestamp">2026-04-18T00:01:35</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
+</div>
 <div class="error-item"><span class="error-timestamp">2026-04-17T18:01:22</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
 </div>
 <div class="error-item"><span class="error-timestamp">2026-04-17T18:01:22</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
 </div>
 <div class="error-item"><span class="error-timestamp">2026-04-17T18:01:21</span><span class="error-stage">trends_postprocess/vector_store</span><div class="error-msg" onclick="this.classList.toggle('expanded')">Table &#39;trends&#39; already exists</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-17T14:45:08</span><span class="error-stage">fb_intelligence/storage</span><div class="error-msg" onclick="this.classList.toggle('expanded')">&#39;int&#39; object has no attribute &#39;replace&#39;</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-17T14:45:08</span><span class="error-stage">fb_intelligence/storage</span><div class="error-msg" onclick="this.classList.toggle('expanded')">&#39;int&#39; object has no attribute &#39;replace&#39;</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-17T14:45:08</span><span class="error-stage">fb_intelligence/storage</span><div class="error-msg" onclick="this.classList.toggle('expanded')">&#39;int&#39; object has no attribute &#39;replace&#39;</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-17T14:45:08</span><span class="error-stage">fb_intelligence/storage</span><div class="error-msg" onclick="this.classList.toggle('expanded')">&#39;int&#39; object has no attribute &#39;replace&#39;</div>
-</div>
-<div class="error-item"><span class="error-timestamp">2026-04-17T14:45:08</span><span class="error-stage">fb_intelligence/storage</span><div class="error-msg" onclick="this.classList.toggle('expanded')">&#39;int&#39; object has no attribute &#39;replace&#39;</div>
 </div>
 <div class="error-item"><span class="error-timestamp">2026-04-17T14:45:08</span><span class="error-stage">fb_intelligence/storage</span><div class="error-msg" onclick="this.classList.toggle('expanded')">&#39;int&#39; object has no attribute &#39;replace&#39;</div>
 </div>
@@ -6968,6 +7038,103 @@ function triggerPipeline() {
 }
 </script>
 </div><!-- /tab-pipeline -->
+<div id="tab-methodology" class="tab-content">
+<div style="padding:24px; max-width:900px; margin:0 auto;">
+<h2 style="color:var(--text-primary); margin-bottom:16px;">Methodology &amp; Scoring Guide</h2>
+<p style="color:var(--text-secondary); margin-bottom:24px;">How OpenClaw discovers, scores, and ranks media buying arbitrage opportunities.</p>
+<details class="methodology-section" open style="margin-bottom:8px;"><summary style="cursor:pointer; padding:12px 16px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-weight:600;">Page 1: RSOC Opportunity Score</summary><div style="padding:12px 16px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius-sm) var(--radius-sm); color:var(--text-secondary); line-height:1.6; font-size:13px;"><p>```yaml
+slug: rsoc-opportunity-score
+title: How the RSOC Opportunity Score Works
+related_columns: [opp_score, rsoc_score, tag, profile]
+```</p><p>### What it measures</p><p>The RSOC Opportunity Score rates every keyword on a 0-100 scale for search arbitrage potential. It answers: **how likely is this keyword to generate profit if you build a landing page for it?**</p><p>### The formula</p><p>Two profiles, selected automatically:</p><p>**EVERGREEN** (stable keywords): `rsoc = (CPC_score × 0.40) + (auction_health × 0.25) + (trend_score × 0.20) + (intent_score × 0.15)`</p><p>**EMERGING** (rising keywords): `rsoc = (CPC_score × 0.30) + (auction_health × 0.20) + (trend_score × 0.35) + (intent_score × 0.15)`</p><p>### Component breakdown</p><p>**CPC Score** (0-100) based on High Top-of-Page Bid (htpb):</p><p>| htpb | Score | Typical Verticals |
+|------|-------|-------------------|
+| &gt;= $50 | 100 | Insurance, legal |
+| &gt;= $20 | 85 | Finance, health |
+| &gt;= $10 | 70 | Software, education |
+| &gt;= $5 | 55 | Mid-range commercial |
+| &gt;= $2 | 35 | General commercial |
+| &gt;= $0.50 | 15 | Low commercial |
+| &lt; $0.50 | 0 | Minimal ad spend |</p><p>**Auction Health** (0-100): `(competition × 75%) + (max(0, min(1, htpb/avg_cpc - 1)) × 25%)`</p><p>**Trend Score** (0-100): `((norm(monthly) × 0.50) + (norm(quarterly) × 0.30) + (norm(yearly) × 0.20)) × 100` where `norm(val) = clamp((val + 50) / 250, 0, 1)`. Default 50 when no data.</p><p>**Intent Score** (0-100): `clamp((p_commercial × 70) + (p_transactional × 100) - (p_navigational × 80), 0, 100)`</p><p>### Worked example</p><p>&quot;best pet insurance plans 2026&quot; (US): CPC=85, Auction=64, Trend=73, Intent=71. EVERGREEN weights: (85×0.40)+(64×0.25)+(73×0.20)+(71×0.15) = **75.25** → GOLDEN.</p><p>### Soft modifiers (post-scoring)</p><p>KD&lt;15 ×0.70, Competition&lt;0.20 ×0.85, Below CPC floor ×0.75, Volume&lt;200 ×0.90, Informational intent ×0.60, htpb≥$50 ×1.05, htpb≥$20 ×1.03.</p><p>### Hard gates (auto-reject → tag = GATED)</p><p>1. Wrong language. 2. Navigational-only intent. 3. SERP saturation ≥ 2.0.</p><p>### Data source</p><p>Calculated during Validation stage. Updated every pipeline run. Sources: Google KP/DataForSEO (CPC), Google Trends/Reddit/Bing (trends), search API (intent).</p><p>---</p></div></details>
+<details class="methodology-section" style="margin-bottom:8px;"><summary style="cursor:pointer; padding:12px 16px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-weight:600;">Page 2: Arbitrage Index</summary><div style="padding:12px 16px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius-sm) var(--radius-sm); color:var(--text-secondary); line-height:1.6; font-size:13px;"><p>```yaml
+slug: arbitrage-index
+title: How the Arbitrage Index Works
+related_columns: [ai_score]
+```</p><p>### What it measures</p><p>The Arbitrage Index quantifies raw profit potential by combining how much advertisers pay (CPC), how many people search (volume), and how easy it is to rank (SERP weakness), normalized by competition.</p><p>### The formula</p><p>```
+arbitrage_index = (CPC × search_volume × SERP_weakness) / (competition × 10,000)
+```</p><p>| Variable | Source | Description |
+|----------|--------|-------------|
+| CPC | `cpc_usd` from Google KP / DataForSEO | Cost-per-click in USD |
+| search_volume | Monthly search volume from API | How many people search per month |
+| SERP_weakness | `max(1 - serp_dominance, 0.1)` | Inverse of authority site dominance in SERP. serp_dominance comes from the Vetting stage (ratio of HIGH_DA sites in top 10 results). Weaker SERP = easier to rank = higher index. |
+| competition | Google Ads competition (0-1), floored at 0.01 | Paid advertising competition. Lower = less bidder competition for your clicks. |
+| 10,000 | Normalization constant | Scales the index to manageable numbers |</p><p>### Tag thresholds</p><p>| Index Value | Tag |
+|------------|-----|
+| &gt; 0.8 | GOLDEN_OPPORTUNITY |
+| &gt; 0.5 | WATCH |
+| ≤ 0.5 | LOW |</p><p>### Persistence weighting</p><p>When a NeuralProphet trend forecast is available, the index is further adjusted: `weighted_score = ai_score × persistence_probability`. This penalizes keywords predicted to fade quickly.</p><p>### Worked example</p><p>Keyword: &quot;best medicare supplement plans&quot; (US)</p><p>- CPC: $42.00<br>• Search volume: 8,100<br>• SERP dominance: 0.3 → SERP weakness = 0.7<br>• Competition: 0.85</p><p>Index = (42 × 8,100 × 0.7) / (0.85 × 10,000) = 238,140 / 8,500 = **28.02** → GOLDEN.</p><p>Keyword: &quot;how to cook pasta&quot; (US)</p><p>- CPC: $0.15<br>• Search volume: 201,000<br>• SERP dominance: 0.9 → SERP weakness = 0.1<br>• Competition: 0.02</p><p>Index = (0.15 × 201,000 × 0.1) / (0.02 × 10,000) = 3,015 / 200 = **15.08** → GOLDEN (but would be filtered by informational intent soft modifier).</p><p>---</p></div></details>
+<details class="methodology-section" style="margin-bottom:8px;"><summary style="cursor:pointer; padding:12px 16px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-weight:600;">Page 3: RPC Estimator</summary><div style="padding:12px 16px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius-sm) var(--radius-sm); color:var(--text-secondary); line-height:1.6; font-size:13px;"><p>```yaml
+slug: rpc-estimator
+title: How Revenue Per Click Is Estimated
+related_columns: [exp_rpc, confidence]
+```</p><p>### What it measures</p><p>Expected RPC estimates how much you earn each time a user clicks through your content to an advertiser. If RPC exceeds traffic acquisition cost, the keyword is profitable.</p><p>### The 5-level cascade</p><p>**L1 — Direct**: country × vertical has 20+ keywords with revenue data → bucket median with p25/p75 bounds.</p><p>**L2 — Blended**: both exist separately → `country_median × (vertical_weighted / global_weighted)`.</p><p>**L3 — Country only**: country median regardless of vertical.</p><p>**L4 — Vertical only**: vertical median regardless of country.</p><p>**L5 — Global**: `total_revenue / total_clicks`.</p><p>### Actual vs expected blend</p><p>| Clicks | Behavior | Mode |
+|--------|----------|------|
+| &lt; 25 | Pure model | &quot;model&quot; |
+| 25-199 | Linear blend (weight = clicks/200) | &quot;blend&quot; |
+| &gt;= 200 | Pure actual | &quot;actual&quot; |</p><p>Outlier guard: actual &gt; 5× expected with &lt; 50 clicks → fallback to model.</p><p>### Confidence levels</p><p>High (50+ keywords, 500+ clicks, green), Medium (20+, 100+, amber), Low (5+, gray), Insufficient (&lt;5).</p><p>### Bounds</p><p>Floor: $0.05. Cap: $15.00. Intent modifiers dampened to 50% strength.</p><p>---</p></div></details>
+<details class="methodology-section" style="margin-bottom:8px;"><summary style="cursor:pointer; padding:12px 16px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-weight:600;">Page 4: Country Tier System</summary><div style="padding:12px 16px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius-sm) var(--radius-sm); color:var(--text-secondary); line-height:1.6; font-size:13px;"><p>```yaml
+slug: country-tier-system
+title: Country Tiers and Efficiency
+related_columns: [tier, country]
+```</p><p>**Tier 1 (Premium)**: US, GB, CA, AU, DE, FR. Highest CPC ($2.50+ US), expensive traffic. Efficiency = 1.0.</p><p>**Tier 2 (Established)**: JP, KR, IT, ES, NL. Good ad markets, efficiency ~1.8.</p><p>**Tier 3 (High-Efficiency)**: BR, MX, IN, ID, TH, PH. Low CPC but very cheap traffic. Efficiency ~5.0. Strong arbitrage ratio.</p><p>**Tier 4 (Frontier)**: NG, KE, EG, BD, PK. Lowest CPC, emerging markets. Efficiency ~6.0. Needs massive volume.</p><p>Per-country CPC floors: US=$2.50, GB=$2.10, DE=$1.70, BR=$0.65, IN=$0.55. Keywords below the floor get a ×0.75 soft modifier.</p><p>---</p></div></details>
+<details class="methodology-section" style="margin-bottom:8px;"><summary style="cursor:pointer; padding:12px 16px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-weight:600;">Page 5: SERP Saturation Risk (SSR)</summary><div style="padding:12px 16px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius-sm) var(--radius-sm); color:var(--text-secondary); line-height:1.6; font-size:13px;"><p>```yaml
+slug: serp-saturation-risk
+title: How SERP Saturation Risk Works
+related_columns: [ssr]
+```</p><p>SSR = weighted sum of SERP features: answer_box (+0.8), featured_snippet (+0.8), AI_overview (+0.7), knowledge_graph (+0.6), local_pack (+0.5), video (+0.3), image (+0.2), shopping (-0.3), paid_ads (-0.2).</p><p>Shopping and paid ads reduce SSR because they validate commercial demand.</p><p>SSR &lt; 1.0: no penalty. 1.0-2.0: linear penalty ×(2.0-SSR). ≥ 2.0: hard reject.</p><p>---</p></div></details>
+<details class="methodology-section" style="margin-bottom:8px;"><summary style="cursor:pointer; padding:12px 16px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-weight:600;">Page 6: Ad Durability Tiers</summary><div style="padding:12px 16px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius-sm) var(--radius-sm); color:var(--text-secondary); line-height:1.6; font-size:13px;"><p>```yaml
+slug: ad-durability-tiers
+title: What Ad Durability Tells You
+related_columns: [ad_age, durability]
+```</p><p>| Days | Label | Meaning |
+|------|-------|---------|
+| 0-6 | — | Too early to judge |
+| 7-13 | promising | Survived testing |
+| 14-29 | validated | Suggests profitability |
+| 30-59 | winner | Strong profit signal |
+| 60+ | evergreen | Proven sustained ROI |</p><p>Data sourced from native ad network intelligence (content distribution platforms). Updated per pipeline cycle.</p><p>---</p></div></details>
+<details class="methodology-section" style="margin-bottom:8px;"><summary style="cursor:pointer; padding:12px 16px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-weight:600;">Page 7: Dual-Track CPC Validation</summary><div style="padding:12px 16px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius-sm) var(--radius-sm); color:var(--text-secondary); line-height:1.6; font-size:13px;"><p>```yaml
+slug: dual-track-cpc
+title: Track A vs Track B — How CPC Gets Confirmed
+related_columns: [data_src, cpc]
+```</p><p>**Track A (&quot;Follow the Money&quot;)**: Real API calls. ~30% of keywords. GKP/DFS badges. Cap: 150/cycle.</p><p>**Track B (&quot;Catch the Wave&quot;)**: Inherited estimates. ~70%. DEF badge. 3-tier fallback: proven exact RPC → proven template avg → `vertical_avg_rpc × brand_multiplier × country_multiplier`. Brand multiplier: 1.5× for proven entities.</p><p>---</p></div></details>
+<details class="methodology-section" style="margin-bottom:8px;"><summary style="cursor:pointer; padding:12px 16px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-weight:600;">Page 8: KVSI</summary><div style="padding:12px 16px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius-sm) var(--radius-sm); color:var(--text-secondary); line-height:1.6; font-size:13px;"><p>```yaml
+slug: kvsi
+title: Is This Trend Sustainable or a Spike?
+related_columns: [kvsi, emerging]
+```</p><p>### Formula</p><p>```
+KVSI = (ΔV_YoY + ΔV_QoQ) / (σ_12m + 1)
+```</p><p>Numerator = growth direction. Denominator = volatility. High growth with low volatility = sustainable.</p><p>**Threshold**: KVSI &gt;= 0.5 → sustainable → promotes EMERGING to EMERGING_HIGH.</p><p>### Limitation</p><p>KVSI uses standard deviation as a volatility proxy. When both growth and volatility are proportionally extreme (e.g., viral news events), KVSI can still exceed the threshold. In practice, such keywords are typically filtered by downstream gates: low CPC (no advertisers), high SERP saturation, or informational-only intent. KVSI should be read alongside these other signals, not in isolation.</p><p>Recalibrated after 30 days of data collection.</p><p>---</p></div></details>
+<details class="methodology-section" style="margin-bottom:8px;"><summary style="cursor:pointer; padding:12px 16px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-weight:600;">Page 9: Keyword Quality Score</summary><div style="padding:12px 16px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius-sm) var(--radius-sm); color:var(--text-secondary); line-height:1.6; font-size:13px;"><p>```yaml
+slug: keyword-quality-score
+title: How Keyword Quality Is Scored
+related_columns: [quality_score]
+```</p><p>LLM-assessed 1-10 scale. 10 = exceptional (top vertical + top country + strong intent). 5 = borderline. 1 = reject.</p><p>Special modifiers: branded +1, desperation signals strong positive, negative qualifiers (&quot;bad credit&quot;) strong positive, B2B industrial always 1-3, India non-insurance capped at 4.</p><p>Non-deterministic — same keyword may get slightly different scores across runs.</p><p>---</p></div></details>
+<details class="methodology-section" style="margin-bottom:8px;"><summary style="cursor:pointer; padding:12px 16px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-weight:600;">Page 10: Trend Persistence</summary><div style="padding:12px 16px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius-sm) var(--radius-sm); color:var(--text-secondary); line-height:1.6; font-size:13px;"><p>```yaml
+slug: trend-persistence
+title: How Keyword Halflife Is Predicted
+related_columns: [halflife]
+```</p><p>```
+persistence = min(1, appearances/span_days) × max(0.5, 1 - days_since_last/14)
+halflife = max(1, int(span_days × frequency / 2))
+```</p><p>Halflife &gt; 30d: stable, invest in quality. 14-30d: moderate, standard article. 7-13d: short-lived. &lt; 7d: spike, skip unless exceptional CPC.</p><p>---</p></div></details>
+<details class="methodology-section" style="margin-bottom:8px;"><summary style="cursor:pointer; padding:12px 16px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-weight:600;">Page 11: Angle RSOC Score</summary><div style="padding:12px 16px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius-sm) var(--radius-sm); color:var(--text-secondary); line-height:1.6; font-size:13px;"><p>```yaml
+slug: angle-rsoc-score
+title: How Content Angles Are Scored
+related_columns: [score]
+```</p><p>```
+angle_rsoc = (fit × 0.30) + (cpc_norm × 0.30) + (intent × 0.20) + (lang × 0.10) + (saturation × 0.10) + discovery_boost
+```</p><p>10 canonical angles: eligibility_explainer, how_it_works_explainer, trend_attention_piece, lifestyle_fit_analysis, pre_review_guide, policy_year_stamped_update, accusatory_expose, hidden_costs, diagnostic_signs, comparison.</p><p>Category diversity enforced: each selected angle must represent a different ad category. This ensures content covers distinct advertiser segments. Minimum 5 angles per keyword; if diversity produces fewer, the engine backfills with highest-scoring remaining angles.</p><p>---</p><p>*11 methodology pages total. All review items resolved.*</p></div></details>
+</div></div>
 <script>
 // Experimental tab filter/sort
 (function(){
