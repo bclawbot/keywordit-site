@@ -309,16 +309,16 @@ describe('CCD Scoring Module', () => {
   });
 
   describe('CCD v1 tuned — tier distribution', () => {
-    it('0-vertical keyword uses global fallback and scores low-Competitive', () => {
+    it('0-vertical keyword uses global fallback and scores Emerging', () => {
       // EMPTY_VERTICALS_KEYWORD: network_count=1, verticals=[]
-      // Global fallback: avgVertDurability=1.0, velocity=100, avgConsensus=0.3
-      // raw = 35*1 + 15*1.0 + 0.03*100 + 20*0.3 = 35+15+3+6 = 59
-      // normalized = ((59-10)/190)*100 ≈ 26
+      // Global fallback: avgVertDurability=1.0, velocity=10, avgConsensus=0.3
+      // raw = 35*1 + 15*1.0 + 0.03*10 + 20*0.3 = 35+15+0.3+6 = 56.3
+      // normalized = ((56.3-10)/190)*100 ≈ 24
       const result = CCD.cache[EMPTY_VERTICALS_KEYWORD.id].v1;
       expect(result.breakdown.global_fallback).toBe(true);
       expect(result.confidence).toBe('low');
-      expect(result.normalized).toBeGreaterThanOrEqual(20);
-      expect(result.normalized).toBeLessThanOrEqual(30);
+      expect(result.normalized).toBeLessThanOrEqual(25); // Emerging tier
+      expect(CCD.tier(result.normalized).label).toBe('Emerging');
     });
 
     it('1-network 1-vertical keyword scores higher than 0-vertical with same network count', () => {

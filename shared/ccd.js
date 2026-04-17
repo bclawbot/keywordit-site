@@ -122,7 +122,7 @@ var CCD = {
     if (verts.length === 0) {
       // No vertical data at all — use global medians as weak signal
       avgVertDurability = 1.0;
-      velocity = 100;
+      velocity = 10;
       avgConsensus = 0.3;
       usedGlobalFallback = true;
     } else if (vertDurabilities.length > 0) {
