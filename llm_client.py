@@ -33,6 +33,13 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
+from requests.adapters import HTTPAdapter
+
+# ── Persistent session with explicit pool (prevents connection starvation) ─────
+_session = requests.Session()
+_adapter = HTTPAdapter(pool_connections=20, pool_maxsize=20, pool_block=False)
+_session.mount("http://", _adapter)
+_session.mount("https://", _adapter)
 
 # ── Load .env once at import time ──────────────────────────────────────────────
 try:
@@ -59,6 +66,7 @@ _BASE = Path(__file__).resolve().parent
 ERROR_LOG = _BASE / "error_log.jsonl"
 
 TIMEOUTS = {
+    "bg":       15,   # pipeline stages, Ollama direct expected
     "fast":     30,
     "normal":   120,
     "generous":  300,
@@ -76,7 +84,9 @@ def _litellm_ok() -> bool:
     if now - _litellm_ok_cache["ts"] < _LITELLM_CACHE_TTL and _litellm_ok_cache["ok"] is not None:
         return _litellm_ok_cache["ok"]
     try:
-        requests.get("http://localhost:4000/health", timeout=2)
+        r = _session.get("http://localhost:4000/v1/models", timeout=2,
+                         headers={"Authorization": f"Bearer {LITELLM_KEY}"})
+        r.raise_for_status()
         _litellm_ok_cache.update(ok=True, ts=now)
         return True
     except Exception:
@@ -127,6 +137,7 @@ def call(
     timeout: str | int = "normal",
     num_predict: int | None = None,
     stage: str = "",
+    local_only: bool = False,
 ) -> str:
     """
     Call LLM with 3-tier fallback: LiteLLM → Ollama → OpenRouter.
@@ -138,6 +149,7 @@ def call(
         timeout:     "fast" (30s), "normal" (120s), "generous" (300s), or int
         num_predict: Override max output tokens for Ollama (defaults to max_tokens)
         stage:       Error logging context (e.g. "keyword_extractor/llm")
+        local_only:  Skip LiteLLM/OpenRouter tiers — use Ollama only.
 
     Returns:
         str — Response content text.
@@ -149,9 +161,9 @@ def call(
     errors = []
 
     # ── Tier 1: LiteLLM proxy ────────────────────────────────────────────────
-    if _litellm_ok():
+    if not local_only and _litellm_ok():
         try:
-            resp = requests.post(
+            resp = _session.post(
                 LITELLM_URL,
                 headers={
                     "Authorization": f"Bearer {LITELLM_KEY}",
@@ -172,11 +184,11 @@ def call(
         except Exception as e:
             errors.append(("litellm", e))
 
-    # ── Tier 2: Direct Ollama (3 retries, 5s backoff) ────────────────────────
-    ollama_timeout = max(secs, 30)  # Ollama always gets at least 120s
+    # ── Tier 2: Direct Ollama (3 retries, exponential backoff) ─────────────
+    ollama_timeout = max(secs, 10)
     for attempt in range(3):
         try:
-            resp = requests.post(
+            resp = _session.post(
                 f"{OLLAMA_URL}/api/chat",
                 json={
                     "model":      OLLAMA_MODEL,
@@ -190,7 +202,7 @@ def call(
                         "num_predict": num_predict or max_tokens,
                     },
                 },
-                timeout=ollama_timeout,
+                timeout=(10, ollama_timeout),
             )
             resp.raise_for_status()
             content = resp.json().get("message", {}).get("content", "")
@@ -199,12 +211,12 @@ def call(
         except Exception as e:
             errors.append(("ollama", e))
             if attempt < 2:
-                time.sleep(5)
+                time.sleep(min(5 * (2 ** attempt), 30))
 
     # ── Tier 3: Direct OpenRouter ────────────────────────────────────────────
-    if OPENROUTER_KEY:
+    if not local_only and OPENROUTER_KEY:
         try:
-            resp = requests.post(
+            resp = _session.post(
                 OPENROUTER_URL,
                 headers={
                     "Authorization": f"Bearer {OPENROUTER_KEY}",
@@ -242,6 +254,7 @@ def generate(
     temperature: float = 0.3,
     timeout: str | int = "normal",
     stage: str = "",
+    local_only: bool = False,
 ) -> str:
     """
     Single-prompt generation with 3-tier fallback.
@@ -268,9 +281,9 @@ def generate(
     errors = []
 
     # ── Tier 1: LiteLLM proxy (via messages) ─────────────────────────────────
-    if _litellm_ok():
+    if not local_only and _litellm_ok():
         try:
-            resp = requests.post(
+            resp = _session.post(
                 LITELLM_URL,
                 headers={
                     "Authorization": f"Bearer {LITELLM_KEY}",
@@ -291,11 +304,11 @@ def generate(
         except Exception as e:
             errors.append(("litellm", e))
 
-    # ── Tier 2: Direct Ollama /api/generate ──────────────────────────────────
-    ollama_timeout = max(secs, 30)
+    # ── Tier 2: Direct Ollama /api/generate (3 retries, exponential backoff)
+    ollama_timeout = max(secs, 10)
     for attempt in range(3):
         try:
-            resp = requests.post(
+            resp = _session.post(
                 f"{OLLAMA_URL}/api/generate",
                 json={
                     "model":      OLLAMA_MODEL,
@@ -309,7 +322,7 @@ def generate(
                         "num_predict": max_tokens,
                     },
                 },
-                timeout=ollama_timeout,
+                timeout=(10, ollama_timeout),
             )
             resp.raise_for_status()
             content = resp.json().get("response", "")
@@ -318,12 +331,12 @@ def generate(
         except Exception as e:
             errors.append(("ollama", e))
             if attempt < 2:
-                time.sleep(5)
+                time.sleep(min(5 * (2 ** attempt), 30))
 
     # ── Tier 3: Direct OpenRouter (via messages) ─────────────────────────────
-    if OPENROUTER_KEY:
+    if not local_only and OPENROUTER_KEY:
         try:
-            resp = requests.post(
+            resp = _session.post(
                 OPENROUTER_URL,
                 headers={
                     "Authorization": f"Bearer {OPENROUTER_KEY}",
@@ -393,6 +406,7 @@ async def async_call(
     temperature: float = 0.3,
     timeout: str | int = "normal",
     stage: str = "",
+    local_only: bool = False,
 ) -> str:
     """
     Async LLM call with 4-tier fallback: LiteLLM → Ollama → OpenRouter primary → OpenRouter free.
@@ -412,7 +426,7 @@ async def async_call(
     errors = []
 
     # ── Tier 1: LiteLLM proxy ────────────────────────────────────────────────
-    if await _async_litellm_ok():
+    if not local_only and await _async_litellm_ok():
         try:
             async with httpx.AsyncClient(timeout=_HTTPX_CLOUD_TIMEOUT) as client:
                 r = await client.post(
@@ -462,7 +476,7 @@ async def async_call(
         "X-Title": "Dwight-Bot",
         "Content-Type": "application/json",
     }
-    if OPENROUTER_KEY:
+    if not local_only and OPENROUTER_KEY:
         try:
             async with httpx.AsyncClient(timeout=_HTTPX_CLOUD_TIMEOUT) as client:
                 r = await client.post(

@@ -1,7 +1,9 @@
 import concurrent.futures as _cf
 import json
+import os
 import subprocess
 import sys
+import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -15,6 +17,14 @@ except Exception:
 BASE      = Path(__file__).resolve().parent
 ERROR_LOG = BASE / "error_log.jsonl"
 GOLDEN    = BASE / "golden_opportunities.json"
+
+sys.path.insert(0, str(BASE))
+try:
+    from config.logging_config import get_logger
+    _log = get_logger("heartbeat")
+except Exception:
+    import logging as _logging
+    _log = _logging.getLogger("heartbeat")
 
 # ── LiteLLM contention management ─────────────────────────────────────────────
 # During pipeline runs, remove Ollama from LiteLLM fallbacks so LiteLLM never
@@ -127,15 +137,13 @@ except FileNotFoundError:
 CHECKPOINT_DIR = Path("/tmp/openclaw_checkpoints")
 
 def _current_run_id() -> str:
-    """Derive run_id from the current 6h schedule slot (00, 06, 12, 18).
+    """Derive run_id from today's date (daily schedule).
 
-    Any run within the same 6h window gets the same ID, so a crashed
-    process that restarts within the same slot resumes correctly.
-    The next scheduled slot gets a fresh ID automatically.
+    Any run on the same calendar day gets the same ID, so a crashed
+    process that restarts the same day resumes correctly.
+    The next day gets a fresh ID automatically.
     """
-    now = datetime.now()
-    slot_hour = (now.hour // 6) * 6
-    return now.strftime(f"%Y-%m-%dT{slot_hour:02d}")
+    return datetime.now().strftime("%Y-%m-%d")
 
 def _is_stage_done(script_name: str, run_id: str) -> bool:
     """Check if a stage has already completed for this run slot."""
@@ -166,24 +174,32 @@ STAGE_TIMEOUTS = {
     "reddit_intelligence.py": 300,
     "trends_scraper.py":      1800,
     "trends_postprocess.py":  3600,   # LanceDB dedup embeds 700+ trends (~30-35 min)
+    "money_flow_classifier.py": 900,  # Regex + Ollama direct (with per-200 checkpoint)
     "keyword_expander.py":    600,
     "commercial_keyword_transformer.py": 3600,  # increased: LLM transformation, safety net with think=False
+    "consequence_generator.py": 1800, # 30 min — LLM per classified trend (cap 80), local-only
     "keyword_extractor.py":   21600,  # 6h — LLM batches + DataForSEO expansion
     "vetting.py":             3600,
     "validation.py":          1800,
-    "angle_engine.py":        5400,   # increased: LLM title generation, safety net with think=False
+    "angle_engine.py":        7800,   # increased: wall_limit=7200 + 600s cleanup margin
     "dashboard_builder.py":   120,
     "reflection.py":          300,
+    "intel_bridge.py":        300,    # Sprint 4: inject intelligence keywords before vetting
+    "run_intelligence.py":    1800,   # Sprint 4: intelligence engine + daily analyzer
 }
 
 STAGES = [
+    ("0-intel", "run_intelligence.py"),  # Sprint 4: intelligence engine first (feeds intel_bridge)
     ("0a", "subreddit_discovery.py"),
     (0,    "reddit_intelligence.py"),
     (1,    "trends_scraper.py"),
     ("1b", "trends_postprocess.py"),
+    ("1c", "money_flow_classifier.py"),     # Sprint 2: enrich explosive_trends.json with money-flow archetypes
     ("2a", "keyword_expander.py"),
     ("2a.5", "commercial_keyword_transformer.py"),  # Transform CPC=$0 keywords
+    ("2a.7", "consequence_generator.py"),           # Sprint 4: service/info/product keywords from money-flow trends
     (2,    "keyword_extractor.py"),
+    ("2c", "intel_bridge.py"),           # Sprint 4: inject missed opps + competitor keywords
     ("2b", "vetting.py"),
     (3,    "validation.py"),
     ("3a", "angle_engine.py"),        # RSOC angle scoring + selection
@@ -199,6 +215,8 @@ print("=" * 56)
 print("  OpenClaw Heartbeat — Full Pipeline Run")
 print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print("=" * 56)
+_pipeline_start = _time.time()
+_log.info("Pipeline start")
 
 # ── Post-stage assertions & funnel tracking ──────────────────────────────────
 # Maps stage script → primary output file(s) to validate after each stage
@@ -207,9 +225,12 @@ _STAGE_OUTPUTS = {
     "reddit_intelligence.py":             [BASE / "reddit_intelligence.json"],
     "trends_scraper.py":                  [BASE / "latest_trends.json"],
     "trends_postprocess.py":              [BASE / "explosive_trends.json"],
+    "money_flow_classifier.py":           [BASE / "explosive_trends.json"],  # enriches in-place
     "keyword_expander.py":                [BASE / "expanded_keywords.json"],
     "commercial_keyword_transformer.py":  [BASE / "transformed_keywords.json"],
+    "consequence_generator.py":           [BASE / "transformed_keywords.json"],  # appends in-place
     "keyword_extractor.py":              [BASE / "commercial_keywords.json"],
+    "intel_bridge.py":                   [BASE / "commercial_keywords.json"],  # appends to existing
     "vetting.py":                        [BASE / "vetted_opportunities.json"],
     "validation.py":                     [BASE / "validated_opportunities.json",
                                           BASE / "golden_opportunities.json"],
@@ -262,6 +283,7 @@ def _exec_stage(stage_num, script_name) -> bool:
         return False
     timeout_secs = STAGE_TIMEOUTS.get(script_name, 1800)
     cmd = ["bash", str(script_path)] if script_name.endswith(".sh") else [sys.executable, str(script_path)]
+    _log.info("Stage start", extra={"stage": script_name})
     _t0 = _time.time()
     proc = subprocess.Popen(
         cmd,
@@ -278,6 +300,7 @@ def _exec_stage(stage_num, script_name) -> bool:
         proc.communicate()
         msg = f"{script_name} timed out after {timeout_secs}s"
         print(f"[Stage {stage_num}] ❌ Timeout: {msg}")
+        _log.error("Stage timeout: %s", msg, extra={"stage": script_name, "duration": timeout_secs})
         errors.append({"timestamp": datetime.now().isoformat(),
                         "stage": str(stage_num), "error": msg})
         return False
@@ -288,11 +311,13 @@ def _exec_stage(stage_num, script_name) -> bool:
             for line in stdout.strip().splitlines():
                 print(f"           {line}")
         _assert_stage_output(script_name)
+        _log.info("Stage completed", extra={"stage": script_name, "duration": _stage_durations[script_name]})
         return script_name == "dashboard_builder.py"
     else:
         stderr_out = stderr.strip() or stdout.strip() or "non-zero exit"
         first_error_line = stderr_out.splitlines()[0] if stderr_out else "unknown error"
         print(f"[Stage {stage_num}] ❌ Failed: {first_error_line}")
+        _log.error("Stage failed: %s", first_error_line, extra={"stage": script_name, "duration": _stage_durations.get(script_name, 0)})
         errors.append({"timestamp": datetime.now().isoformat(),
                         "stage": str(stage_num), "error": stderr_out})
         return False
@@ -304,6 +329,25 @@ print(f"  [Run ID] {_run_id}")
 
 # Remove Ollama from LiteLLM fallbacks to prevent contention during pipeline
 _litellm_swapped = _strip_ollama_from_litellm()
+
+# Warm Ollama so money_flow_classifier's first call isn't paying for model load.
+# qwen3:14b cold-start can be 30-90s on M1; keep_alive=-1 pins it for the run.
+try:
+    _warm_req = urllib.request.Request(
+        "http://localhost:11434/api/generate",
+        data=json.dumps({
+            "model": "qwen3:14b",
+            "prompt": "ok",
+            "stream": False,
+            "keep_alive": -1,
+            "options": {"num_ctx": 32768, "num_predict": 1},
+        }).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    urllib.request.urlopen(_warm_req, timeout=180).read()
+    print("  [Ollama] Warmed qwen3:14b (keep_alive=-1)")
+except Exception as _warm_e:
+    print(f"  [Ollama] Warm-up failed: {_warm_e}")  # non-fatal
 
 try:
     stages_iter = iter(STAGES)
@@ -395,18 +439,21 @@ if GOLDEN.exists():
                 cpc = o.get("cpc_usd", 0)
                 geo = o.get("country", "—")
                 print(f"  {kw:<30} AI={ai:.4f}  CPC=${cpc:.2f}  [{geo}]")
+        _log.info("Golden count: %d", len(golden_only))
     except Exception as e:
         print(f"  ⚠️  Could not read golden_opportunities.json: {e}")
+        _log.warning("Golden read failed: %s", e)
 else:
     print("  golden_opportunities.json not found")
+    _log.warning("golden_opportunities.json not found")
 
 # ── Phase 0.2: Zero-GOLDEN drought alert ─────────────────────────────────────
 def _check_golden_drought():
-    """Alert via Telegram if 0 GOLDEN opportunities found in last 12h (2 cycles)."""
+    """Alert via Telegram if 0 GOLDEN opportunities found in last 26h (daily pipeline)."""
     try:
         validated_path = BASE / "validated_opportunities.json"
         history_path   = BASE / "validation_history.jsonl"
-        cutoff = (datetime.now(timezone.utc) - timedelta(hours=12)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=26)).isoformat()
         golden_recent = 0
 
         # Check current validated file
@@ -493,6 +540,58 @@ try:
 except Exception as _sync_err:
     print(f"  ⚠️  Backend sync failed: {_sync_err}")
 
+
+def _notify_golden_opportunities():
+    """Send Telegram notification if new GOLDEN opportunities were found this run."""
+    try:
+        if not GOLDEN.exists():
+            return
+        goldens = json.loads(GOLDEN.read_text())
+        if not goldens:
+            return
+
+        cutoff = (datetime.now() - timedelta(hours=26)).isoformat()
+        new_goldens = [
+            g for g in goldens
+            if g.get("tag") == "GOLDEN_OPPORTUNITY"
+            and (g.get("validated_at") or "") > cutoff
+        ]
+        if not new_goldens:
+            return
+
+        lines = [f"🏆 {len(new_goldens)} new GOLDEN opportunities found!\n"]
+        for g in new_goldens[:5]:
+            kw = g.get("keyword", "?")
+            country = g.get("country", "?")
+            cpc = g.get("cpc_usd", 0) or 0
+            vol = g.get("search_volume", 0) or 0
+            score = g.get("opportunity_score", 0) or 0
+            lines.append(f"• {kw} ({country}) — ${cpc:.2f} CPC, {vol:,} vol, score {score:.1f}")
+        if len(new_goldens) > 5:
+            lines.append(f"  ...and {len(new_goldens) - 5} more")
+
+        msg = "\n".join(lines)
+
+        token = os.environ.get("TELEGRAM_TOKEN", "")
+        chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
+        if not token or not chat_id:
+            print("  ⚠️  TELEGRAM_TOKEN or TELEGRAM_CHAT_ID not set — skipping golden notification")
+            return
+
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        data = json.dumps({"chat_id": chat_id, "text": msg}).encode()
+        req = urllib.request.Request(
+            url, data=data, headers={"Content-Type": "application/json"}
+        )
+        urllib.request.urlopen(req, timeout=10)
+        print(f"  ✅ Sent golden notification: {len(new_goldens)} opportunities")
+    except Exception as e:
+        print(f"  ⚠️  Golden notification failed: {e}")
+
+
+_notify_golden_opportunities()
+
 print()
 status = f"{len(errors)} error(s)" if errors else "all stages OK"
 print(f"✅ Heartbeat complete — {status}")
+_log.info("Pipeline complete", extra={"duration": round(_time.time() - _pipeline_start, 1)})
