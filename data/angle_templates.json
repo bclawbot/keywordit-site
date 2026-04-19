@@ -1,0 +1,202 @@
+{
+  "patterns": {
+    "auto_insurance": {
+      "default": [
+        "{entity} Just Changed Their Rates for {year}",
+        "New {country_name} Law Affects {entity} Policyholders",
+        "{entity} Auto Insurance: What {year} Drivers Need to Know",
+        "{entity} Policyholders: Check Your {year} Rate Update",
+        "Why {entity} Auto Insurance Costs Are Shifting in {year}"
+      ],
+      "US": [
+        "{entity} Auto Insurance: New State Rates for {year}",
+        "{year} {entity} Insurance: Compare Before You Renew"
+      ]
+    },
+    "housing_ssi": {
+      "default": [
+        "{entity} Recipients: New Housing Options in {year}",
+        "{year} {entity} Housing Waitlist Update",
+        "{entity} Apartments Near You: {year} Availability Guide",
+        "How {entity} Recipients Are Finding Housing in {year}",
+        "New {entity} Housing Rules for {year}: What Changed"
+      ]
+    },
+    "german_ausbildung": {
+      "default": [
+        "Neue {entity}-Stellen {year}: Jetzt bewerben",
+        "{entity} ohne Erfahrung: So geht's in {year}",
+        "{entity} Gehalt {year}: Was verdient man wirklich?",
+        "Top {entity}-Jobs {year}: Freie Stellen in deiner Stadt",
+        "{entity} mit 30+: Lohnt sich der Wechsel {year}?"
+      ]
+    },
+    "medical_pharma": {
+      "default": [
+        "{entity} Without Insurance: What {year} Patients Need to Know",
+        "New {entity} Discount Programs for {year}",
+        "{entity} Cost Update {year}: Savings Options Available",
+        "{entity} Alternatives in {year}: What Doctors Recommend",
+        "{year} {entity} Patient Assistance: How to Qualify"
+      ]
+    },
+    "legal_services": {
+      "default": [
+        "New {year} Settlement Update for {entity} Victims",
+        "{entity} Lawsuit {year}: Are You Eligible for Compensation?",
+        "{year} {entity} Claims: Deadline Approaching",
+        "{entity} Settlement Payouts: {year} Update",
+        "Were You Affected by {entity}? {year} Legal Options"
+      ]
+    },
+    "cruises_travel": {
+      "default": [
+        "{entity} {year} Deals: Prices Dropped for Last-Minute Bookings",
+        "{entity} Cruise Sale {year}: Cabins Starting Under $500",
+        "{year} {entity} Itineraries: New Destinations Added",
+        "Why {entity} Cruises Are Cheaper in {month} {year}",
+        "{entity} vs Competitors: {year} Price Comparison"
+      ]
+    },
+    "home_services": {
+      "default": [
+        "{year} {entity} Costs: What Homeowners Are Paying Now",
+        "{entity} Installation {year}: Free Quotes Available",
+        "New {entity} Models for {year}: Prices and Reviews",
+        "{entity} Rebates {year}: Government Incentives Available",
+        "Before You Buy {entity}: {year} Pricing Guide"
+      ]
+    },
+    "gig_delivery": {
+      "default": [
+        "Ganar dinero entregando paquetes con {entity} en {year}",
+        "Delivering for {entity} in {year}: Updated Pay Rates",
+        "{entity} Driver Pay {year}: How Much Can You Really Earn?",
+        "New {entity} Delivery Bonuses for {month} {year}",
+        "{entity} vs Other Delivery Apps: {year} Earnings Compared"
+      ],
+      "MX": [
+        "Trabajar con {entity} en {year}: Requisitos y ganancias",
+        "Cuanto gana un repartidor de {entity} en Mexico {year}"
+      ],
+      "BR": [
+        "Quanto ganha um entregador {entity} em {year}",
+        "Trabalhar na {entity} {year}: Vale a pena?"
+      ]
+    },
+    "loans_credit": {
+      "default": [
+        "{entity} Rates to Review for {month} {year}",
+        "{entity} in {year}: Compare Today's Offers",
+        "New {entity} Options for {year}: Lower Rates Available",
+        "{entity} Approval Tips: What Lenders Want in {year}",
+        "{year} {entity} Guide: Which Option Saves You the Most?"
+      ]
+    },
+    "seniors_demographics": {
+      "default": [
+        "{entity} Senior Discounts: Complete {year} Guide",
+        "{year} {entity} Benefits for Seniors: What's New",
+        "{entity} Discounts You Might Be Missing in {year}",
+        "Over 55? {entity} Has New {year} Savings Programs",
+        "{entity} {year}: Senior-Exclusive Offers and Deals"
+      ]
+    },
+    "veterans_military": {
+      "default": [
+        "{entity} Benefits {year}: Updated Eligibility Guide",
+        "New {entity} Programs for Veterans in {year}",
+        "{entity} Discounts for Military: {year} Complete List",
+        "{year} {entity} Claims Update: What Veterans Should Know",
+        "{entity} Housing Benefits {year}: How to Apply"
+      ]
+    },
+    "ssi_disability": {
+      "default": [
+        "{entity} Payment Update {year}: New Amounts Announced",
+        "{entity} Eligibility {year}: Do You Qualify?",
+        "{year} {entity} Changes: What Recipients Need to Know",
+        "{entity} Back Pay {year}: How to Claim What You're Owed",
+        "New {entity} Rules for {year}: Important Deadline"
+      ]
+    },
+    "_generic": {
+      "default": [
+        "{entity}: What You Need to Know in {year}",
+        "{year} Guide to {entity}: Updated Information",
+        "{entity} in {year}: Latest Changes and Updates",
+        "New {entity} Options Available for {year}",
+        "{entity} {year}: How to Compare Your Options"
+      ]
+    }
+  },
+  "seasonal_hooks": {
+    "US": [
+      {"months": [1,2,3,4], "hook": "Tax season", "relevance": "high"},
+      {"months": [10,11,12], "hook": "Medicare open enrollment", "relevance": "high"},
+      {"months": [6,7,8,9,10,11], "hook": "Hurricane season insurance", "relevance": "medium"},
+      {"months": [1], "hook": "New year health resolutions", "relevance": "medium"},
+      {"months": [8,9], "hook": "Back to school", "relevance": "medium"},
+      {"months": [11,12], "hook": "Holiday shopping deals", "relevance": "high"}
+    ],
+    "DE": [
+      {"months": [8,9], "hook": "Ausbildung start", "relevance": "high"},
+      {"months": [5,6,7], "hook": "Steuererklärung season", "relevance": "high"},
+      {"months": [1,2,3], "hook": "New Bürgergeld rules", "relevance": "medium"},
+      {"months": [10,11,12], "hook": "Energy prices winter", "relevance": "medium"},
+      {"months": [1,2,3,4], "hook": "Quereinsteiger hiring wave", "relevance": "medium"}
+    ],
+    "CA": [
+      {"months": [1,2,3], "hook": "RRSP season", "relevance": "high"},
+      {"months": [3,4,5], "hook": "Spring housing market", "relevance": "medium"},
+      {"months": [11,12,1], "hook": "Winter driving insurance", "relevance": "medium"},
+      {"months": [2,3,4], "hook": "Tax filing deadline", "relevance": "high"}
+    ],
+    "AU": [
+      {"months": [7,8,9,10], "hook": "Tax time", "relevance": "high"},
+      {"months": [11,12,1,2], "hook": "Bushfire season insurance", "relevance": "high"},
+      {"months": [7,8], "hook": "Medicare levy changes", "relevance": "medium"},
+      {"months": [1,2,3,4,5,6], "hook": "Cost of living pressure", "relevance": "medium"}
+    ],
+    "MX": [
+      {"months": [11], "hook": "Buen Fin", "relevance": "high"},
+      {"months": [12], "hook": "Aguinaldo spending", "relevance": "high"},
+      {"months": [1,2,3,4,5,6,7,8,9,10,11,12], "hook": "Gig economy expansion", "relevance": "medium"},
+      {"months": [3,4], "hook": "Declaración anual SAT", "relevance": "high"}
+    ],
+    "IN": [
+      {"months": [7,8,9], "hook": "Tax filing season", "relevance": "high"},
+      {"months": [10,11], "hook": "Festival season spending", "relevance": "high"},
+      {"months": [1,2], "hook": "Budget season", "relevance": "medium"},
+      {"months": [4,5], "hook": "Summer health insurance", "relevance": "medium"}
+    ],
+    "BR": [
+      {"months": [3,4], "hook": "Declaração IRPF", "relevance": "high"},
+      {"months": [11], "hook": "Black Friday Brasil", "relevance": "high"},
+      {"months": [12,1], "hook": "13º salário spending", "relevance": "high"}
+    ],
+    "ZA": [
+      {"months": [7,8,9,10], "hook": "Tax season SARS", "relevance": "high"},
+      {"months": [11,12], "hook": "Festive season spending", "relevance": "medium"}
+    ],
+    "ES": [
+      {"months": [4,5,6], "hook": "Declaración de la Renta", "relevance": "high"},
+      {"months": [1,2], "hook": "Rebajas de invierno", "relevance": "medium"}
+    ]
+  },
+  "country_names": {
+    "US": "American", "CA": "Canadian", "AU": "Australian",
+    "DE": "German", "MX": "Mexican", "IN": "Indian",
+    "ZA": "South African", "BR": "Brazilian", "AR": "Argentine",
+    "ES": "Spanish", "CH": "Swiss", "CO": "Colombian",
+    "FR": "French", "CL": "Chilean", "IT": "Italian",
+    "NZ": "New Zealand", "AE": "UAE", "PE": "Peruvian",
+    "PR": "Puerto Rican", "EC": "Ecuadorian", "GB": "British",
+    "NL": "Dutch", "JP": "Japanese", "KR": "Korean"
+  },
+  "month_names": {
+    "1": "January", "2": "February", "3": "March", "4": "April",
+    "5": "May", "6": "June", "7": "July", "8": "August",
+    "9": "September", "10": "October", "11": "November", "12": "December"
+  }
+}

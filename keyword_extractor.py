@@ -809,7 +809,10 @@ def main():
                 gkw.setdefault("country", "US")
                 gkw.setdefault("commercial_category", "")
                 gkw.setdefault("confidence", "high" if not gkw.get("needs_dataforseo_validation") else "medium")
-                gkw.setdefault("source_trend", gkw.get("expansion_seed", ""))
+                # Do NOT backfill source_trend from expansion_seed — a keyword echoing
+                # itself is not real grounding. Leave empty for pure Google Ads expansions
+                # so title_generator correctly routes to templates for them.
+                gkw.setdefault("source_trend", "")
                 if not gkw.get("needs_dataforseo_validation"):
                     gkw["cpc_usd"]       = gkw.get("google_estimated_cpc", 0)
                     gkw["search_volume"] = gkw.get("google_volume", 0)

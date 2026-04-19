@@ -78,3 +78,7 @@ discovery_last_run.txt
 
 # Claude Code metadata
 .claude/
+
+# STEP 9 smoke-test artifacts
+*.bak_step9*
+angle_candidates.json.bak_*

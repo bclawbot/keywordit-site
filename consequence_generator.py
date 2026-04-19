@@ -338,6 +338,7 @@ def _format_as_transformed(c: dict) -> dict:
         "keyword": c["keyword"],
         "country": c["country"],
         "expansion_seed": c["source_keyword"],
+        "source_trend": c["source_keyword"],
         "google_cpc_low": 0.0,
         "google_cpc_high": 0.0,
         "google_estimated_cpc": 0.0,

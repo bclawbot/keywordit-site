@@ -357,6 +357,7 @@ def _process_keyword(opp: dict, ck_idx: dict, cfg: dict) -> dict:
         year=year,
         source_trend=source_trend,
         vertical=fine_vertical,
+        discovery_context=discovery_ctx,
     )
     for c in selected:
         c["angle_title"] = titles.get(c["angle_type"], keyword)
@@ -489,6 +490,7 @@ def main() -> int:
     import time as _time
     _start_ts = _time.monotonic()
     WALL_LIMIT = float(engine_cfg.get("wall_limit_seconds", 4800))  # stop before 5400s heartbeat timeout
+    cpc_llm_threshold = float(engine_cfg.get("cpc_llm_threshold_usd", 0.25))
 
     for opp, skip_key in pending:
         # Early exit if approaching wall-clock limit
@@ -501,9 +503,12 @@ def main() -> int:
         kw = opp.get("keyword", "?")
         kw_start = _time.monotonic()
 
-        # Skip LLM title generation for low-CPC keywords (use templates instead)
+        # Skip LLM title generation only for low-CPC keywords with weak signals.
+        # Real signals (news_event, reddit_discussion, google_trends,
+        # commercial_transform, commercial_intent) get the LLM even on cheap keywords.
         _orig_trend = opp.get("source_trend")
-        if float(opp.get("cpc_usd") or 0) < 0.50:
+        sig = (opp.get("discovery_context") or {}).get("signal_type") or ""
+        if float(opp.get("cpc_usd") or 0) < cpc_llm_threshold and sig in ("", "keyword_expansion"):
             opp["source_trend"] = ""
 
         try:

@@ -1,0 +1,75 @@
+angle_engine:
+  # Tags eligible for angle processing (must be in validated_opportunities.json)
+  eligible_tags:
+    - GOLDEN_OPPORTUNITY
+    - WATCH
+    - EMERGING_HIGH
+    - EMERGING
+    - LOW
+    - UNSCORED
+  # Minimum number of angles per keyword (enforced as max(default_top_n, 5))
+  default_top_n: 5
+  # Angles with rsoc_score below this threshold are filtered before generation
+  min_rsoc_score: 0.45
+  # Enforce ad category diversity: no two selected angles share the same ad_category
+  diversity_rule: true
+  # Maximum articles to generate per pipeline run (keeps Stage 3b within 2h timeout)
+  # Set to 0 for unlimited (use only if pipeline timeout is extended)
+  max_articles_per_run: 20
+  # Wall-clock limit for angle processing (seconds). Must be < heartbeat STAGE_TIMEOUT (7800s).
+  wall_limit_seconds: 7200
+  # Keywords below this CPC skip LLM title generation and use templates — UNLESS
+  # they have a real discovery signal (news_event, reddit_discussion, google_trends,
+  # commercial_transform, commercial_intent). keyword_expansion and unknown signals
+  # still get templated at this threshold.
+  cpc_llm_threshold_usd: 0.25
+
+title_generation:
+  # Use LLM for title generation when source_trend is available
+  # Set to false to revert to pure template titles
+  use_llm: true
+  # Must match content_generation to avoid Ollama model reload
+  ollama_model: "qwen3:14b"
+  ollama_url: "http://localhost:11434/api/chat"
+  ollama_num_ctx: 32768
+  ollama_temperature: 0.7
+  ollama_timeout_seconds: 120
+  # Token budget for batch title generation (5 titles per keyword)
+  num_predict_batch: 400
+
+content_generation:
+  # qwen3:14b IS installed and warm; qwen3-coder:14b is NOT installed
+  ollama_model: "qwen3:14b"
+  ollama_url: "http://localhost:11434/api/chat"
+  # CRITICAL: must match all other Ollama callers to prevent 60-90s model reload
+  ollama_num_ctx: 32768
+  ollama_temperature: 0.4
+  ollama_timeout_seconds: 300
+  # OpenRouter fallback if Ollama is unavailable
+  openrouter_fallback_model: "deepseek/deepseek-v3.2"
+  openrouter_timeout_seconds: 120
+  # Directory for article .md files (relative to workspace root)
+  articles_dir: "articles"
+
+quality_gates:
+  min_word_count: 600
+  max_word_count: 1400
+  min_h2_count: 3
+  # Articles below this quality score are re-queued (not published)
+  min_quality_score: 0.70
+
+compliance:
+  # CRITICAL and HIGH violations block publication (no override)
+  block_critical: true
+  block_high: true
+  # MEDIUM violations log warning but allow publication
+  warn_medium: true
+
+lancedb:
+  db_path: "~/.openclaw/vector_db"
+  angle_table: "angle_candidates"
+  articles_table: "generated_articles"
+
+logging:
+  error_log: "error_log.jsonl"
+  log_level: "INFO"
