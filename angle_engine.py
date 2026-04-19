@@ -37,7 +37,17 @@ from pipeline.stages.stage_5_5_angle_engine.title_generator import (
     generate_title,
     generate_titles_batch,
     _detect_lang_from_script,
+    _RAF_TITLE_BANNED_WORD_RX,
 )
+
+
+def _filter_best_from_fb_angles(fb_angles: list) -> list:
+    """Compliance: drop fb_intel angles whose title contains the standalone
+    word "best" (STEP 9 §6 — applies to all titles surfaced on Discovery,
+    including competitor-sourced). Competitor ad copy is ground truth; we
+    drop offending angles rather than rewriting their titles."""
+    return [a for a in fb_angles
+            if not _RAF_TITLE_BANNED_WORD_RX.search(a.get("angle_title", ""))]
 from pipeline.stages.stage_5_5_angle_engine.content_store import write_angle_candidates
 
 # Country → language code (mirrors validation.py _DFS_LANG)
@@ -400,6 +410,15 @@ def _process_keyword(opp: dict, ck_idx: dict, cfg: dict) -> dict:
                 })
         except (ImportError, Exception):
             pass
+    if fb_angles:
+        # Compliance: drop any fb_intel angle whose title contains the standalone
+        # word "best" (STEP 9 §6 — applies to all titles surfaced on Discovery,
+        # incl. competitor-sourced).
+        before = len(fb_angles)
+        fb_angles = _filter_best_from_fb_angles(fb_angles)
+        dropped = before - len(fb_angles)
+        if dropped:
+            print(f"  [{keyword}] dropped {dropped} fb_intel angle(s) for 'best' in title")
     if fb_angles:
         # Prepend fb_intel angles (they have rsoc_score=1.0 for originals)
         output["selected_angles"] = fb_angles + output["selected_angles"]
