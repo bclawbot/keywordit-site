@@ -178,7 +178,7 @@ def _get_fb_intel_angles(keyword: str, country: str, vertical: str) -> list:
         db.row_factory = sqlite3.Row
         cursor = db.cursor()
 
-        # Exact keyword match → KeywordAngles with source='original' first
+        # Exact keyword match → article_content and original tied as top priority
         cursor.execute("""
             SELECT ka.angle_type, ka.angle_title, ka.article_url,
                    ka.confidence, ka.source, k.keyword
@@ -186,19 +186,25 @@ def _get_fb_intel_angles(keyword: str, country: str, vertical: str) -> list:
             JOIN Keywords k ON ka.keyword_id = k.id
             WHERE LOWER(k.keyword) = LOWER(?)
             ORDER BY
-                CASE WHEN ka.source = 'original' THEN 0 ELSE 1 END,
+                CASE
+                    WHEN ka.source = 'article_content' THEN 0
+                    WHEN ka.source = 'original'        THEN 0
+                    ELSE 1
+                END,
                 ka.confidence DESC
             LIMIT 5
         """, (keyword,))
 
         for row in cursor.fetchall():
+            src = row["source"]
+            is_ground_truth = src in ("original", "article_content")
             angles.append({
                 "angle_type":   row["angle_type"] or "",
                 "angle_title":  row["angle_title"] or "",
                 "article_url":  row["article_url"] or "",
                 "confidence":   float(row["confidence"] or 0),
-                "source":       "fb_intel",
-                "rsoc_score":   1.0 if row["source"] == "original" else 0.85,
+                "source":       "article_content" if src == "article_content" else "fb_intel",
+                "rsoc_score":   1.0 if is_ground_truth else 0.85,
                 "ad_category":  "competitor_intelligence",
                 "selected":     True,
             })
@@ -545,6 +551,16 @@ def main() -> int:
     except Exception as e:
         _log_error("3a.lancedb", str(e))
         print(f"[angle_engine] WARN: LanceDB write failed (non-fatal): {e}")
+
+    # Write to SQLite — additive, non-fatal
+    try:
+        from sqlite_store import OpportunityStore
+        store = OpportunityStore()
+        count = store.import_angles_from_json(str(OUTPUT))
+        print(f"[angle_engine] SQLite: {count} angle clusters written to pipeline_store.db")
+    except Exception as e:
+        _log_error("3a.sqlite", str(e))
+        print(f"[angle_engine] WARN: SQLite write failed (non-fatal): {e}")
 
     total_angles = sum(len(r.get("selected_angles", [])) for r in results)
     print(f"[angle_engine] Done. {len(results)} keywords × avg "
