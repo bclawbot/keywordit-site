@@ -76,9 +76,25 @@ articles/
 .last_deploy_hash.bak
 discovery_last_run.txt
 
+# Node.js
+node_modules/
+
 # Claude Code metadata
 .claude/
 
 # STEP 9 smoke-test artifacts
 *.bak_step9*
 angle_candidates.json.bak_*
+
+# STEP 9 bridge transients
+bridge_consequence_to_commercial.py
+commercial_keywords.json.bak_step9_bridge
+
+# SERP cache (T3)
+cache/
+
+# STEP 9 snapshot payloads — metadata and report are committed, JSONs are not
+implementation/snapshots/step9_final/commercial_keywords.json
+implementation/snapshots/step9_final/vetted_opportunities.json
+implementation/snapshots/step9_final/validated_opportunities.json
+implementation/snapshots/step9_final/angle_candidates.json
