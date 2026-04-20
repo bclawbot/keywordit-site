@@ -88,12 +88,116 @@ async def search_ddg(keyword: str, executor: ThreadPoolExecutor) -> list:
     try:
         raw = await asyncio.wait_for(
             loop.run_in_executor(executor, _ddg_fetch_sync, keyword),
-            timeout=8,
+            timeout=5,
         )
         return [{"url": r["href"], "title": r["title"], "snippet": r["body"]} for r in raw]
     except (asyncio.TimeoutError, FuturesTimeout, Exception) as e:
         print(f"  ⚠️  DDG search failed for '{keyword}': {type(e).__name__}")
         return []
+
+
+# ── SERP cache ─────────────────────────────────────────────────────────────────
+
+SERP_CACHE_DIR  = Path.home() / ".openclaw" / "workspace" / "cache"
+SERP_CACHE_PATH = SERP_CACHE_DIR / "serp_cache.jsonl"
+SERP_CACHE_TTL  = 86400  # 24h
+
+_serp_cache: dict[tuple[str, str], dict] = {}
+
+
+def _serp_cache_key(keyword: str, country: str) -> tuple[str, str]:
+    return (keyword.strip().lower(), country.strip().upper())
+
+
+def load_serp_cache() -> int:
+    """Load cache entries newer than TTL into memory. Returns entry count."""
+    _serp_cache.clear()
+    if not SERP_CACHE_PATH.exists():
+        return 0
+    import time as _t
+    now = _t.time()
+    loaded = 0
+    try:
+        for line in SERP_CACHE_PATH.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            cached_at = entry.get("cached_at_epoch", 0)
+            if now - cached_at > SERP_CACHE_TTL:
+                continue
+            key = (entry.get("keyword", "").lower(), entry.get("country", "").upper())
+            _serp_cache[key] = entry
+            loaded += 1
+    except Exception as e:
+        print(f"  ⚠️  SERP cache load failed: {e}")
+    return loaded
+
+
+def cache_lookup(keyword: str, country: str) -> list | None:
+    entry = _serp_cache.get(_serp_cache_key(keyword, country))
+    return entry["results"] if entry else None
+
+
+def cache_store(keyword: str, country: str, results: list, source: str) -> None:
+    if not results:
+        return
+    import time as _t
+    entry = {
+        "keyword":          keyword,
+        "country":          country,
+        "results":          results,
+        "source":           source,
+        "cached_at":        datetime.now().isoformat(),
+        "cached_at_epoch":  _t.time(),
+    }
+    _serp_cache[_serp_cache_key(keyword, country)] = entry
+    try:
+        SERP_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        with SERP_CACHE_PATH.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        print(f"  ⚠️  SERP cache write failed: {e}")
+
+
+async def search_searxng(keyword: str, session: aiohttp.ClientSession) -> list:
+    """SearXNG local meta-search — preferred source when available."""
+    import urllib.parse
+    url = f"http://localhost:8888/search?q={urllib.parse.quote(keyword)}&format=json&categories=general"
+    try:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as r:
+            r.raise_for_status()
+            data = await r.json()
+            results = []
+            for item in data.get("results", [])[:10]:
+                results.append({
+                    "url":     item.get("url", ""),
+                    "title":   item.get("title", ""),
+                    "snippet": item.get("content", ""),
+                })
+            return results
+    except Exception as e:
+        print(f"  ⚠️  SearXNG search failed for '{keyword}': {e}")
+        return []
+
+
+async def check_searxng_health() -> bool:
+    """Quick health check — returns True if SearXNG is responding."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                "http://localhost:8888/search?q=test&format=json",
+                timeout=aiohttp.ClientTimeout(total=5)
+            ) as r:
+                data = await r.json()
+                n = len(data.get("results", []))
+                print(f"  {'✅' if n > 0 else '⚠️'} SearXNG: {n} results")
+                return n > 0
+    except Exception as e:
+        print(f"  ⚠️  SearXNG: unreachable ({e})")
+        return False
 
 
 async def search_brave(keyword: str, session: aiohttp.ClientSession, retries: int = 2) -> list:
@@ -138,19 +242,48 @@ async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
         keyword = entry.get("keyword", "")
         country = entry.get("country", "US")
 
-        results = await search_ddg(keyword, executor)
-        if not results:
-            results = await search_brave(keyword, session)
+        # Cache check — skip cascade entirely on hit (24h TTL)
+        cached = cache_lookup(keyword, country)
+        if cached is not None:
+            results = cached
+        else:
+            # Search cascade: SearXNG (local) → DDG → Brave (last resort)
+            results = await search_searxng(keyword, session)
+            _source = "searxng"
+            if not results:
+                results = await search_ddg(keyword, executor)
+                _source = "ddg"
+            if not results:
+                results = await search_brave(keyword, session)
+                _source = "brave"
+            if results:
+                cache_store(keyword, country, results, _source)
 
         survivors = []
         # Phase 2.1: Compute SERP dominance — ratio of HIGH_DA authority sites in results
         # High serp_dominance = dominated by authority sites = HARD to rank = BAD for arbitrage
         # Low serp_dominance  = thin SERP coverage = EASY to rank = GOOD for arbitrage
         HIGH_DA_DOMAINS = (
-            "wikipedia.org", "webmd.com", "forbes.com", "nytimes.com",
-            "reddit.com", "amazon.com", "yelp.com", "bbc.com", "cnn.com",
-            "mayoclinic.org", "healthline.com", "investopedia.com",
-            "nerdwallet.com", "gov.",
+            # General authority / news
+            "wikipedia.org", "forbes.com", "nytimes.com", "bbc.com", "cnn.com",
+            "washingtonpost.com", "theguardian.com", "reuters.com", "usatoday.com",
+            # Finance / insurance
+            "nerdwallet.com", "investopedia.com", "bankrate.com", "creditkarma.com",
+            "lendingtree.com", "wallethub.com", "thezebra.com", "policygenius.com",
+            "valuepenguin.com", "moneygeek.com", "fool.com",
+            # Health
+            "webmd.com", "mayoclinic.org", "healthline.com", "verywellhealth.com",
+            "medicalnewstoday.com", "clevelandclinic.org",
+            # Legal
+            "findlaw.com", "avvo.com", "justia.com", "nolo.com",
+            # General commercial / reviews
+            "amazon.com", "yelp.com", "reddit.com", "quora.com",
+            "tripadvisor.com", "g2.com", "capterra.com", "trustpilot.com",
+            "consumerreports.org", "pcmag.com", "cnet.com", "wirecutter.com",
+            # Government
+            "gov.", ".gov",
+            # Home services
+            "homeadvisor.com", "angi.com", "thumbtack.com",
         )
         noise_domains = ("youtube.com", "twitter.com", "x.com", "instagram.com",
                          "tiktok.com", "facebook.com")
@@ -205,6 +338,12 @@ async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
 
 
 async def vet_all(trends: list) -> list:
+    # Load the SERP cache once at entry. Hits skip the SearXNG/DDG/Brave
+    # cascade entirely — fixes run-to-run variance caused by SearXNG
+    # rate-limit degradation (2026-04-20 bridge experiments v2=77 vs v2b=35).
+    loaded = load_serp_cache()
+    print(f"  [SERP cache] loaded {loaded} entries (TTL {SERP_CACHE_TTL}s)")
+
     semaphore = asyncio.Semaphore(15)  # 15 concurrent SERP checks (3× faster)
     executor  = ThreadPoolExecutor(max_workers=15)
 
@@ -283,7 +422,8 @@ if __name__ == "__main__":
     # no price signal and produce only UNSCORED results, wasting Brave quota.
     HIGH_VALUE_VERTICALS = {
         "finance", "insurance", "legal", "health", "real_estate", "education",
-        "software", "saas", "tech", "travel", "automotive"
+        "software", "saas", "tech", "travel", "automotive",
+        "cybersecurity", "government_benefits",  # Sprint 2: money-flow archetypes
     }
     all_cpc_zero = all(float(kw.get("cpc_usd") or 0) == 0 for kw in commercial_keywords)
     if all_cpc_zero:
@@ -327,10 +467,20 @@ if __name__ == "__main__":
     # Prioritise by CPC × volume (highest commercial value first).
     VETTING_CAP = 2000
     if len(commercial_keywords) > VETTING_CAP:
+        # Stable tiebreak: sha1(keyword|country) ensures rows with identical
+        # CPC×volume scores (e.g. bridged consequence_generator placeholders)
+        # always sort the same way regardless of file order. Prevents bridge
+        # experimentation from shuffling survivor sets run-to-run.
+        import hashlib
+        def _stable_tiebreak(k):
+            key = f"{k.get('keyword','')}|{k.get('country','')}".encode('utf-8')
+            return hashlib.sha1(key).hexdigest()
         commercial_keywords = sorted(
             commercial_keywords,
-            key=lambda k: (k.get("cpc_usd") or 0) * (k.get("search_volume") or 0),
-            reverse=True,
+            key=lambda k: (
+                -((k.get("cpc_usd") or 0) * (k.get("search_volume") or 0)),
+                _stable_tiebreak(k),
+            ),
         )[:VETTING_CAP]
         print(f"  [Cap] Trimmed to top {VETTING_CAP} keywords by CPC×volume for vetting")
 
