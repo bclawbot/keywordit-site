@@ -66,7 +66,7 @@ _BASE = Path(__file__).resolve().parent
 ERROR_LOG = _BASE / "error_log.jsonl"
 
 TIMEOUTS = {
-    "bg":       15,   # pipeline stages, Ollama direct expected
+    "bg":       60,   # pipeline stages, Ollama direct expected; 15s was too tight for qwen3:14b under load (2026-04-20 mfc ReadTimeout)
     "fast":     30,
     "normal":   120,
     "generous":  300,
