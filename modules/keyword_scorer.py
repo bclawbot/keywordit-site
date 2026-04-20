@@ -25,15 +25,12 @@ Usage:
 import json
 import os
 import re
-import requests
+
+from llm_client import call as _llm_call, LLMError
 
 # ── Config ──────────────────────────────────────────────────────────────────
 _BASE_DIR = os.path.dirname(__file__)
 _WINNER_DNA_PATH = os.path.join(_BASE_DIR, '..', 'data', 'winner_dna.json')
-
-LITELLM_URL    = os.environ.get("LITELLM_URL",   "http://localhost:4000/v1/chat/completions")
-LITELLM_API_KEY = os.environ.get("LITELLM_API_KEY", "sk-dwight")
-LITELLM_MODEL  = os.environ.get("LITELLM_MODEL",  "dwight-primary")
 
 _FEW_SHOT_CACHE = None
 
@@ -167,22 +164,14 @@ def score_keywords_batch(keywords: list, timeout: int = 120) -> list:
     ], ensure_ascii=False)
 
     try:
-        resp = requests.post(
-            LITELLM_URL,
-            headers={"Authorization": f"Bearer {LITELLM_API_KEY}"},
-            json={
-                "model": LITELLM_MODEL,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user",   "content": user_message},
-                ],
-                "temperature": 0.1,
-                "max_tokens":  2048,
-            },
-            timeout=timeout,
+        raw = _llm_call(
+            [{"role": "system", "content": system_prompt},
+             {"role": "user", "content": user_message}],
+            max_tokens=2048,
+            temperature=0.1,
+            timeout="normal",
+            stage="keyword_scorer",
         )
-        resp.raise_for_status()
-        raw = resp.json()["choices"][0]["message"]["content"]
         cleaned = _strip_code_fences(raw)
         scored = json.loads(cleaned)
 
@@ -196,7 +185,7 @@ def score_keywords_batch(keywords: list, timeout: int = 120) -> list:
             results.append(item)
         return results
 
-    except Exception as e:
+    except (Exception, LLMError) as e:
         # Graceful fallback: return input with score=0 (caller can handle)
         fallback = []
         for k in keywords:

@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit · Admin</title>
+<link rel="stylesheet" href="shared/base.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 [data-theme="dark"] {
@@ -72,7 +75,6 @@ body {
 [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 [data-theme="light"] .theme-toggle .icon-sun { display: none; }
 [data-theme="light"] .theme-toggle .icon-moon { display: block; }
-}
 
 /* ═══ NAV ═══ */
 .admin-nav {
@@ -371,7 +373,7 @@ body {
     <div class="nav-right">
       <span class="nav-user" id="admin-user-label"></span>
       <button class="btn-nav" onclick="window.location.href='dashboard.html'">Dashboard</button>
-      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
         <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
         <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
       </button>
@@ -471,11 +473,12 @@ body {
 
 <div class="toast" id="toast"></div>
 
+<script src="shared/theme.js"></script>
+<script src="shared/auth.js"></script>
+<script src="shared/palette.js"></script>
 <script>
-async function hashStr(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
+var ADMIN_API = 'https://keywordit-api-production.up.railway.app';
+var _allUsers = [];
 
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -484,137 +487,119 @@ function toast(msg) {
   setTimeout(() => el.classList.remove('visible'), 2500);
 }
 
-function getUsers() { return JSON.parse(localStorage.getItem('keywordit_users') || '[]'); }
-function setUsers(u) { localStorage.setItem('keywordit_users', JSON.stringify(u)); }
-function getRequests() { return JSON.parse(localStorage.getItem('keywordit_requests') || '[]'); }
-function setRequests(r) { localStorage.setItem('keywordit_requests', JSON.stringify(r)); }
+function adminHeaders() {
+  return (window.auth && auth.getHeaders) ? auth.getHeaders() : {};
+}
+
+async function apiFetch(path, opts) {
+  opts = opts || {};
+  opts.headers = adminHeaders();
+  const r = await fetch(ADMIN_API + path, opts);
+  if (r.status === 401 || r.status === 403) { signOut(); return null; }
+  return r;
+}
 
 // ═══ AUTH CHECK ═══
-(function() {
-  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
-  if (!session || !session.token) {
-    document.getElementById('auth-gate').querySelector('.msg').textContent = 'Not authenticated. Redirecting...';
-    setTimeout(() => window.location.href = 'login.html', 1000);
-    return;
-  }
-  const users = getUsers();
-  const user = users.find(u => u.username === session.user && u.status === 'approved');
-  if (!user || user.role !== 'admin') {
-    document.getElementById('auth-gate').querySelector('.msg').textContent = 'Admin access required. Redirecting...';
-    setTimeout(() => window.location.href = 'dashboard.html', 1500);
-    return;
-  }
+requireAuth({ requireAdmin: true, onSuccess: function(s) {
   document.getElementById('auth-gate').style.display = 'none';
   document.getElementById('admin-main').style.display = 'block';
-  document.getElementById('admin-user-label').textContent = session.user + ' (admin)';
+  document.getElementById('admin-user-label').textContent = s.user + ' (admin)';
   renderAll();
-})();
+} });
 
-function renderAll() {
-  renderRequests();
+Palette.register([
+  { id: 'admin-add-user', label: 'Add New User', category: 'Admin', action: function() { document.getElementById('add-username').focus(); } },
+]);
+
+async function renderAll() {
+  try {
+    const r = await apiFetch('/api/admin/users');
+    if (!r) return;
+    _allUsers = await r.json();
+  } catch(e) { _allUsers = []; }
   renderUsers();
   renderStats();
 }
 
 function renderStats() {
-  const users = getUsers();
-  const requests = getRequests();
-  const pending = requests.filter(r => r.status === 'pending');
+  const users = _allUsers;
+  const pending = users.filter(u => u.status === 'pending');
+  const active = users.filter(u => u.status === 'active');
+  const suspended = users.filter(u => u.status === 'suspended');
   document.getElementById('stat-total').textContent = users.length;
   document.getElementById('stat-pending').textContent = pending.length;
-  document.getElementById('stat-approved').textContent = users.filter(u => u.status === 'approved').length;
-  document.getElementById('stat-declined').textContent = requests.filter(r => r.status === 'declined').length;
+  document.getElementById('stat-approved').textContent = active.length;
+  document.getElementById('stat-declined').textContent = suspended.length;
   document.getElementById('pending-badge').textContent = pending.length + ' pending';
 }
 
 function renderRequests() {
-  const requests = getRequests().filter(r => r.status === 'pending');
-  const tbody = document.getElementById('requests-body');
-  if (requests.length === 0) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No pending requests</td></tr>';
-    return;
-  }
-  tbody.innerHTML = requests.map((r, i) => `
-    <tr>
-      <td>${esc(r.name)}</td>
-      <td class="mono dim">${esc(r.email)}</td>
-      <td class="dim">${esc(r.company || '—')}</td>
-      <td class="mono">${esc(r.username)}</td>
-      <td class="dim" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.reason)}">${esc(r.reason || '—')}</td>
-      <td class="muted">${r.requestedAt ? new Date(r.requestedAt).toLocaleDateString() : '—'}</td>
-      <td>
-        <div class="action-group">
-          <button class="btn-approve" onclick="approveRequest(${i})">Approve</button>
-          <button class="btn-decline" onclick="declineRequest(${i})">Decline</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-}
-
-async function approveRequest(idx) {
-  const requests = getRequests();
-  const pending = requests.filter(r => r.status === 'pending');
-  const req = pending[idx];
-  if (!req) return;
-
-  // Prompt for a password
-  const pass = prompt(`Set password for "${req.username}":`);
-  if (!pass) return;
-
-  const users = getUsers();
-  const passHash = await hashStr(pass);
-  users.push({
-    username: req.username,
-    passwordHash: passHash,
-    role: 'user',
-    status: 'approved',
-    name: req.name,
-    email: req.email,
-    createdAt: new Date().toISOString()
-  });
-  setUsers(users);
-
-  // Update request status
-  const fullIdx = requests.findIndex(r => r.username === req.username && r.status === 'pending');
-  if (fullIdx >= 0) requests[fullIdx].status = 'approved';
-  setRequests(requests);
-
-  toast(`Approved: ${req.username}`);
-  renderAll();
-}
-
-function declineRequest(idx) {
-  const requests = getRequests();
-  const pending = requests.filter(r => r.status === 'pending');
-  const req = pending[idx];
-  if (!req) return;
-  if (!confirm(`Decline access for "${req.username}"?`)) return;
-
-  const fullIdx = requests.findIndex(r => r.username === req.username && r.status === 'pending');
-  if (fullIdx >= 0) requests[fullIdx].status = 'declined';
-  setRequests(requests);
-
-  toast(`Declined: ${req.username}`);
-  renderAll();
+  // Pending users from the backend (status=pending)
+  renderUsers();
 }
 
 function renderUsers() {
-  const users = getUsers();
+  const pending = _allUsers.filter(u => u.status === 'pending');
+  const reqTbody = document.getElementById('requests-body');
+  if (pending.length === 0) {
+    reqTbody.innerHTML = '<tr class="empty-row"><td colspan="7">No pending requests</td></tr>';
+  } else {
+    reqTbody.innerHTML = pending.map(u => `
+      <tr>
+        <td>${esc(u.name || '—')}</td>
+        <td class="mono dim">${esc(u.email || '—')}</td>
+        <td class="dim">—</td>
+        <td class="mono">${esc(u.username)}</td>
+        <td class="dim">—</td>
+        <td class="muted">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+        <td>
+          <div class="action-group">
+            <button class="btn-approve" onclick="approveUser('${u.id}')">Approve</button>
+            <button class="btn-decline" onclick="suspendUser('${u.id}')">Decline</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  const active = _allUsers.filter(u => u.status !== 'pending');
   const tbody = document.getElementById('users-body');
-  tbody.innerHTML = users.map((u, i) => `
+  if (!active.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;opacity:.5;">No users</td></tr>';
+    return;
+  }
+  tbody.innerHTML = active.map(u => `
     <tr>
       <td class="mono">${esc(u.username)}</td>
       <td>${esc(u.name || '—')}</td>
       <td class="mono dim">${esc(u.email || '—')}</td>
-      <td><span class="status-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${u.role.toUpperCase()}</span></td>
-      <td><span class="status-badge status-${u.status}">${u.status.toUpperCase()}</span></td>
-      <td class="muted">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
+      <td><span class="status-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${(u.role||'viewer').toUpperCase()}</span></td>
+      <td><span class="status-badge status-${u.status === 'active' ? 'approved' : u.status}">${(u.status||'').toUpperCase()}</span></td>
+      <td class="muted">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
       <td>
-        ${u.username !== 'admin' ? `<button class="btn-delete" onclick="deleteUser(${i})">Remove</button>` : '<span class="muted">protected</span>'}
+        ${u.role !== 'admin' ? `<button class="btn-delete" onclick="suspendUser('${u.id}')">Suspend</button>` : '<span class="muted">protected</span>'}
       </td>
     </tr>
   `).join('');
+}
+
+async function approveUser(userId) {
+  try {
+    const r = await apiFetch('/api/admin/users/' + userId + '/approve', { method: 'POST' });
+    if (!r || !r.ok) { toast('Failed to approve'); return; }
+    toast('User approved');
+    renderAll();
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+async function suspendUser(userId) {
+  if (!confirm('Suspend this user?')) return;
+  try {
+    const r = await apiFetch('/api/admin/users/' + userId + '/suspend', { method: 'POST' });
+    if (!r || !r.ok) { toast('Failed to suspend'); return; }
+    toast('User suspended');
+    renderAll();
+  } catch(e) { toast('Error: ' + e.message); }
 }
 
 async function addUser() {
@@ -626,42 +611,38 @@ async function addUser() {
 
   if (!username || !password) { toast('Username and password required'); return; }
   if (username.length < 3) { toast('Username too short'); return; }
+  if (password.length < 8) { toast('Password must be at least 8 characters'); return; }
 
-  const users = getUsers();
-  if (users.find(u => u.username === username)) { toast('Username already exists'); return; }
-
-  const passHash = await hashStr(password);
-  users.push({
-    username, passwordHash: passHash, role, status: 'approved',
-    name, email, createdAt: new Date().toISOString()
-  });
-  setUsers(users);
-
-  // Clear form
-  document.getElementById('add-username').value = '';
-  document.getElementById('add-password').value = '';
-  document.getElementById('add-name').value = '';
-  document.getElementById('add-email').value = '';
-  document.getElementById('add-role').value = 'user';
-
-  toast(`User "${username}" created`);
-  renderAll();
-}
-
-function deleteUser(idx) {
-  const users = getUsers();
-  const u = users[idx];
-  if (!u || u.username === 'admin') return;
-  if (!confirm(`Remove user "${u.username}"? This cannot be undone.`)) return;
-  users.splice(idx, 1);
-  setUsers(users);
-  toast(`Removed: ${u.username}`);
-  renderAll();
+  try {
+    // Register user via API
+    await auth.register({ username, password, email: email || undefined, name: name || undefined });
+    // Then find user and approve + set role
+    const r = await apiFetch('/api/admin/users');
+    if (r) {
+      const users = await r.json();
+      const newUser = users.find(u => u.username === username);
+      if (newUser) {
+        await apiFetch('/api/admin/users/' + newUser.id + '/approve', { method: 'POST' });
+        if (role !== 'viewer') {
+          await apiFetch('/api/admin/users/' + newUser.id + '/role', {
+            method: 'PUT',
+            body: JSON.stringify({ role })
+          });
+        }
+      }
+    }
+    document.getElementById('add-username').value = '';
+    document.getElementById('add-password').value = '';
+    document.getElementById('add-name').value = '';
+    document.getElementById('add-email').value = '';
+    document.getElementById('add-role').value = 'user';
+    toast('User "' + username + '" created');
+    renderAll();
+  } catch(e) { toast('Error: ' + e.message); }
 }
 
 function logout() {
-  localStorage.removeItem('keywordit_session');
-  window.location.href = 'login.html';
+  signOut();
 }
 
 function esc(s) {
@@ -669,17 +650,6 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Theme toggle
-(function() {
-  const saved = localStorage.getItem('keywordit-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('theme-toggle').addEventListener('click', function() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('keywordit-theme', next);
-  });
-})();
 </script>
 </body>
 </html>

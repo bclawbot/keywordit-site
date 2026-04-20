@@ -23,19 +23,11 @@ Output schema per keyword:
 """
 
 import json
-import os
 import re
 import sys
 import time
-import requests
 
-# ── Config ──────────────────────────────────────────────────────────────────
-LITELLM_URL     = os.environ.get("LITELLM_URL",    "http://localhost:4000/v1/chat/completions")
-LITELLM_API_KEY = os.environ.get("LITELLM_API_KEY", "sk-dwight-local")
-LITELLM_MODEL   = os.environ.get("LITELLM_MODEL",   "dwight-primary")
-
-OLLAMA_URL      = "http://localhost:11434/api/generate"
-OLLAMA_MODEL    = os.environ.get("OLLAMA_MODEL", "qwen3:14b")
+from llm_client import call as _llm_call, LLMError
 
 BATCH_SIZE      = 30    # keywords per LLM call (20-50 per spec)
 MAX_RETRIES     = 3
@@ -77,48 +69,6 @@ Output: [
 
 def _strip_code_fences(text: str) -> str:
     return re.sub(r'^```json?\n?|\n?```$', '', text.strip(), flags=re.MULTILINE)
-
-
-def _call_litellm(keywords_json: str) -> str:
-    """Call LiteLLM proxy with decomposition prompt."""
-    resp = requests.post(
-        LITELLM_URL,
-        headers={"Authorization": f"Bearer {LITELLM_API_KEY}"},
-        json={
-            "model": LITELLM_MODEL,
-            "messages": [
-                {"role": "system", "content": _DECOMPOSE_SYSTEM},
-                {"role": "user",   "content": f"Analyze these keywords:\n{keywords_json}"},
-            ],
-            "temperature": 0.1,
-            "max_tokens":  4096,
-        },
-        timeout=120,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
-
-
-def _call_ollama(keywords_json: str) -> str:
-    """Direct Ollama fallback."""
-    prompt = (
-        f"{_DECOMPOSE_SYSTEM}\n\n"
-        f"Analyze these keywords:\n{keywords_json}\n\n"
-        "/no_think"
-    )
-    resp = requests.post(
-        OLLAMA_URL,
-        json={
-            "model":      OLLAMA_MODEL,
-            "prompt":     prompt,
-            "stream":     False,
-            "keep_alive": -1,
-            "options": {"num_ctx": 32768, "temperature": 0.1, "num_predict": 4096},
-        },
-        timeout=180,
-    )
-    resp.raise_for_status()
-    return resp.json().get("response", "")
 
 
 def _safe_fields(item: dict, keyword: str) -> dict:
@@ -176,13 +126,14 @@ def decompose_batch(keywords: list, country: str = "US") -> list:
 
         for attempt in range(MAX_RETRIES):
             try:
-                # Try LiteLLM first, fall back to direct Ollama
-                try:
-                    raw = _call_litellm(batch_json)
-                except Exception as litellm_err:
-                    print(f"  [decomposer] LiteLLM failed ({litellm_err}), trying Ollama…",
-                          file=sys.stderr)
-                    raw = _call_ollama(batch_json)
+                raw = _llm_call(
+                    [{"role": "system", "content": _DECOMPOSE_SYSTEM},
+                     {"role": "user", "content": f"Analyze these keywords:\n{batch_json}"}],
+                    max_tokens=4096,
+                    temperature=0.1,
+                    timeout="normal",
+                    stage="template_decomposer",
+                )
 
                 cleaned = _strip_code_fences(raw)
 
@@ -200,7 +151,7 @@ def decompose_batch(keywords: list, country: str = "US") -> list:
 
                 break  # success
 
-            except Exception as e:
+            except (Exception, LLMError) as e:
                 last_error = e
                 if attempt < MAX_RETRIES - 1:
                     time.sleep(RETRY_DELAY)
@@ -214,7 +165,11 @@ def decompose_batch(keywords: list, country: str = "US") -> list:
         # Align parsed results to batch keywords (handle length mismatches)
         for i, kw in enumerate(batch):
             if i < len(parsed):
-                results.append(_safe_fields(parsed[i], kw))
+                item = parsed[i]
+                if not isinstance(item, dict):
+                    results.append(_fallback_entries([kw])[0])
+                else:
+                    results.append(_safe_fields(item, kw))
             else:
                 results.append(_fallback_entries([kw])[0])
 

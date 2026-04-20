@@ -74,7 +74,7 @@ client_config = {
         "client_secret": CLIENT_SECRET,
         "auth_uri":      "https://accounts.google.com/o/oauth2/auth",
         "token_uri":     "https://oauth2.googleapis.com/token",
-        "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob", "http://localhost"],
+        "redirect_uris": ["http://localhost:8080", "http://localhost"],
     }
 }
 
@@ -82,40 +82,26 @@ print("=" * 60)
 print("  Google Ads API — OAuth2 Setup")
 print("=" * 60)
 print()
-print("Step 1: Opening authorization URL in your browser...")
-print("        (If it doesn't open automatically, copy-paste the URL below)")
-print()
+print("Step 1: Starting local OAuth server on http://localhost:8080 ...")
+print("        (Google Cloud Console must have http://localhost:8080 in Authorized redirect URIs,")
+print("         OR your OAuth client type must be 'Desktop app')")
 
 flow = InstalledAppFlow.from_client_config(client_config, scopes=SCOPES)
-flow.redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
 
-auth_url, _ = flow.authorization_url(
-    access_type="offline",
-    prompt="consent",
-    include_granted_scopes="true",
-)
-
-print(f"Authorization URL:\n  {auth_url}\n")
-try:
-    webbrowser.open(auth_url)
-except Exception:
-    pass
-
-print("Step 2: Authorize access in the browser.")
-print("        After you approve, Google will show you an authorization code.")
+print("Step 2: A browser window will open. Authorize access and wait for the")
+print("        'Authentication complete' page — then return here.")
 print()
-auth_code = input("Step 3: Paste the authorization code here: ").strip()
-
-print()
-print("Exchanging code for refresh token...")
 
 try:
-    flow.fetch_token(code=auth_code)
+    credentials = flow.run_local_server(
+        port=8080,
+        access_type="offline",
+        prompt="consent",
+        open_browser=True,
+    )
 except Exception as e:
-    print(f"❌  Token exchange failed: {e}")
+    print(f"❌  OAuth flow failed: {e}")
     sys.exit(1)
-
-credentials = flow.credentials
 refresh_token = credentials.refresh_token
 
 if not refresh_token:

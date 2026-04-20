@@ -3,12 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit · Intelligence Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+<link rel="stylesheet" href="shared/base.css">
 <style>
 /* ============================================================
    THEME VARIABLES
@@ -64,6 +67,10 @@
 
   --shadow-dropdown: 0 12px 40px rgba(0,0,0,0.7);
   --chart-grid: #1a1a22;
+  
+  /* Transformation indicators */
+  --transform-accent: #8b5cf6;
+  --transform-dim: rgba(139,92,246,0.12);
 }
 
 /* ── LIGHT THEME ── */
@@ -577,11 +584,7 @@ tr:hover .copy-btn { opacity: 1; }
 .rsoc-high { color: #22c55e; font-weight: 600; }
 .rsoc-mid  { color: #f59e0b; }
 .rsoc-low  { color: var(--text-muted); }
-.intent-badge { display:inline-block; font-size:9px; padding:1px 4px; border-radius:3px; margin-left:4px; font-weight:600; vertical-align:middle; }
-.intent-com { background:rgba(59,130,246,0.15); color:#3b82f6; }
-.intent-txn { background:rgba(34,197,94,0.15); color:#22c55e; }
-.intent-inf { background:rgba(107,114,128,0.12); color:#6b7280; }
-.intent-nav { background:rgba(239,68,68,0.12); color:#ef4444; }
+/* first .intent-badge block removed — duplicate of block at ~line 629 */
 .tag-UNSCORED { background: var(--bg-elevated); color: var(--text-tertiary); border: 1px solid var(--border); }
 
 /* CPC coloring */
@@ -620,10 +623,76 @@ tr:hover .copy-btn { opacity: 1; }
 .trend-other { background: var(--bg-elevated); color: var(--text-secondary); }
 
 /* Intent badges */
-.intent-badge { display:inline-block; font-size:8px; font-family:var(--font-mono); font-weight:700; padding:1px 4px; border-radius:2px; margin-left:4px; vertical-align:middle; letter-spacing:0.05em; }
-.intent-trx { background:var(--c-amber-dim); color:var(--c-amber); }
-.intent-com { background:var(--c-green-dim); color:var(--c-green); }
-.intent-nav { background:var(--c-cyan-dim); color:var(--c-cyan); }
+.intent-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.intent-trx { background: var(--c-green-dim); color: var(--c-green); }
+.intent-com { background: var(--c-cyan-dim); color: var(--c-cyan); }
+.intent-nav { background: var(--c-purple-dim); color: var(--c-purple); }
+.intent-inf { background: var(--c-gray-dim); color: var(--c-gray); }
+
+/* Transformation badge */
+.transform-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-left: 6px;
+  vertical-align: middle;
+  background: var(--transform-dim);
+  color: var(--transform-accent);
+  cursor: help;
+}
+.transform-badge:hover {
+  background: rgba(139,92,246,0.18);
+}
+
+/* Transformation tooltip */
+.transform-tooltip {
+  position: absolute;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 11px;
+  max-width: 300px;
+  z-index: 1000;
+  box-shadow: var(--shadow-dropdown);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.transform-tooltip.visible {
+  opacity: 1;
+}
+.transform-tooltip-label {
+  color: var(--text-tertiary);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.transform-tooltip-value {
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.transform-tooltip-relationship {
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.4;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
 
 /* Ads badge */
 .ads-badge { display:inline-block; font-size:8px; font-family:var(--font-mono); font-weight:700; color:var(--c-amber); border:1px solid rgba(245,158,11,0.3); padding:0px 3px; border-radius:2px; margin-right:3px; }
@@ -652,6 +721,25 @@ tr:hover .copy-btn { opacity: 1; }
 .group-seed-label { font-family:var(--font-mono); font-size:11px; color:var(--accent); }
 .group-meta { font-size:10px; color:var(--text-tertiary); font-family:var(--font-mono); margin-left:8px; }
 
+/* Inline angle expansion panel */
+.angle-panel-row td { padding:0 !important; background:var(--bg-elevated); border-bottom:2px solid var(--accent); }
+.angle-panel { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; padding:12px 14px; box-sizing:border-box; }
+.angle-card { min-width:0; background:var(--bg-raised); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:10px 12px; display:flex; flex-direction:column; gap:6px; overflow:hidden; }
+.angle-type-badge { font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.06em; color:var(--accent); }
+.angle-card-title { font-size:12px; color:var(--text-primary); line-height:1.3; flex-grow:1; overflow-wrap:break-word; word-break:break-word; min-width:0; }
+.angle-card-meta { font-family:var(--font-mono); font-size:10px; color:var(--text-tertiary); }
+.angle-gen-btn { margin-top:4px; padding:4px 10px; font-size:11px; background:var(--accent); color:#000; border:none; border-radius:var(--radius-sm); cursor:pointer; font-weight:600; white-space:nowrap; }
+.angle-gen-btn:disabled { opacity:.6; cursor:default; }
+.angle-copy-btn { margin-top:4px; margin-right:4px; padding:4px 8px; font-size:11px; background:transparent; color:var(--text-secondary); border:1px solid var(--border-light); border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap; }
+.angle-copy-btn:hover { border-color:var(--accent); color:var(--accent); }
+.angle-article-area { display:none; margin-top:8px; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:12px; font-size:13px; line-height:1.6; color:var(--text-primary); white-space:pre-wrap; max-height:420px; overflow-y:auto; font-family:var(--font-sans); }
+.angle-article-toolbar { display:none; gap:6px; margin-top:6px; flex-wrap:wrap; }
+.angle-article-toolbar.visible { display:flex; }
+.art-action-btn { padding:3px 9px; font-size:11px; background:transparent; color:var(--text-secondary); border:1px solid var(--border-light); border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap; }
+.art-action-btn:hover { border-color:var(--accent); color:var(--accent); }
+tr.angle-expanded > td:first-child { position:relative; }
+tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; left:2px; color:var(--accent); font-size:10px; }
+
 /* Sentinel & loading */
 #table-sentinel { height: 40px; }
 #loading-more {
@@ -673,6 +761,11 @@ tr:hover .copy-btn { opacity: 1; }
 }
 #empty-state .empty-title { font-size: 15px; color: var(--text-secondary); font-weight: 500; }
 #empty-state .empty-sub { font-size: 12px; }
+
+#data-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:var(--text-muted);gap:12px;}
+#data-loading .spinner{width:24px;height:24px;border-width:3px;}
+#data-loading .load-text{font-size:13px;font-family:var(--font-mono);}
+#data-loading.hidden{display:none;}
 
 /* ============================================================
    DETAIL DRAWER
@@ -944,7 +1037,112 @@ tr:hover .copy-btn { opacity: 1; }
   letter-spacing: 0.04em;
 }
 .btn-signout:hover { border-color: var(--c-red); color: var(--c-red); }
-__EXTRA_CSS__
+/* ── TAB NAVIGATION ── */
+.tab-nav {
+  display: flex; gap: 0; padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+.tab-btn {
+  padding: 10px 20px; border: none; background: none;
+  color: var(--text-secondary); font-family: var(--font-mono);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  transition: all var(--transition-fast);
+}
+.tab-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.tab-btn.active { color: var(--accent-text); border-bottom-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── EXPERIMENTAL TAB ── */
+.exp-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+.exp-header h2 { margin: 0 0 6px; font-family: var(--font-mono); font-size: 14px; color: var(--accent-text); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.exp-header .exp-stats { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); line-height: 1.7; }
+.exp-header .exp-stats span { color: var(--text-primary); font-weight: 500; }
+
+.exp-filters { display: flex; gap: 8px; padding: 12px 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+.exp-filter-btn { padding: 5px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-raised); color: var(--text-secondary); font-family: var(--font-mono); font-size: 11px; cursor: pointer; transition: all var(--transition-fast); }
+.exp-filter-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+.exp-filter-btn.active { border-color: var(--accent); color: var(--accent-text); background: var(--accent-dim); }
+.exp-sort-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); margin-left: auto; }
+.exp-sort-label select { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary); font-family: var(--font-mono); font-size: 11px; padding: 4px 8px; border-radius: var(--radius-sm); }
+
+.exp-section { padding: 16px 24px; }
+.exp-section-title { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+
+/* Template group cards */
+.tmpl-group { background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 10px; }
+.tmpl-group:hover { border-color: var(--border-light); }
+.tmpl-pattern { font-family: var(--font-mono); font-size: 12px; color: var(--accent-text); margin-bottom: 4px; }
+.tmpl-source { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; }
+.tmpl-source .revenue { color: var(--c-green); font-weight: 500; }
+.tmpl-expansions { list-style: none; padding: 0; margin: 0; }
+.tmpl-expansions li { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-family: var(--font-mono); font-size: 11px; color: var(--text-primary); border-left: 2px solid var(--border); padding-left: 12px; margin-left: 4px; }
+.tmpl-expansions li:last-child { border-left-color: var(--border); }
+.tmpl-expansions .kw-name { flex: 1; }
+.tmpl-expansions .cpc-val { min-width: 60px; text-align: right; }
+
+.badge-confirmed { background: rgba(245,158,11,0.15); border: 1px solid var(--c-amber); color: var(--c-amber); padding: 1px 7px; border-radius: 3px; font-family: var(--font-mono); font-size: 10px; font-weight: 500; white-space: nowrap; }
+.badge-inherited { background: var(--bg-elevated); border: 1px solid var(--border-light); color: var(--text-tertiary); padding: 1px 7px; border-radius: 3px; font-family: var(--font-mono); font-size: 10px; white-space: nowrap; }
+
+/* Entity scoreboard */
+.entity-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 11px; }
+.entity-table th { text-align: left; padding: 6px 10px; color: var(--text-tertiary); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); }
+.entity-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+.entity-table tr:hover td { background: var(--bg-hover); }
+.entity-status-new { color: var(--c-amber); }
+.entity-status-new::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--c-amber); margin-right: 6px; animation: pulse 2s infinite; }
+.entity-status-proven { color: var(--c-green); }
+.entity-status-test { color: var(--text-tertiary); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* Discovered entities */
+.disc-entity { background: var(--bg-raised); border: 1px solid var(--border); border-left: 3px solid var(--c-amber); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 8px; }
+.disc-entity .disc-title { font-family: var(--font-mono); font-size: 12px; color: var(--c-amber); margin-bottom: 4px; }
+.disc-entity .disc-detail { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); line-height: 1.6; }
+
+.exp-empty { padding: 40px 24px; text-align: center; color: var(--text-tertiary); font-family: var(--font-mono); font-size: 12px; }
+
+/* ── PERFORMANCE TAB ── */
+.perf-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+.perf-header h2 { margin: 0 0 6px; font-family: var(--font-mono); font-size: 14px; color: var(--c-purple); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.perf-header .perf-stats { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); line-height: 1.7; }
+.perf-header .perf-stats span { color: var(--text-primary); font-weight: 500; }
+
+.perf-section { padding: 16px 24px; }
+.perf-section-title { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+
+.perf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.perf-metric { background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; }
+.perf-metric .pm-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.perf-metric .pm-value { font-family: var(--font-mono); font-size: 18px; color: var(--text-primary); font-weight: 600; }
+.perf-metric .pm-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+
+.perf-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-family: var(--font-mono); font-size: 11px; }
+.perf-bar-label { min-width: 200px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.perf-bar-track { flex: 1; height: 8px; background: var(--bg-elevated); border-radius: 4px; overflow: hidden; }
+.perf-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+.perf-bar-fill.high { background: var(--c-amber); }
+.perf-bar-fill.mid { background: var(--text-primary); }
+.perf-bar-fill.low { background: var(--text-tertiary); }
+.perf-bar-pct { min-width: 50px; text-align: right; color: var(--text-secondary); }
+
+.perf-alert { background: var(--c-amber-dim); border: 1px solid var(--c-amber); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--c-amber); }
+.perf-alert-error { background: var(--c-red-dim); border-color: var(--c-red); color: var(--c-red); }
+
+.perf-promo-card { background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.perf-promo-info { font-family: var(--font-mono); font-size: 11px; color: var(--text-primary); }
+.perf-promo-btn { padding: 5px 12px; border: 1px solid var(--c-green); border-radius: var(--radius-sm); background: rgba(34,197,94,0.1); color: var(--c-green); font-family: var(--font-mono); font-size: 10px; cursor: pointer; transition: all var(--transition-fast); }
+.perf-promo-btn:hover { background: rgba(34,197,94,0.2); }
+.perf-demo-btn { padding: 5px 12px; border: 1px solid var(--c-red); border-radius: var(--radius-sm); background: rgba(239,68,68,0.1); color: var(--c-red); font-family: var(--font-mono); font-size: 10px; cursor: pointer; transition: all var(--transition-fast); }
+.perf-demo-btn:hover { background: rgba(239,68,68,0.2); }
+
+.perf-awaiting { padding: 60px 24px; text-align: center; }
+.perf-awaiting h3 { font-family: var(--font-mono); font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; }
+.perf-awaiting p { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); line-height: 1.8; }
+.perf-awaiting code { background: var(--bg-elevated); padding: 2px 8px; border-radius: 3px; color: var(--accent-text); }
 </style>
 </head>
 <body>
@@ -1015,12 +1213,12 @@ __EXTRA_CSS__
       <svg class="search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
         <circle cx="7" cy="7" r="4.5"/><line x1="10.5" y1="10.5" x2="14" y2="14"/>
       </svg>
-      <input type="text" id="global-search" placeholder="Search keywords, verticals, countries... ( / )" autocomplete="off" spellcheck="false">
-      <button class="search-clear" id="search-clear-btn" title="Clear search">&times;</button>
+      <input type="text" id="global-search" placeholder="Search keywords, verticals, countries... ( / )" autocomplete="off" spellcheck="false" aria-label="Search keywords">
+      <button class="search-clear" id="search-clear-btn" title="Clear search" aria-label="Clear search">&times;</button>
     </div>
   </div>
   <div class="cmd-right">
-    <button class="btn-cmd" id="filter-toggle">
+    <button class="btn-cmd" id="filter-toggle" aria-expanded="false">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="4" x2="14" y2="4"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="6" y1="12" x2="10" y2="12"/></svg>
       Filters <span id="filter-active-count" class="badge-count hidden">0</span>
     </button>
@@ -1042,15 +1240,17 @@ __EXTRA_CSS__
         <div class="dropdown-item" id="export-json">Export JSON</div>
       </div>
     </div>
-    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
       <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
       <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
     </button>
+    <button class="btn-cmd" onclick="window.location.href='intelligence.html'">Intel</button>
     <button class="btn-cmd" id="admin-link-btn" style="display:none" onclick="window.location.href='admin.html'">Admin</button>
     <button class="btn-signout" id="signout-btn" onclick="signOut()">Sign Out</button>
   </div>
 </div>
 __TAB_NAV__
+<div id="tab-discovery" class="tab-content active">
 
 <!-- ═══════ KPI STRIP ═══════ -->
 <div id="kpi-strip">
@@ -1127,10 +1327,10 @@ __TAB_NAV__
 
 <!-- ═══════ FILTER PANEL (overlay) ═══════ -->
 <div id="filter-overlay"></div>
-<div id="filter-panel">
+<div id="filter-panel" role="dialog" aria-label="Advanced Filters">
   <div class="fp-header">
     <span class="fp-title">Advanced Filters</span>
-    <button class="fp-close" id="fp-close-btn">&times;</button>
+    <button class="fp-close" id="fp-close-btn" aria-label="Close">&times;</button>
   </div>
   <div class="fp-inner">
     <div class="fp-section-title">Tag</div>
@@ -1142,6 +1342,11 @@ __TAB_NAV__
       <div class="fp-row"><input type="checkbox" id="ft-LOW" value="LOW"><label for="ft-LOW">LOW</label></div>
       <div class="fp-row"><input type="checkbox" id="ft-GATED" value="GATED"><label for="ft-GATED">GATED</label></div>
       <div class="fp-row"><input type="checkbox" id="ft-UNSCORED" value="UNSCORED"><label for="ft-UNSCORED">UNSCORED</label></div>
+    </div>
+
+    <div class="fp-section-title">Keyword Type</div>
+    <div id="filter-keyword-type">
+      <div class="fp-row"><input type="checkbox" id="ft-transformed" value="transformed"><label for="ft-transformed">🔄 Transformed Keywords Only</label></div>
     </div>
 
     <div class="fp-section-title">Vertical</div>
@@ -1227,7 +1432,8 @@ __TAB_NAV__
         <span id="sort-indicator" style="color:var(--text-muted);font-size:10px;font-family:var(--font-mono)"></span>
       </div>
     </div>
-    <div id="table-scroll-wrap">
+    <div id="data-loading"><div class="spinner"></div><div class="load-text">Loading opportunity data...</div></div>
+    <div id="table-scroll-wrap" class="hidden">
       <table id="opportunity-table">
         <thead id="table-head"></thead>
         <tbody id="table-body"></tbody>
@@ -1242,47 +1448,30 @@ __TAB_NAV__
   </div>
 
   <!-- DETAIL DRAWER -->
-  <div id="detail-drawer">
+  <div id="detail-drawer" role="dialog" aria-label="Keyword details">
     <div id="drawer-body"></div>
     <div id="drawer-actions">
       <button class="btn-primary" id="drawer-copy-btn">Copy Keyword</button>
-      <button class="btn-secondary" id="drawer-close-btn">Close</button>
+      <button class="btn-secondary" id="drawer-close-btn" aria-label="Close">Close</button>
     </div>
   </div>
 </div>
+</div><!-- /tab-discovery -->
 
+<script src="shared/theme.js"></script>
+<script src="shared/auth.js"></script>
+<script src="shared/palette.js"></script>
 <script>
 // ═══ AUTH GATE ═══
-(function() {
-  const gate = document.getElementById('auth-gate');
-  const gateMsg = document.getElementById('gate-msg');
-  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
-
-  if (!session || !session.token) {
-    gateMsg.textContent = 'Not authenticated. Redirecting to login...';
-    setTimeout(() => window.location.href = 'login.html', 1200);
-    return;
-  }
-
-  const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-  const user = users.find(u => u.username === session.user && u.status === 'approved');
-
-  if (!user) {
-    gateMsg.textContent = 'Access denied. Redirecting...';
-    localStorage.removeItem('keywordit_session');
-    setTimeout(() => window.location.href = 'login.html', 1200);
-    return;
-  }
-
-  // Authenticated — show dashboard
+requireAuth({ onSuccess: function(s) {
+  var gate = document.getElementById('auth-gate');
   gate.classList.add('hidden');
-
   // Show admin button if admin
-  if (user.role === 'admin') {
-    const adminBtn = document.getElementById('admin-link-btn');
+  if (s.role === 'admin') {
+    var adminBtn = document.getElementById('admin-link-btn');
     if (adminBtn) adminBtn.style.display = '';
   }
-})();
+} });
 
 function signOut() {
   localStorage.removeItem('keywordit_session');
@@ -1291,8 +1480,25 @@ function signOut() {
 </script>
 
 <script>
-window.OPPORTUNITIES = __DATA__;
+window.OPPORTUNITIES = [];
 window.PIPELINE_META = __META__;
+window.ANGLES = {};
+
+(function() {
+  var meta = window.PIPELINE_META || {};
+  var ver = '?v=' + (meta.run_id || Date.now());
+  fetch('data/opportunities.json' + ver)
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      window.OPPORTUNITIES = data;
+      document.dispatchEvent(new CustomEvent('opportunities-loaded'));
+    })
+    .catch(function(err) {
+      console.error('Failed to load opportunities:', err);
+      var el = document.querySelector('#data-loading .load-text');
+      if (el) el.textContent = 'Failed to load data. Try refreshing.';
+    });
+})();
 
 (function() {
 'use strict';
@@ -1310,11 +1516,12 @@ const S = {
     confidence: 'all',
     sources: [],           // trend sources
     metricsSources: [],    // metrics sources (gkp, dfs, none, deferred)
-    dateFrom: '', dateTo: ''
+    dateFrom: '', dateTo: '',
+    showTransformedOnly: false,
   },
   // Column header filters (multi-select per column)
   colFilters: {},
-  visibleCols: new Set(['#','keyword','tag','country','vertical','cpc_usd','search_volume','opportunity_score','metrics_source','trend_source_col','rsoc_score','kd','main_intent','trend_monthly']),
+  visibleCols: new Set(['#','keyword','tag','country','vertical','cpc_usd','search_volume','rpc_display','opportunity_score','metrics_source','trend_source_col','rsoc_score','kd','main_intent','trend_monthly']),
   renderOffset: 0,
   pageSize: 60,
   drawerItem: null,
@@ -1323,7 +1530,8 @@ const S = {
   groupBySeed: false,
   focusedRowIdx: -1,
   charts: {},
-  openHeaderFilter: null
+  openHeaderFilter: null,
+  sliderMax: { cpc: 0, vol: 0, score: 0 }
 };
 
 // ===== COLUMNS =====
@@ -1335,6 +1543,7 @@ const COLUMNS = [
   { key: 'vertical',          label: 'Vertical',     sortKey: 'vertical',          defaultVisible: true,  filterable: true, filterType: 'set' },
   { key: 'cpc_usd',          label: 'CPC',          sortKey: 'cpc_usd',           defaultVisible: true,  filterable: false },
   { key: 'search_volume',    label: 'Volume',       sortKey: 'search_volume',     defaultVisible: true,  filterable: false },
+  { key: 'rpc_display',      label: 'Exp RPC',      sortKey: 'rpc_display',       defaultVisible: true,  filterable: false },
   { key: 'opportunity_score', label: 'Opp Score',    sortKey: 'opportunity_score', defaultVisible: true,  filterable: false },
   { key: 'metrics_source',   label: 'Data Src',     sortKey: 'metrics_source',    defaultVisible: true,  filterable: true, filterType: 'set' },
   { key: 'trend_source_col', label: 'Trend',        sortKey: 'source_trend',      defaultVisible: true,  filterable: true, filterType: 'set' },
@@ -1348,6 +1557,7 @@ const COLUMNS = [
   { key: 'rsoc_score',      label: 'RSOC Score',   sortKey: 'rsoc_score',        defaultVisible: true,  filterable: false },
   { key: 'kd',              label: 'KD',           sortKey: 'kd',                defaultVisible: true,  filterable: false },
   { key: 'main_intent',     label: 'Intent',       sortKey: 'main_intent',       defaultVisible: true,  filterable: true, filterType: 'set' },
+  { key: 'transformed',     label: 'Transformed',  sortKey: 'transformed_at',    defaultVisible: false, filterable: true, filterType: 'set' },
   { key: 'ssr',             label: 'SSR',          sortKey: 'ssr',               defaultVisible: false, filterable: false },
   { key: 'trend_monthly',   label: 'Trend MoM',    sortKey: 'trend_monthly',     defaultVisible: true,  filterable: false },
   { key: 'kvsi',            label: 'KVSI',         sortKey: 'kvsi',              defaultVisible: false, filterable: false },
@@ -1422,6 +1632,7 @@ function getColValue(item, key) {
     case 'trend_source_col': return trendLabel(item);
     case 'country_tier': return item.country_tier ? 'T'+item.country_tier : '—';
     case 'tag': return (item.tag || 'UNSCORED').toUpperCase();
+    case 'transformed': return item.transformed_at ? 'Yes' : 'No';
     default: return item[key] || '—';
   }
 }
@@ -1439,11 +1650,52 @@ function copyToClipboard(text) {
 }
 
 // ===== INIT =====
-document.addEventListener('DOMContentLoaded', () => {
+function initDashboard() {
   S.all = Array.isArray(window.OPPORTUNITIES) ? window.OPPORTUNITIES : [];
+
+  // ── KPI strip ──
+  const setKpi = (id, val, sub) => {
+    const card = document.getElementById(id);
+    if (!card) return;
+    card.querySelector('.kpi-value').textContent = val ?? '—';
+    if (sub != null) card.querySelector('.kpi-sub').textContent = sub;
+  };
+  const meta2 = window.PIPELINE_META || {};
+  const scored = S.all.filter(x => x.cpc_usd > 0);
+  const avgCpc = scored.length ? scored.reduce((s,x) => s + (parseFloat(x.cpc_usd)||0), 0) / scored.length : 0;
+  const avgScore = scored.length ? scored.reduce((s,x) => s + (parseFloat(x.opportunity_score)||0), 0) / scored.length : 0;
+  const bestRpm = Math.max(...S.all.map(x => parseFloat(x.estimated_rpm)||0), 0);
+  const fresh24h = S.all.filter(x => {
+    const ts = x.validated_at || x.processed_at || '';
+    return ts && (Date.now() - new Date(ts)) < 86400000;
+  }).length;
+  setKpi('kv-total', meta2.total_validated ?? S.all.length);
+  setKpi('kv-golden', meta2.total_golden ?? S.all.filter(x=>x.tag==='GOLDEN_OPPORTUNITY'||x.tag==='GOLDEN').length);
+  setKpi('kv-emerging', meta2.total_emerging ?? S.all.filter(x=>x.tag==='EMERGING'||x.tag==='EMERGING_HIGH').length);
+  setKpi('kv-countries', meta2.countries_covered ?? new Set(S.all.map(x=>x.country)).size);
+  setKpi('kv-avgcpc', avgCpc > 0 ? fmtCpc(avgCpc) : '—');
+  setKpi('kv-avgscore', avgScore > 0 ? fmtScore(avgScore) : '—');
+  setKpi('kv-bestrpm', bestRpm > 0 ? fmtCpc(bestRpm) : '—');
+  setKpi('kv-fresh', fresh24h);
+
+  // ── Hide loading, show table ──
+  document.getElementById('data-loading').classList.add('hidden');
+  document.getElementById('table-scroll-wrap').classList.remove('hidden');
+
+  // ── Init chain (order matters) ──
+  buildColDropdown();
+  buildFilterPanel();
+  restoreFromHash();
+  applyFilters();
+  renderTable();
+  buildCharts();
+  bindEvents();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
   const meta = window.PIPELINE_META || {};
 
-  // ── System status bar ──
+  // ── System status bar (uses only meta, available immediately) ──
   const lastRun = meta.last_run_at || '';
   const hoursSince = lastRun ? (Date.now() - new Date(lastRun)) / 3600000 : Infinity;
   const hbDot = document.getElementById('sys-heartbeat-dot');
@@ -1457,65 +1709,33 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('sys-dfs-count').textContent = meta.metrics_from_dataforseo || 0;
   document.getElementById('sys-unscored-count').textContent = meta.total_unscored || 0;
   const unscored = meta.total_unscored || 0;
-  const total = meta.total_validated || S.all.length;
+  const total = meta.total_validated || 0;
   if (unscored > total * 0.5) {
     document.getElementById('sys-errors-dot').className = 'sys-dot warn';
     document.getElementById('sys-errors-text').textContent = 'High unscored';
   }
   document.getElementById('sys-generated-at').textContent = meta.generated_at ? 'Generated ' + timeAgo(meta.generated_at) : '';
 
-  // ── KPI strip ──
-  const setKpi = (id, val, sub) => {
-    const card = document.getElementById(id);
-    if (!card) return;
-    card.querySelector('.kpi-value').textContent = val ?? '—';
-    if (sub != null) card.querySelector('.kpi-sub').textContent = sub;
-  };
-  const scored = S.all.filter(x => x.cpc_usd > 0);
-  const avgCpc = scored.length ? scored.reduce((s,x) => s + (parseFloat(x.cpc_usd)||0), 0) / scored.length : 0;
-  const avgScore = scored.length ? scored.reduce((s,x) => s + (parseFloat(x.opportunity_score)||0), 0) / scored.length : 0;
-  const bestRpm = Math.max(...S.all.map(x => parseFloat(x.estimated_rpm)||0), 0);
-  const fresh24h = S.all.filter(x => {
-    const ts = x.validated_at || x.processed_at || '';
-    return ts && (Date.now() - new Date(ts)) < 86400000;
-  }).length;
-  setKpi('kv-total', meta.total_validated ?? S.all.length);
-  setKpi('kv-golden', meta.total_golden ?? S.all.filter(x=>x.tag==='GOLDEN_OPPORTUNITY'||x.tag==='GOLDEN').length);
-  setKpi('kv-emerging', meta.total_emerging ?? S.all.filter(x=>x.tag==='EMERGING'||x.tag==='EMERGING_HIGH').length);
-  setKpi('kv-countries', meta.countries_covered ?? new Set(S.all.map(x=>x.country)).size);
-  setKpi('kv-avgcpc', avgCpc > 0 ? fmtCpc(avgCpc) : '—');
-  setKpi('kv-avgscore', avgScore > 0 ? fmtScore(avgScore) : '—');
-  setKpi('kv-bestrpm', bestRpm > 0 ? fmtCpc(bestRpm) : '—');
-  setKpi('kv-fresh', fresh24h);
-
-  // ── Init ──
-  buildColDropdown();
-  buildFilterPanel();
-  restoreFromHash();
-  applyFilters();
-  renderTable();
-  buildCharts();
-  bindEvents();
+  // ── Wait for async data, then init ──
+  if (window.OPPORTUNITIES.length > 0) {
+    initDashboard();
+  } else {
+    document.addEventListener('opportunities-loaded', initDashboard, { once: true });
+  }
 });
 
-// ===== THEME =====
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('keywordit-theme', next);
-  // Rebuild charts with new colors
-  if (S.chartsOpen) {
-    Object.values(S.charts).forEach(c => c.destroy());
-    S.charts = {};
-    buildCharts();
-    updateCharts();
-  }
-}
-// Restore theme on load
+// ===== THEME (chart rebuild on theme change) =====
+// theme.js handles the actual toggle; we just rebuild charts when it changes
 (function() {
-  const saved = localStorage.getItem('keywordit-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  var observer = new MutationObserver(function() {
+    if (S.chartsOpen) {
+      Object.values(S.charts).forEach(function(c) { c.destroy(); });
+      S.charts = {};
+      buildCharts();
+      updateCharts();
+    }
+  });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 })();
 
 // ===== COLUMN DROPDOWN =====
@@ -1594,18 +1814,21 @@ function buildFilterPanel() {
     document.getElementById('slider-cpc').noUiSlider.on('update', v => { document.getElementById('cpc-min-label').textContent = parseFloat(v[0]).toFixed(1); document.getElementById('cpc-max-label').textContent = parseFloat(v[1]).toFixed(1); });
     document.getElementById('slider-cpc').noUiSlider.on('change', onFilterChange);
     S.filters.cpcRange = [0, maxCpc];
+    S.sliderMax.cpc = maxCpc;
   }
   if (maxVol > 0) {
     noUiSlider.create(document.getElementById('slider-volume'), { start: [0, maxVol], connect: true, range: { min: 0, max: maxVol }, step: Math.max(100, Math.floor(maxVol/100)) });
     document.getElementById('slider-volume').noUiSlider.on('update', v => { document.getElementById('vol-min-label').textContent = fmtNum(v[0]); document.getElementById('vol-max-label').textContent = fmtNum(v[1]); });
     document.getElementById('slider-volume').noUiSlider.on('change', onFilterChange);
     S.filters.volRange = [0, maxVol];
+    S.sliderMax.vol = maxVol;
   }
   if (maxScore > 0) {
     noUiSlider.create(document.getElementById('slider-score'), { start: [0, maxScore], connect: true, range: { min: 0, max: maxScore }, step: 0.1 });
     document.getElementById('slider-score').noUiSlider.on('update', v => { document.getElementById('score-min-label').textContent = parseFloat(v[0]).toFixed(1); document.getElementById('score-max-label').textContent = parseFloat(v[1]).toFixed(1); });
     document.getElementById('slider-score').noUiSlider.on('change', onFilterChange);
     S.filters.scoreRange = [0, maxScore];
+    S.sliderMax.score = maxScore;
   }
 
   const runDates = (window.PIPELINE_META && window.PIPELINE_META.run_dates) || [];
@@ -1709,6 +1932,20 @@ function renderActiveFilters() {
     });
   });
 
+  // Slider range filters
+  const [cpcMin, cpcMax] = S.filters.cpcRange;
+  if (S.sliderMax.cpc > 0 && (cpcMin > 0 || cpcMax < S.sliderMax.cpc)) {
+    pills.push({ type: 'slider-cpc', label: `CPC: $${cpcMin.toFixed(1)}–$${cpcMax.toFixed(1)}` });
+  }
+  const [volMin, volMax] = S.filters.volRange;
+  if (S.sliderMax.vol > 0 && (volMin > 0 || volMax < S.sliderMax.vol)) {
+    pills.push({ type: 'slider-vol', label: `Vol: ${fmtNum(volMin)}–${fmtNum(volMax)}` });
+  }
+  const [scoreMin, scoreMax] = S.filters.scoreRange;
+  if (S.sliderMax.score > 0 && (scoreMin > 0 || scoreMax < S.sliderMax.score)) {
+    pills.push({ type: 'slider-score', label: `Score: ${scoreMin.toFixed(1)}–${scoreMax.toFixed(1)}` });
+  }
+
   // Search
   if (S.search) pills.push({ type: 'search', label: `Search: "${S.search}"` });
 
@@ -1731,10 +1968,30 @@ function renderActiveFilters() {
           if (newArr.length === 0) delete S.colFilters[pill.colKey];
           else S.colFilters[pill.colKey] = newArr;
         }
+      } else if (pill.type === 'slider-cpc') {
+        const el = document.getElementById('slider-cpc');
+        if (el.noUiSlider) el.noUiSlider.reset();
+        S.filters.cpcRange = [0, S.sliderMax.cpc || Infinity];
+      } else if (pill.type === 'slider-vol') {
+        const el = document.getElementById('slider-volume');
+        if (el.noUiSlider) el.noUiSlider.reset();
+        S.filters.volRange = [0, S.sliderMax.vol || Infinity];
+      } else if (pill.type === 'slider-score') {
+        const el = document.getElementById('slider-score');
+        if (el.noUiSlider) el.noUiSlider.reset();
+        S.filters.scoreRange = [0, S.sliderMax.score || Infinity];
       } else if (pill.type === 'search') {
         S.search = '';
         document.getElementById('global-search').value = '';
         document.getElementById('search-clear-btn').style.display = 'none';
+      } else if (pill.type === 'panel-tag') {
+        const cb = document.getElementById('ft-' + pill.value);
+        if (cb) cb.checked = false;
+        onFilterChange();
+      } else if (pill.type === 'panel-ms') {
+        const cb = document.querySelector('#filter-metrics-source input[value="' + pill.value + '"]');
+        if (cb) cb.checked = false;
+        onFilterChange();
       }
       applyFilters(); renderTable(); renderActiveFilters(); updateCharts(); saveToHash();
       // Update column header filter indicators
@@ -1758,7 +2015,7 @@ function onFilterChange() {
 }
 
 function collectFilters() {
-  S.filters.tags = [...document.querySelectorAll('#filter-tags input:checked')].map(x=>x.value);
+  S.filters.tags = [...document.querySelectorAll('#filter-tags input[type="checkbox"]:checked')].map(el => el.value);
   S.filters.verticals = [...document.querySelectorAll('#filter-verticals input:checked')].map(x=>x.value);
   S.filters.countries = [...document.querySelectorAll('#filter-countries input:checked')].map(x=>x.value);
   S.filters.tiers = [...document.querySelectorAll('#filter-tiers input:checked')].map(x=>parseInt(x.value));
@@ -1766,6 +2023,7 @@ function collectFilters() {
   S.filters.confidence = confRadio ? confRadio.value : 'all';
   S.filters.sources = [...document.querySelectorAll('#filter-sources input:checked')].map(x=>x.value);
   S.filters.metricsSources = [...document.querySelectorAll('#filter-metrics-source input:checked')].map(x=>x.value);
+  S.filters.showTransformedOnly = document.getElementById('ft-transformed')?.checked || false;
   const cpcSlider = document.getElementById('slider-cpc').noUiSlider;
   if (cpcSlider) { const v = cpcSlider.get(); S.filters.cpcRange = [parseFloat(v[0]), parseFloat(v[1])]; }
   const volSlider = document.getElementById('slider-volume').noUiSlider;
@@ -1833,6 +2091,8 @@ function applyFilters() {
   // Date range
   if (S.filters.dateFrom) data = data.filter(x => (x.run_date || '') >= S.filters.dateFrom);
   if (S.filters.dateTo)   data = data.filter(x => (x.run_date || '') <= S.filters.dateTo);
+  // Transformed keywords only
+  if (S.filters.showTransformedOnly) data = data.filter(x => !!x.transformed_at);
 
   // Sort
   if (S.sortCol) {
@@ -1917,7 +2177,11 @@ function buildRow(item, idx) {
   const cells = visibleCols.map(col => {
     switch(col.key) {
       case '#': return `<td class="td-num">${idx+1}</td>`;
-      case 'keyword': return `<td class="td-keyword"><span class="keyword-text" title="${esc(item.keyword)}">${esc(item.keyword)}</span>${intentBadge}<button class="copy-btn" data-kw="${esc(item.keyword)}" title="Copy">⎘</button></td>`;
+      case 'keyword': {
+        const transformBadge = item.transformed_at ?
+          `<span class="transform-badge" data-original="${esc(item.original_keyword)}" data-relationship="${esc(item.transformation_relationship||'')}" data-confidence="${item.transformation_confidence||0}" title="Transformed from: ${esc(item.original_keyword)}">🔄 TRANSFORMED</span>` : '';
+        return `<td class="td-keyword"><span class="keyword-text" title="${esc(item.keyword)}">${esc(item.keyword)}</span>${intentBadge}${transformBadge}<button class="copy-btn" data-kw="${esc(item.keyword)}" title="Copy">⎘</button></td>`;
+      }
       case 'tag': return `<td><span class="tag-badge tag-${tag}">${tag.replace('GOLDEN_OPPORTUNITY','GOLDEN')}</span></td>`;
       case 'country': return `<td style="font-size:11px">${esc(item.country||'—')}</td>`;
       case 'vertical': return `<td style="font-size:11px;color:var(--text-secondary)">${esc(item.vertical||'—')}</td>`;
@@ -1961,7 +2225,7 @@ function buildRow(item, idx) {
       case 'main_intent': {
         const mi = (item.main_intent || '').toLowerCase();
         if (!mi) return '<td>—</td>';
-        const miMap = {commercial:'intent-com', transactional:'intent-txn', informational:'intent-inf', navigational:'intent-nav'};
+        const miMap = {commercial:'intent-com', transactional:'intent-trx', informational:'intent-inf', navigational:'intent-nav'};
         const miCls = miMap[mi] || 'intent-inf';
         const miLbl = mi.slice(0,3).toUpperCase();
         return `<td><span class="intent-badge ${miCls}">${miLbl}</span></td>`;
@@ -1996,12 +2260,28 @@ function buildRow(item, idx) {
         if (!sp) return '<td style="color:var(--text-muted)">—</td>';
         return `<td class="td-mono" style="font-size:10px">${esc(sp)}</td>`;
       }
+      case 'transformed': {
+        if (item.transformed_at) {
+          return `<td><span class="transform-badge" data-original="${esc(item.original_keyword)}" data-relationship="${esc(item.transformation_relationship||'')}" data-confidence="${item.transformation_confidence||0}" title="Transformed from: ${esc(item.original_keyword)}">Yes</span></td>`;
+        }
+        return '<td style="color:var(--text-muted);font-size:11px">No</td>';
+      }
       case 'cpc_high_usd': return `<td class="td-mono" style="font-size:11px">${fmtCpc(item.cpc_high_usd)}</td>`;
+      case 'rpc_display': {
+        const rpc = parseFloat(item.rpc_display);
+        if (isNaN(rpc) || item.rpc_display == null) return '<td class="td-mono" style="color:var(--text-muted)">—</td>';
+        const rpcConf = item.rpc_confidence || '';
+        const rpcSrc = item.rpc_source || '';
+        const rpcColor = rpcConf === 'high' ? '#22c55e' : rpcConf === 'medium' ? 'var(--text-secondary)' : 'var(--text-muted)';
+        const srcLbl = rpcSrc ? `<span style="font-size:9px;color:var(--text-muted);margin-left:2px">${esc(rpcSrc.split('_')[0])}</span>` : '';
+        return `<td class="td-mono" style="color:${rpcColor};font-size:12px">${fmtCpc(rpc)}${srcLbl}</td>`;
+      }
       default: return '<td>—</td>';
     }
   });
   const rowCls = tag === 'EMERGING_HIGH' ? ' class="row-emerging-high"' : '';
-  return `<tr data-idx="${idx}"${rowCls}>${cells.join('')}</tr>`;
+  const kwAttr = item.keyword ? ` data-keyword="${esc(item.keyword)}" data-country="${esc(item.country||'')}"` : '';
+  return `<tr data-idx="${idx}"${rowCls}${kwAttr}>${cells.join('')}</tr>`;
 }
 
 function renderRows() {
@@ -2105,7 +2385,7 @@ function openDrawer(item) {
   const cpcCls = cpc >= 5 ? 'cpc-high' : cpc >= 1 ? 'cpc-mid' : 'cpc-low';
   const conf = item.confidence || '—';
   body.innerHTML = `
-    <div style="position:relative"><button class="drawer-close" id="drawer-x-btn">&times;</button></div>
+    <div style="position:relative"><button class="drawer-close" id="drawer-x-btn" aria-label="Close">&times;</button></div>
     <div class="drawer-kw">${esc(item.keyword)}</div>
     <div class="drawer-tags">
       <span class="tag-badge tag-${tag}">${tag.replace('GOLDEN_OPPORTUNITY','GOLDEN')}</span>
@@ -2123,7 +2403,7 @@ function openDrawer(item) {
       <div class="drawer-metric"><div class="dm-label">Competition</div><div class="dm-value">${item.competition != null ? fmtScore(item.competition) : '—'}</div></div>
     </div>
     <hr class="drawer-divider">
-    ${item.main_intent ? `<div class="drawer-field"><div class="df-label">Intent</div><div class="df-value"><span class="intent-badge ${({commercial:'intent-com',transactional:'intent-txn',informational:'intent-inf',navigational:'intent-nav'})[item.main_intent]||'intent-inf'}">${esc(item.main_intent)}</span></div></div>` : ''}
+    ${item.main_intent ? `<div class="drawer-field"><div class="df-label">Intent</div><div class="df-value"><span class="intent-badge ${({commercial:'intent-com',transactional:'intent-trx',informational:'intent-inf',navigational:'intent-nav'})[item.main_intent]||'intent-inf'}">${esc(item.main_intent)}</span></div></div>` : ''}
     ${item.emerging_tag ? `<div class="drawer-field"><div class="df-label">Emerging Tag</div><div class="df-value"><span class="tag-badge tag-${item.emerging_tag}">${esc(item.emerging_tag)}</span></div></div>` : ''}
     ${item.ssr != null ? `<div class="drawer-field"><div class="df-label">SSR</div><div class="df-value" style="font-family:var(--font-mono)">${parseFloat(item.ssr).toFixed(1)}${parseFloat(item.ssr) > 1.0 ? ' ⚠️' : ''}</div></div>` : ''}
     ${item.trend_monthly != null ? `<div class="drawer-field"><div class="df-label">Trend MoM</div><div class="df-value" style="font-family:var(--font-mono);color:${parseFloat(item.trend_monthly) > 30 ? '#22c55e' : parseFloat(item.trend_monthly) > 0 ? 'var(--text-secondary)' : '#ef4444'}">${parseFloat(item.trend_monthly) >= 0 ? '+' : ''}${Math.round(parseFloat(item.trend_monthly))}%</div></div>` : ''}
@@ -2335,7 +2615,7 @@ function resetFilters() {
   ['slider-cpc','slider-volume','slider-score'].forEach(id => { const el = document.getElementById(id); if (el.noUiSlider) el.noUiSlider.reset(); });
   document.getElementById('filter-date-from').value = '';
   document.getElementById('filter-date-to').value = '';
-  S.filters = { tags: [], verticals: [], countries: [], tiers: [], cpcRange: [0, Infinity], volRange: [0, Infinity], scoreRange: [0, Infinity], confidence: 'all', sources: [], metricsSources: [], dateFrom: '', dateTo: '' };
+  S.filters = { tags: [], verticals: [], countries: [], tiers: [], cpcRange: [0, Infinity], volRange: [0, Infinity], scoreRange: [0, Infinity], confidence: 'all', sources: [], metricsSources: [], dateFrom: '', dateTo: '', showTransformedOnly: false };
   S.colFilters = {};
   document.querySelectorAll('#table-head th').forEach(th => th.classList.remove('has-filter'));
   onFilterChange();
@@ -2450,8 +2730,7 @@ function bindEvents() {
     }
   });
 
-  // Theme
-  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  // Theme toggle is handled by shared/theme.js
 
   // Drawer
   document.getElementById('drawer-close-btn').addEventListener('click', closeDrawer);
@@ -2460,6 +2739,7 @@ function bindEvents() {
   document.querySelectorAll('#filter-tags input, #filter-tiers input, #filter-sources input, #filter-metrics-source input').forEach(el => {
     el.addEventListener('change', onFilterChange);
   });
+  document.getElementById('ft-transformed')?.addEventListener('change', onFilterChange);
   document.querySelectorAll('input[name="conf"]').forEach(el => { el.addEventListener('change', onFilterChange); });
   document.getElementById('filter-date-from').addEventListener('change', onFilterChange);
   document.getElementById('filter-date-to').addEventListener('change', onFilterChange);
@@ -2479,6 +2759,16 @@ function bindEvents() {
 }
 
 })();
+</script>
+<script>
+Palette.register([
+  { id: 'dash-golden', label: 'Show Golden Only', shortcut: 'g', category: 'Filters', action: function() { var cb = document.querySelector('input[value="GOLDEN_OPPORTUNITY"]'); if(cb && !cb.checked) { cb.checked = true; onFilterChange(); } } },
+  { id: 'dash-clear-filters', label: 'Clear All Filters', category: 'Filters', action: function() { var btn = document.getElementById('reset-all-filters'); if(btn) btn.click(); } },
+  { id: 'dash-export-csv', label: 'Export as CSV', category: 'Actions', action: function() { if(typeof exportCSV === 'function') exportCSV(); } },
+  { id: 'dash-export-json', label: 'Export as JSON', category: 'Actions', action: function() { if(typeof exportJSON === 'function') exportJSON(); } },
+  { id: 'dash-toggle-charts', label: 'Toggle Charts', shortcut: 'c', category: 'Actions', action: function() { var btn = document.getElementById('charts-toggle'); if(btn) btn.click(); } },
+  { id: 'dash-toggle-filters', label: 'Toggle Filter Panel', shortcut: 'f', category: 'Actions', action: function() { if(typeof toggleFilterPanel === 'function') toggleFilterPanel(); } },
+]);
 </script>
 __EXTRA_TABS__
 </body>

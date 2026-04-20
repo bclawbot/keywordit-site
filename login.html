@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit · Access</title>
+<link rel="stylesheet" href="shared/base.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 [data-theme="dark"] {
@@ -50,7 +53,7 @@ body {
   justify-content: center;
   -webkit-font-smoothing: antialiased;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
   transition: background 0.3s, color 0.3s;
 }
 body::before {
@@ -256,7 +259,7 @@ body::before {
 </head>
 <body>
 
-<button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+<button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
   <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
   <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
 </button>
@@ -267,9 +270,9 @@ body::before {
 </div>
 
 <div class="auth-container">
-  <div class="auth-tabs">
-    <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
-    <button class="auth-tab" id="tab-request" onclick="switchTab('request')">Request Access</button>
+  <div class="auth-tabs" role="tablist">
+    <button class="auth-tab active" id="tab-login" onclick="switchTab('login')" role="tab" aria-selected="true">Sign In</button>
+    <button class="auth-tab" id="tab-request" onclick="switchTab('request')" role="tab" aria-selected="false">Request Access</button>
   </div>
 
   <!-- LOGIN -->
@@ -281,7 +284,10 @@ body::before {
     </div>
     <div class="form-group">
       <label class="form-label">Password</label>
-      <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password">
+      <div style="position:relative;">
+        <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" style="padding-right:40px;">
+        <button type="button" onclick="togglePassVis('login-pass', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:4px;" title="Show password" aria-label="Toggle password visibility">&#128065;</button>
+      </div>
     </div>
     <button class="btn-submit" id="login-btn" onclick="doLogin()">Sign In</button>
   </div>
@@ -309,50 +315,25 @@ body::before {
       <label class="form-label">Preferred Username</label>
       <input class="form-input" type="text" id="req-username" placeholder="Choose a username">
     </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="req-pass" placeholder="Min 8 characters" autocomplete="new-password">
+    </div>
     <button class="btn-submit" id="request-btn" onclick="doRequest()">Submit Request</button>
   </div>
 </div>
 
 <div class="back-link">
-  <a href="landing.html">← Back to keywordit.xyz</a>
+  <a href="index.html">← Back to keywordit.xyz</a>
 </div>
 
 <div class="login-footer">Access is reviewed manually · Typical approval: &lt;24h</div>
 
+<script src="shared/theme.js"></script>
+<script src="shared/palette.js"></script>
+<script src="shared/auth.js"></script>
 <script>
-/**
- * AUTH SYSTEM
- * 
- * Uses localStorage for session tokens and a users.json-based credential store.
- * In production, the dashboard_builder.py generates the users database.
- * 
- * Storage keys:
- *   keywordit_session   - { user, token, loginAt }
- *   keywordit_users     - [{ username, passwordHash, role, status, name, email }]
- *   keywordit_requests  - [{ name, email, company, reason, username, requestedAt, status }]
- */
-
-// Simple hash (not cryptographic — use bcrypt in production)
-async function hashStr(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-// Init default admin if no users exist
-async function initDefaults() {
-  let users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-  if (users.length === 0) {
-    const adminHash = await hashStr('admin123');
-    users = [
-      { username: 'admin', passwordHash: adminHash, role: 'admin', status: 'approved', name: 'Admin', email: 'admin@keywordit.xyz', createdAt: new Date().toISOString() }
-    ];
-    localStorage.setItem('keywordit_users', JSON.stringify(users));
-  }
-  if (!localStorage.getItem('keywordit_requests')) {
-    localStorage.setItem('keywordit_requests', '[]');
-  }
-}
-initDefaults();
+// Auth is handled by shared/auth.js (JWT backend)
 
 function switchTab(tab) {
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -361,6 +342,9 @@ function switchTab(tab) {
   document.getElementById('panel-' + tab).classList.add('active');
   // Clear messages
   document.querySelectorAll('.msg').forEach(m => { m.className = 'msg'; m.textContent = ''; });
+  // Re-enable request button in case it was disabled after a previous submission
+  document.getElementById('request-btn').disabled = false;
+  document.getElementById('request-btn').textContent = 'Submit Request';
 }
 
 function showMsg(id, type, text) {
@@ -374,41 +358,14 @@ async function doLogin() {
   const pass = document.getElementById('login-pass').value;
   if (!user || !pass) { showMsg('login-msg', 'error', 'Please enter both fields.'); return; }
 
-  const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-  const passHash = await hashStr(pass);
-  const found = users.find(u => u.username === user && u.passwordHash === passHash);
-
-  if (!found) {
-    showMsg('login-msg', 'error', 'Invalid username or password.');
-    return;
+  showMsg('login-msg', 'info', 'Signing in...');
+  try {
+    await auth.login(user, pass);
+    showMsg('login-msg', 'success', 'Authenticated. Redirecting...');
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 600);
+  } catch(e) {
+    showMsg('login-msg', 'error', e.message || 'Login failed.');
   }
-  if (found.status === 'pending') {
-    showMsg('login-msg', 'info', 'Your account is pending approval. Please check back later.');
-    return;
-  }
-  if (found.status === 'declined') {
-    showMsg('login-msg', 'error', 'Your access request was declined.');
-    return;
-  }
-
-  // Create session
-  const session = {
-    user: found.username,
-    role: found.role,
-    token: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2),
-    loginAt: new Date().toISOString()
-  };
-  localStorage.setItem('keywordit_session', JSON.stringify(session));
-  showMsg('login-msg', 'success', 'Authenticated. Redirecting...');
-
-  setTimeout(() => {
-    if (found.role === 'admin') {
-      // Admin can choose
-      window.location.href = 'dashboard.html';
-    } else {
-      window.location.href = 'dashboard.html';
-    }
-  }, 600);
 }
 
 async function doRequest() {
@@ -427,53 +384,63 @@ async function doRequest() {
     return;
   }
 
-  const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-  const requests = JSON.parse(localStorage.getItem('keywordit_requests') || '[]');
-
-  if (users.find(u => u.username === username) || requests.find(r => r.username === username && r.status === 'pending')) {
-    showMsg('request-msg', 'error', 'That username is already taken or pending.');
+  // Password required for registration (min 8 chars)
+  const pass = document.getElementById('req-pass') ? document.getElementById('req-pass').value : '';
+  if (!pass || pass.length < 8) {
+    showMsg('request-msg', 'error', 'Password must be at least 8 characters.');
     return;
   }
 
-  requests.push({
-    name, email, company, reason, username,
-    requestedAt: new Date().toISOString(),
-    status: 'pending'
-  });
-  localStorage.setItem('keywordit_requests', JSON.stringify(requests));
+  showMsg('request-msg', 'info', 'Submitting...');
+  try {
+    await auth.register({ username: username, password: pass, email: email, name: name });
+    showMsg('request-msg', 'success', 'Account created! Please wait for admin approval.');
+    document.getElementById('request-btn').disabled = true;
+    document.getElementById('request-btn').textContent = 'Submitted';
+    document.getElementById('req-name').value = '';
+    document.getElementById('req-email').value = '';
+    document.getElementById('req-company').value = '';
+    document.getElementById('req-reason').value = '';
+    document.getElementById('req-username').value = '';
+    if (document.getElementById('req-pass')) document.getElementById('req-pass').value = '';
+  } catch(e) {
+    showMsg('request-msg', 'error', e.message || 'Registration failed.');
+  }
+}
 
-  showMsg('request-msg', 'success', 'Access request submitted! You will be notified when approved.');
-  document.getElementById('request-btn').disabled = true;
-  document.getElementById('request-btn').textContent = 'Submitted';
+// Password visibility toggle
+function togglePassVis(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (inp.type === 'password') { inp.type = 'text'; btn.title = 'Hide password'; }
+  else { inp.type = 'password'; btn.title = 'Show password'; }
 }
 
 // Auto-redirect if already authenticated
 (function() {
-  const session = JSON.parse(localStorage.getItem('keywordit_session') || 'null');
-  if (session && session.token) {
-    const users = JSON.parse(localStorage.getItem('keywordit_users') || '[]');
-    const user = users.find(u => u.username === session.user && u.status === 'approved');
-    if (user) {
-      window.location.href = 'dashboard.html';
-    }
+  var sess = checkSession();
+  if (sess.valid) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
+  // Auto-select tab from URL param (?tab=request)
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('tab') === 'request') {
+    switchTab('request');
   }
 })();
 
-// Enter key to submit
+// Enter key to submit — login form
 document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('login-user').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
-// Theme toggle
-(function() {
-  const saved = localStorage.getItem('keywordit-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('theme-toggle').addEventListener('click', function() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('keywordit-theme', next);
+// Enter key to submit — request form
+['req-name','req-email','req-company','req-reason','req-username'].forEach(id => {
+  document.getElementById(id)?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); doRequest(); }
   });
-})();
+});
+
 </script>
 </body>
 </html>

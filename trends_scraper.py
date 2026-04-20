@@ -6,7 +6,7 @@ from pathlib import Path
 
 import aiohttp
 
-BASE    = Path("/Users/newmac/.openclaw/workspace")
+BASE    = Path(__file__).resolve().parent
 ALL_LOG = BASE / "trends_all_history.jsonl"   # append-only log
 SNAP    = BASE / "latest_trends.json"         # last run snapshot
 
@@ -27,7 +27,7 @@ REGIONS = {
 }
 
 REDDIT_COUNTRY_MAP = {
-    "united_states":  ["r/news", "r/technology", "r/worldnews"],
+    "united_states":  ["r/deals", "r/entrepreneur", "r/personalfinance", "r/homeimprovement", "r/frugal"],
     "united_kingdom": ["r/unitedkingdom", "r/uknews"],
     "australia":      ["r/australia"],
     "canada":         ["r/canada"],

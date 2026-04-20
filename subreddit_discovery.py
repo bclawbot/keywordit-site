@@ -27,18 +27,16 @@ from datetime import datetime
 from pathlib import Path
 
 import aiohttp
-import requests
 
-BASE = Path("/Users/newmac/.openclaw/workspace")
+BASE = Path(__file__).resolve().parent
 REGISTRY_FILE       = BASE / "subreddit_registry.json"
 LAST_RUN_FILE       = BASE / "discovery_last_run.txt"
 REJECTED_LOG        = BASE / "discovery_rejected.jsonl"
 CHAT_ID_FILE        = BASE / ".telegram_chat_id"
 ENV_FILE            = Path.home() / ".openclaw" / ".env"
 
-LITELLM_URL     = "http://localhost:4000/v1/chat/completions"
-LITELLM_MODEL   = "dwight-primary"
-LITELLM_API_KEY = "sk-dwight-local"
+# LLM — centralized client (handles .env, think=False, fallback, timeouts)
+from llm_client import call as _llm_call
 
 DISCOVERY_RUN_FREQ_DAYS = 1   # only run if last run was > N days ago
 REGISTRY_CAP            = 100  # max active subs in registry
@@ -555,26 +553,10 @@ def _build_llm_prompt(candidates: list[SubredditCandidate]) -> str:
     return json.dumps(items, ensure_ascii=False)
 
 
-def _prewarm_llm() -> None:
-    """Send a tiny request to ensure the model is loaded before batch scoring."""
-    try:
-        requests.post(
-            LITELLM_URL,
-            headers={"Authorization": f"Bearer {LITELLM_API_KEY}"},
-            json={"model": LITELLM_MODEL, "messages": [{"role": "user", "content": "hi"}], "max_tokens": 1},
-            timeout=120,
-        )
-    except Exception:
-        pass
-
-
 def score_candidates_llm(candidates: list[SubredditCandidate]) -> list[dict]:
-    """Batch-score candidates with LiteLLM. Returns [] on any failure (non-fatal)."""
+    """Batch-score candidates via centralized LLM client. Non-fatal."""
     if not candidates:
         return []
-
-    print("  [discovery] Pre-warming LLM...")
-    _prewarm_llm()
 
     results = []
     system_msg = _llm_system_prompt()
@@ -585,22 +567,14 @@ def score_candidates_llm(candidates: list[SubredditCandidate]) -> list[dict]:
 
         for attempt in range(2):
             try:
-                resp = requests.post(
-                    LITELLM_URL,
-                    headers={"Authorization": f"Bearer {LITELLM_API_KEY}"},
-                    json={
-                        "model": LITELLM_MODEL,
-                        "messages": [
-                            {"role": "system", "content": system_msg},
-                            {"role": "user",   "content": user_msg},
-                        ],
-                        "temperature": 0.2,
-                        "max_tokens":  2048,
-                    },
-                    timeout=300,
+                raw = _llm_call(
+                    [{"role": "system", "content": system_msg},
+                     {"role": "user",   "content": user_msg}],
+                    max_tokens=2048,
+                    temperature=0.2,
+                    timeout="generous",
+                    stage="subreddit_discovery/scoring",
                 )
-                resp.raise_for_status()
-                raw = resp.json()["choices"][0]["message"]["content"]
                 clean = _strip_code_fences(raw)
                 batch_results = json.loads(clean)
                 if not isinstance(batch_results, list):
@@ -610,7 +584,6 @@ def score_candidates_llm(candidates: list[SubredditCandidate]) -> list[dict]:
 
             except json.JSONDecodeError:
                 if attempt == 0:
-                    # Retry with explicit clarification
                     user_msg = (
                         "Your previous response was not valid JSON. "
                         "Return ONLY the JSON array, no other text.\n\n" + user_msg
@@ -618,16 +591,8 @@ def score_candidates_llm(candidates: list[SubredditCandidate]) -> list[dict]:
                     continue
                 print(f"  [!] LLM JSON parse failed for batch {i//LLM_BATCH_SIZE + 1}")
 
-            except requests.exceptions.ConnectionError:
-                print("  [!] LiteLLM proxy unavailable — skipping LLM scoring")
-                return []
-
-            except requests.exceptions.Timeout:
-                print(f"  [!] LLM timeout for batch {i//LLM_BATCH_SIZE + 1}")
-                break
-
             except Exception as e:
-                print(f"  [!] LLM error: {e}")
+                print(f"  [!] LLM error for batch {i//LLM_BATCH_SIZE + 1}: {e}")
                 break
 
     return results
@@ -780,45 +745,49 @@ async def discover_and_update(registry: dict) -> tuple[dict, int]:
         wiki_total = sum(c for c in wiki_counts if isinstance(c, int))
         print(f"             → {wiki_total} candidates from wikis")
 
-        # ── Strategy 2: Comment Mining ─────────────────────────────────────────
-        # Fetch hot posts first, then mine comments from top-scoring ones
+        # ── Strategy 2: Comment Mining (with 300s deadline) ─────────────────────
         print("  [discovery] Strategy 2: Comment mining (fetching posts)...")
         comment_total = 0
-        for sub in known_subs:
-            sub_clean = sub.lstrip("r/")
-            url = f"https://www.reddit.com/r/{sub_clean}/hot.json?limit=25"
-            data = await _reddit_get(session, url, semaphore, rate_limiter)
-            if not data:
-                continue
-            posts_raw = data.get("data", {}).get("children", [])
-            # Pick top 5 posts by score that have comments
-            top_posts = sorted(
-                [p.get("data", {}) for p in posts_raw if not p.get("data", {}).get("stickied")],
-                key=lambda p: p.get("score", 0),
-                reverse=True,
-            )[:5]
-            # Also run strategy 3 (crosspost) on these posts — it's free
-            strategy_crosspost(
-                [p for p in top_posts if p.get("crosspost_parent_list")],
-                candidate_registry,
-                existing_names,
-            )
-            # Mine comments for high-scoring posts
-            comment_tasks = []
-            for post in top_posts:
-                if post.get("score", 0) < 20 or not post.get("num_comments", 0):
+
+        async def _run_comment_mining():
+            nonlocal comment_total
+            for sub in known_subs:
+                sub_clean = sub.lstrip("r/")
+                url = f"https://www.reddit.com/r/{sub_clean}/hot.json?limit=25"
+                data = await _reddit_get(session, url, semaphore, rate_limiter)
+                if not data:
                     continue
-                post_id = post.get("id", "")
-                if post_id:
-                    comment_tasks.append(
-                        strategy_comment_mining(
-                            session, sub, post_id, candidate_registry,
-                            semaphore, rate_limiter, existing_names
+                posts_raw = data.get("data", {}).get("children", [])
+                top_posts = sorted(
+                    [p.get("data", {}) for p in posts_raw if not p.get("data", {}).get("stickied")],
+                    key=lambda p: p.get("score", 0),
+                    reverse=True,
+                )[:5]
+                strategy_crosspost(
+                    [p for p in top_posts if p.get("crosspost_parent_list")],
+                    candidate_registry,
+                    existing_names,
+                )
+                comment_tasks = []
+                for post in top_posts:
+                    if post.get("score", 0) < 20 or not post.get("num_comments", 0):
+                        continue
+                    post_id = post.get("id", "")
+                    if post_id:
+                        comment_tasks.append(
+                            strategy_comment_mining(
+                                session, sub, post_id, candidate_registry,
+                                semaphore, rate_limiter, existing_names
+                            )
                         )
-                    )
-            if comment_tasks:
-                counts = await asyncio.gather(*comment_tasks, return_exceptions=True)
-                comment_total += sum(c for c in counts if isinstance(c, int))
+                if comment_tasks:
+                    counts = await asyncio.gather(*comment_tasks, return_exceptions=True)
+                    comment_total += sum(c for c in counts if isinstance(c, int))
+
+        try:
+            await asyncio.wait_for(_run_comment_mining(), timeout=300)
+        except asyncio.TimeoutError:
+            print("  [discovery] Comment mining timed out after 300s — continuing with partial results")
 
         print(f"             → {comment_total} candidates from comments")
 
@@ -919,36 +888,51 @@ if __name__ == "__main__":
     if not force and not _should_run():
         sys.exit(0)
 
-    registry = load_registry()
-    initial_count = _count_active(registry)
-    print(f"  Registry: {initial_count} active subs loaded")
-
-    registry, new_count = asyncio.run(discover_and_update(registry))
-    save_registry(registry)
-    _mark_run()
-
-    final_count = _count_active(registry)
-    print(f"\n  Discovery complete.")
-    print(f"  New subs added: {new_count}")
-    print(f"  Registry total: {final_count} active subs")
-    print(f"  Saved → {REGISTRY_FILE.name}")
-
-    # Send Telegram notification
-    env = _load_env(ENV_FILE)
-    telegram_token = env.get("TELEGRAM_TOKEN", "")
-    telegram_chat_id = ""
     try:
-        telegram_chat_id = CHAT_ID_FILE.read_text().strip()
-    except FileNotFoundError:
-        pass
+        registry = load_registry()
+        initial_count = _count_active(registry)
+        print(f"  Registry: {initial_count} active subs loaded")
 
-    if telegram_token and telegram_chat_id:
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-        msg = (
-            f"🔍 Subreddit Discovery Complete — {now_str}\n"
-            f"New subreddits added: {new_count}\n"
-            f"Total active subreddits: {final_count}"
-        )
-        print(f"\n[notify] Sending Telegram notification...")
-        _send_telegram(telegram_token, telegram_chat_id, msg)
-        print(f"[notify] Notification sent")
+        registry, new_count = asyncio.run(discover_and_update(registry))
+        save_registry(registry)
+        _mark_run()
+
+        final_count = _count_active(registry)
+        print(f"\n  Discovery complete.")
+        print(f"  New subs added: {new_count}")
+        print(f"  Registry total: {final_count} active subs")
+        print(f"  Saved → {REGISTRY_FILE.name}")
+
+        # Send Telegram notification
+        env = _load_env(ENV_FILE)
+        telegram_token = env.get("TELEGRAM_TOKEN", "")
+        telegram_chat_id = ""
+        try:
+            telegram_chat_id = CHAT_ID_FILE.read_text().strip()
+        except FileNotFoundError:
+            pass
+
+        if telegram_token and telegram_chat_id:
+            now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+            msg = (
+                f"🔍 Subreddit Discovery Complete — {now_str}\n"
+                f"New subreddits added: {new_count}\n"
+                f"Total active subreddits: {final_count}"
+            )
+            print(f"\n[notify] Sending Telegram notification...")
+            _send_telegram(telegram_token, telegram_chat_id, msg)
+            print(f"[notify] Notification sent")
+
+    except Exception as exc:
+        print(f"  [FATAL] Subreddit discovery failed: {exc}")
+        try:
+            with open(BASE / "error_log.jsonl", "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "timestamp": datetime.now().isoformat(),
+                    "stage": "subreddit_discovery",
+                    "error": str(exc),
+                }) + "\n")
+        except Exception:
+            pass
+        # Exit 0 so heartbeat pipeline continues to next stage
+        sys.exit(0)

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Telegram bot — Dwight (Quantitative Arbitrageur)
-Primary:  Ollama  qwen2.5-coder:32b  @ localhost:11434
-Fallback: OpenRouter qwen/qwen3-coder-480b-a35b:free
+Primary:  Ollama  qwen3:14b  @ localhost:11434
+Fallback: LiteLLM proxy (port 4000) → OpenRouter deepseek-v3.2 → stepfun free
 System prompt: loaded from SOUL.md (same directory as this script)
 
 Execution layer:
@@ -17,10 +17,14 @@ Execution layer:
 import asyncio
 import concurrent.futures
 import fcntl
+import json
 import logging
 import os
 import re
+import shlex
+import signal
 import subprocess
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -134,6 +138,86 @@ def load_system_prompt() -> str:
 
 SYSTEM_PROMPT: str = load_system_prompt()
 
+# ── Phase 3.1: CodeAgent integration (opt-in) ─────────────────────────────
+_CODE_AGENT = None
+try:
+    from agents.dwight_code_agent import DwightCodeAgent
+    _CODE_AGENT = DwightCodeAgent()
+    log.info("[STARTUP] CodeAgent loaded — pipeline commands will use structured execution")
+except Exception as _ca_err:
+    log.info("[STARTUP] CodeAgent not available (%s) — using exec fallback", _ca_err)
+
+# ── Phase 1.4: Dynamic skill loader ───────────────────────────────────────
+
+ALWAYS_LOAD_SKILLS = ['arbitrage-knowledge', 'pipeline-runner', 'media-researcher']
+CONDITIONAL_SKILLS = {
+    r'reddit|subreddit': 'reddit-scraper',
+    r'trend|scrape|google trends': 'trends-scraper',
+    r'keyword|cpc|ads|kw': 'keyword-expander',
+    r'dashboard|chart|visual': 'dashboard-builder',
+    r'deploy|hosting|publish': 'deployment',
+    r'cost|spend|budget|api': 'cost-tracker',
+    r'validate|vet|serp|duckduck': 'vetting',
+    r'reflect|memory|learn': 'reflection',
+    r'angle|rsoc|hook': 'angle-engine',
+}
+
+_fm_re_skill = re.compile(r"^---\s*\n.*?\n---\s*\n", re.DOTALL)
+
+def load_skills_for_message(message: str) -> str:
+    """Load only relevant skills based on message keywords instead of all skills."""
+    if not SKILLS_DIR.exists():
+        return ""
+    active = list(ALWAYS_LOAD_SKILLS)
+    for pattern, skill in CONDITIONAL_SKILLS.items():
+        if re.search(pattern, message, re.IGNORECASE):
+            if skill not in active:
+                active.append(skill)
+    content = []
+    for name in active:
+        f = SKILLS_DIR / name / 'SKILL.md'
+        if f.exists():
+            text = f.read_text(encoding='utf-8')
+            text = _fm_re_skill.sub("", text, count=1).strip()
+            content.append(text)
+    return '\n\n---\n\n'.join(content) if content else ""
+
+# ── Phase 1.2: Model parity assertion ─────────────────────────────────────
+
+GATEWAY_CONFIG = Path(os.path.expanduser('~/.openclaw/openclaw.json'))
+EXPECTED_BOT_MODEL = OLLAMA_MODEL  # qwen3:14b
+
+def assert_model_parity():
+    """Hard-fail at startup if openclaw.json model != expected bot model.
+    Prevents 60-second model reload delays on every Telegram interaction."""
+    if not GATEWAY_CONFIG.exists():
+        log.warning("[STARTUP] openclaw.json not found — skipping parity check")
+        return
+    try:
+        with open(GATEWAY_CONFIG) as f:
+            config = json.load(f)
+        gateway_model = config.get('model') or config.get('default_model', '')
+    except Exception as e:
+        log.warning("[STARTUP] Could not read openclaw.json: %s", e)
+        return
+
+    # Check Ollama is reachable and has the model loaded
+    try:
+        r = httpx.get(f'{OLLAMA_BASE}/api/tags', timeout=5)
+        loaded = [m['name'] for m in r.json().get('models', [])]
+        if EXPECTED_BOT_MODEL not in loaded:
+            log.warning("[STARTUP] Model %s not loaded in Ollama (loaded: %s)",
+                        EXPECTED_BOT_MODEL, loaded[:5])
+    except Exception as e:
+        log.warning("[STARTUP] Ollama unreachable: %s", e)
+
+    if gateway_model and gateway_model != EXPECTED_BOT_MODEL:
+        raise RuntimeError(
+            f'[STARTUP ABORT] Model mismatch: openclaw.json={gateway_model!r} '
+            f'vs bot={EXPECTED_BOT_MODEL!r}. Fix openclaw.json before starting.'
+        )
+    log.info("[STARTUP] Model parity OK: %s", EXPECTED_BOT_MODEL)
+
 # ── Single-instance lock ──────────────────────────────────────────────────────
 
 def _acquire_lock():
@@ -149,20 +233,88 @@ def _acquire_lock():
 
 # ── Execution engine ──────────────────────────────────────────────────────────
 
+# Allowed binaries for the exec engine. Commands starting with anything else
+# are rejected to prevent LLM hallucinations or prompt injections from running
+# arbitrary programs (e.g. curl|sh, rm -rf /, etc.).
+_ALLOWED_BINARIES = frozenset({
+    "python3", "python",
+    "cat", "head", "tail", "wc", "ls", "pwd", "date", "echo", "grep", "find",
+    "jq", "sqlite3", "git", "pip3", "pip",
+    "ollama", "curl",  # curl kept for Ollama health probes
+    "launchctl", "pgrep", "pkill",
+})
+
+# Pipeline scripts that are always allowed (resolved to absolute paths)
+_ALLOWED_SCRIPT_DIRS = (
+    str(WORKSPACE),
+    str(Path.home() / ".openclaw"),
+)
+
+
+def _validate_command(cmd: str) -> str | None:
+    """Validate a command string against the allowlist.
+
+    Returns None if the command is safe, or an error message if rejected.
+    """
+    # Strip backtick substitution (legacy sanitization)
+    cmd_clean = re.sub(r'`([^`]*)`', r'$(\1)', cmd)
+
+    # Reject dangerous shell metacharacters that enable chaining/injection.
+    # We allow: pipes to head/tail/grep (common and useful), but NOT arbitrary pipes.
+    # The shell=False approach below prevents these from being interpreted anyway,
+    # but we reject them explicitly to give clear error messages.
+    dangerous_patterns = [
+        (r';\s*\S', "semicolon command chaining"),
+        (r'&&', "'&&' command chaining"),
+        (r'\|\|', "'||' command chaining"),
+        (r'>\s*/', "output redirection to absolute path"),
+        (r'>>', "append redirection"),
+        (r'\$\(', "command substitution"),
+        (r'`', "backtick substitution"),
+    ]
+    for pattern, desc in dangerous_patterns:
+        if re.search(pattern, cmd_clean):
+            return f"Blocked: {desc} not allowed in exec commands"
+
+    try:
+        parts = shlex.split(cmd_clean)
+    except ValueError as e:
+        return f"Blocked: malformed command ({e})"
+
+    if not parts:
+        return "Blocked: empty command"
+
+    binary = Path(parts[0]).name  # extract basename (python3 from /usr/bin/python3)
+
+    if binary in _ALLOWED_BINARIES:
+        return None
+
+    # Allow scripts under workspace or .openclaw dirs
+    resolved = parts[0]
+    if any(resolved.startswith(d) for d in _ALLOWED_SCRIPT_DIRS):
+        return None
+
+    return f"Blocked: '{binary}' is not in the allowed command list"
+
+
 async def run_command(cmd: str, timeout: int = EXEC_TIMEOUT) -> str:
-    """Run a shell command in the workspace directory and return its output."""
-    # Convert old-style `cmd` backtick substitution to $(cmd) to avoid shell syntax errors
-    cmd = re.sub(r'`([^`]*)`', r'$(\1)', cmd)
+    """Run a validated command in the workspace directory and return its output."""
+    # Validate before executing
+    rejection = _validate_command(cmd)
+    if rejection:
+        log.warning("EXEC BLOCKED: %s — %s", cmd[:80], rejection)
+        return f"[{rejection}]"
+
     log.info("EXEC: %s", cmd)
     loop = asyncio.get_event_loop()
     env = {**os.environ, "HOME": str(Path.home())}
     try:
+        parts = shlex.split(cmd)
         result = await asyncio.wait_for(
             loop.run_in_executor(
                 _executor,
                 lambda: subprocess.run(
-                    cmd,
-                    shell=True,
+                    parts,
                     capture_output=True,
                     text=True,
                     cwd=str(WORKSPACE),
@@ -204,11 +356,10 @@ async def _run_scheduled(
             + sessions.get(user_id, [])
             + [{"role": "user", "content": f"[scheduled exec output — run #{iteration}]\n$ {cmd}\n{output}\n\nSummarise results concisely."}]
         )
-        summary = (
-            await call_ollama(messages)
-            or await call_openrouter(messages)
-            or output
-        )
+        try:
+            summary = await _llm_async_call(messages, stage="telegram_bot/scheduled")
+        except _LLMError:
+            summary = output
 
         for chunk in _split_message(f"[Update #{iteration}]\n{summary}"):
             try:
@@ -225,93 +376,18 @@ def _cancel_user_tasks(user_id: int) -> int:
         t.cancel()
     return len(tasks)
 
-# ── LLM backends ──────────────────────────────────────────────────────────────
+# ── LLM backends (delegated to shared llm_client.py async_call) ──────────────
 
-async def call_litellm(messages: list[dict]) -> Optional[str]:
-    """Call LiteLLM proxy — handles qwen3:14b → deepseek-v3.2 → stepfun fallback chain."""
-    headers = {
-        "Authorization": f"Bearer {LITELLM_API_KEY}",
-        "Content-Type": "application/json",
-    }
-    payload = {"model": LITELLM_MODEL, "messages": messages}
-    try:
-        async with httpx.AsyncClient(timeout=_OLLAMA_TIMEOUT) as client:
-            r = await client.post(
-                f"{LITELLM_BASE}/v1/chat/completions",
-                headers=headers,
-                json=payload,
-            )
-            r.raise_for_status()
-            content = r.json()["choices"][0]["message"]["content"]
-            if not content:
-                log.warning("LiteLLM returned empty content")
-                return None
-            return content
-    except Exception as exc:
-        log.warning("LiteLLM proxy failed: %s", repr(exc))
-        return None
-
-
-async def call_ollama(messages: list[dict]) -> Optional[str]:
-    payload = {
-        "model": OLLAMA_MODEL,
-        "messages": messages,
-        "stream": False,
-        "think": False,
-        "options": {"num_ctx": 32768},
-    }
-    try:
-        async with httpx.AsyncClient(timeout=_OLLAMA_TIMEOUT) as client:
-            r = await client.post(f"{OLLAMA_BASE}/api/chat", json=payload)
-            r.raise_for_status()
-            content = r.json()["message"]["content"]
-            if not content:
-                log.warning("Ollama returned empty content")
-                return None
-            return content
-    except Exception as exc:
-        log.warning("Ollama failed: %s", repr(exc))
-        return None
-
-
-async def call_openrouter(messages: list[dict], model: str = OPENROUTER_MODEL) -> Optional[str]:
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_KEY}",
-        "HTTP-Referer": "https://github.com/openclaw",
-        "X-Title": "Dwight-Bot",
-        "Content-Type": "application/json",
-    }
-    payload = {"model": model, "messages": messages}
-    try:
-        async with httpx.AsyncClient(timeout=_OPENROUTER_TIMEOUT) as client:
-            r = await client.post(
-                f"{OPENROUTER_BASE}/chat/completions",
-                headers=headers,
-                json=payload,
-            )
-            r.raise_for_status()
-            return r.json()["choices"][0]["message"]["content"]
-    except Exception as exc:
-        log.warning("OpenRouter (%s) failed: %s", model, exc)
-        return None
+from llm_client import async_call as _llm_async_call, LLMError as _LLMError
 
 
 async def _llm(messages: list[dict]) -> tuple[Optional[str], str]:
-    # LiteLLM proxy first — it handles the full fallback chain internally
-    reply = await call_litellm(messages)
-    if reply is not None:
-        return reply, f"LiteLLM ({LITELLM_MODEL})"
-    # Direct backends as safety net if proxy is down
-    reply = await call_ollama(messages)
-    if reply is not None:
-        return reply, f"Ollama ({OLLAMA_MODEL}) [direct]"
-    reply = await call_openrouter(messages, OPENROUTER_MODEL)
-    if reply is not None:
-        return reply, f"OpenRouter ({OPENROUTER_MODEL}) [direct]"
-    reply = await call_openrouter(messages, OPENROUTER_MODEL2)
-    if reply is not None:
-        return reply, f"OpenRouter ({OPENROUTER_MODEL2}) [direct]"
-    return None, "none"
+    """Call LLM with 4-tier async fallback via shared llm_client."""
+    try:
+        reply = await _llm_async_call(messages, stage="telegram_bot/llm")
+        return reply, "llm_client (auto-fallback)"
+    except _LLMError:
+        return None, "none"
 
 
 async def get_reply(
@@ -332,7 +408,12 @@ async def get_reply(
     appended_this_turn = False   # track if we already appended reply in loop
 
     for iteration in range(MAX_EXEC_LOOPS):
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
+        # Phase 1.4: Dynamic skill loading based on message content
+        dynamic_skills = load_skills_for_message(user_message)
+        sys_prompt = SYSTEM_PROMPT
+        if dynamic_skills:
+            sys_prompt = SYSTEM_PROMPT + "\n\n## ACTIVE SKILLS\n\n" + dynamic_skills
+        messages = [{"role": "system", "content": sys_prompt}] + history
         reply, backend = await _llm(messages)
 
         if reply is None:
@@ -375,7 +456,16 @@ async def get_reply(
                         )
                     except Exception:
                         pass
-                output = await run_command(cmd)
+                # Phase 3.1: Try CodeAgent for pipeline stage commands
+                output = None
+                if _CODE_AGENT and re.search(r'python3?\s+\S+\.py', cmd):
+                    try:
+                        output = await asyncio.to_thread(_CODE_AGENT.run_stage_by_cmd, cmd)
+                    except Exception as _ca_e:
+                        log.warning("CodeAgent failed (%s) — falling back to exec", _ca_e)
+                        output = None
+                if output is None:
+                    output = await run_command(cmd)
                 exec_results.append(f"$ {cmd}\n{output}")
 
         combined = "\n\n---\n\n".join(exec_results)
@@ -516,6 +606,32 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     else:
         log.error("Unhandled PTB error: %s", err, exc_info=context.error)
 
+# ── Graceful shutdown ────────────────────────────────────────────────────────
+
+_lock_fd = None  # set in main() after lock acquisition
+
+def _shutdown_handler(signum, frame):
+    """Clean up background tasks, subprocesses, and lock file on SIGTERM/SIGINT."""
+    sig_name = signal.Signals(signum).name
+    log.info("Received %s — shutting down gracefully", sig_name)
+    # Cancel all background tasks
+    for uid, tasks in bg_tasks.items():
+        for t in tasks:
+            t.cancel()
+    bg_tasks.clear()
+    # Release lock file
+    if _lock_fd:
+        try:
+            fcntl.flock(_lock_fd, fcntl.LOCK_UN)
+            _lock_fd.close()
+        except Exception:
+            pass
+    try:
+        os.unlink(LOCK_FILE)
+    except FileNotFoundError:
+        pass
+    sys.exit(0)
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -524,7 +640,15 @@ def main() -> None:
     if not OPENROUTER_KEY:
         log.warning("OPENROUTER_API_KEY not set — fallback will fail.")
 
-    _lock = _acquire_lock()
+    global _lock_fd
+    _lock_fd = _acquire_lock()
+
+    # Register graceful shutdown handlers
+    signal.signal(signal.SIGTERM, _shutdown_handler)
+    signal.signal(signal.SIGINT, _shutdown_handler)
+
+    # Phase 1.2: Assert model parity before starting
+    assert_model_parity()
 
     log.info(
         "Starting Dwight bot (primary=%s, fallback=%s)",

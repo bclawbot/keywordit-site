@@ -9,7 +9,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 
-BASE    = Path("/Users/newmac/.openclaw/workspace")
+BASE    = Path(__file__).resolve().parent
 INPUT   = BASE / "commercial_keywords.json"
 OUTPUT  = BASE / "vetted_opportunities.json"
 HISTORY = BASE / "vetted_history.jsonl"
@@ -83,17 +83,121 @@ def _ddg_fetch_sync(keyword):
 
 
 async def search_ddg(keyword: str, executor: ThreadPoolExecutor) -> list:
-    """DDG search via thread executor with 15s wall-clock timeout."""
+    """DDG search via thread executor with 8s wall-clock timeout."""
     loop = asyncio.get_event_loop()
     try:
         raw = await asyncio.wait_for(
             loop.run_in_executor(executor, _ddg_fetch_sync, keyword),
-            timeout=15,
+            timeout=5,
         )
         return [{"url": r["href"], "title": r["title"], "snippet": r["body"]} for r in raw]
     except (asyncio.TimeoutError, FuturesTimeout, Exception) as e:
         print(f"  ⚠️  DDG search failed for '{keyword}': {type(e).__name__}")
         return []
+
+
+# ── SERP cache ─────────────────────────────────────────────────────────────────
+
+SERP_CACHE_DIR  = Path.home() / ".openclaw" / "workspace" / "cache"
+SERP_CACHE_PATH = SERP_CACHE_DIR / "serp_cache.jsonl"
+SERP_CACHE_TTL  = 86400  # 24h
+
+_serp_cache: dict[tuple[str, str], dict] = {}
+
+
+def _serp_cache_key(keyword: str, country: str) -> tuple[str, str]:
+    return (keyword.strip().lower(), country.strip().upper())
+
+
+def load_serp_cache() -> int:
+    """Load cache entries newer than TTL into memory. Returns entry count."""
+    _serp_cache.clear()
+    if not SERP_CACHE_PATH.exists():
+        return 0
+    import time as _t
+    now = _t.time()
+    loaded = 0
+    try:
+        for line in SERP_CACHE_PATH.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            cached_at = entry.get("cached_at_epoch", 0)
+            if now - cached_at > SERP_CACHE_TTL:
+                continue
+            key = (entry.get("keyword", "").lower(), entry.get("country", "").upper())
+            _serp_cache[key] = entry
+            loaded += 1
+    except Exception as e:
+        print(f"  ⚠️  SERP cache load failed: {e}")
+    return loaded
+
+
+def cache_lookup(keyword: str, country: str) -> list | None:
+    entry = _serp_cache.get(_serp_cache_key(keyword, country))
+    return entry["results"] if entry else None
+
+
+def cache_store(keyword: str, country: str, results: list, source: str) -> None:
+    if not results:
+        return
+    import time as _t
+    entry = {
+        "keyword":          keyword,
+        "country":          country,
+        "results":          results,
+        "source":           source,
+        "cached_at":        datetime.now().isoformat(),
+        "cached_at_epoch":  _t.time(),
+    }
+    _serp_cache[_serp_cache_key(keyword, country)] = entry
+    try:
+        SERP_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        with SERP_CACHE_PATH.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        print(f"  ⚠️  SERP cache write failed: {e}")
+
+
+async def search_searxng(keyword: str, session: aiohttp.ClientSession) -> list:
+    """SearXNG local meta-search — preferred source when available."""
+    import urllib.parse
+    url = f"http://localhost:8888/search?q={urllib.parse.quote(keyword)}&format=json&categories=general"
+    try:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as r:
+            r.raise_for_status()
+            data = await r.json()
+            results = []
+            for item in data.get("results", [])[:10]:
+                results.append({
+                    "url":     item.get("url", ""),
+                    "title":   item.get("title", ""),
+                    "snippet": item.get("content", ""),
+                })
+            return results
+    except Exception as e:
+        print(f"  ⚠️  SearXNG search failed for '{keyword}': {e}")
+        return []
+
+
+async def check_searxng_health() -> bool:
+    """Quick health check — returns True if SearXNG is responding."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                "http://localhost:8888/search?q=test&format=json",
+                timeout=aiohttp.ClientTimeout(total=5)
+            ) as r:
+                data = await r.json()
+                n = len(data.get("results", []))
+                print(f"  {'✅' if n > 0 else '⚠️'} SearXNG: {n} results")
+                return n > 0
+    except Exception as e:
+        print(f"  ⚠️  SearXNG: unreachable ({e})")
+        return False
 
 
 async def search_brave(keyword: str, session: aiohttp.ClientSession, retries: int = 2) -> list:
@@ -138,11 +242,60 @@ async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
         keyword = entry.get("keyword", "")
         country = entry.get("country", "US")
 
-        results = await search_ddg(keyword, executor)
-        if not results:
-            results = await search_brave(keyword, session)
+        # Cache check — skip cascade entirely on hit (24h TTL)
+        cached = cache_lookup(keyword, country)
+        if cached is not None:
+            results = cached
+        else:
+            # Search cascade: SearXNG (local) → DDG → Brave (last resort)
+            results = await search_searxng(keyword, session)
+            _source = "searxng"
+            if not results:
+                results = await search_ddg(keyword, executor)
+                _source = "ddg"
+            if not results:
+                results = await search_brave(keyword, session)
+                _source = "brave"
+            if results:
+                cache_store(keyword, country, results, _source)
 
         survivors = []
+        # Phase 2.1: Compute SERP dominance — ratio of HIGH_DA authority sites in results
+        # High serp_dominance = dominated by authority sites = HARD to rank = BAD for arbitrage
+        # Low serp_dominance  = thin SERP coverage = EASY to rank = GOOD for arbitrage
+        HIGH_DA_DOMAINS = (
+            # General authority / news
+            "wikipedia.org", "forbes.com", "nytimes.com", "bbc.com", "cnn.com",
+            "washingtonpost.com", "theguardian.com", "reuters.com", "usatoday.com",
+            # Finance / insurance
+            "nerdwallet.com", "investopedia.com", "bankrate.com", "creditkarma.com",
+            "lendingtree.com", "wallethub.com", "thezebra.com", "policygenius.com",
+            "valuepenguin.com", "moneygeek.com", "fool.com",
+            # Health
+            "webmd.com", "mayoclinic.org", "healthline.com", "verywellhealth.com",
+            "medicalnewstoday.com", "clevelandclinic.org",
+            # Legal
+            "findlaw.com", "avvo.com", "justia.com", "nolo.com",
+            # General commercial / reviews
+            "amazon.com", "yelp.com", "reddit.com", "quora.com",
+            "tripadvisor.com", "g2.com", "capterra.com", "trustpilot.com",
+            "consumerreports.org", "pcmag.com", "cnet.com", "wirecutter.com",
+            # Government
+            "gov.", ".gov",
+            # Home services
+            "homeadvisor.com", "angi.com", "thumbtack.com",
+        )
+        noise_domains = ("youtube.com", "twitter.com", "x.com", "instagram.com",
+                         "tiktok.com", "facebook.com")
+        total_results  = len(results)
+        dominant_hits  = 0
+        for r in results:
+            url = r.get("url", "").lower()
+            if any(d in url for d in HIGH_DA_DOMAINS):
+                dominant_hits += 1
+        # serp_dominance: 0.0 (thin SERP) to 1.0 (fully dominated by authority sites)
+        serp_dominance = round(dominant_hits / max(total_results, 1), 3)
+
         for r in results:
             url     = r.get("url", "")
             title   = r.get("title", "")
@@ -151,8 +304,6 @@ async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
             if not is_long_form(url, snippet):
                 continue
 
-            noise_domains = ("youtube.com", "twitter.com", "x.com", "instagram.com",
-                             "tiktok.com", "facebook.com", "reddit.com", "wikipedia.org")
             if any(d in url.lower() for d in noise_domains):
                 continue
 
@@ -166,32 +317,41 @@ async def vet_keyword(entry: dict, session: aiohttp.ClientSession,
                 "lander_title":    title,
                 "ad_age_days":     90,
                 "data_source":     "ddg_serp",
+                "serp_dominance":  serp_dominance,
                 "vetted_at":       datetime.now().isoformat(),
             }
             # Copy all CPC and metrics fields from commercial_keywords
             for key in ["cpc_usd", "search_volume", "competition", "competition_index",
                         "opportunity_score", "estimated_rpm", "metrics_source",
                         "commercial_category", "confidence", "country_tier",
-                        "efficiency_factor", "processed_at", "cpc_low_usd", "cpc_high_usd"]:
+                        "efficiency_factor", "processed_at", "cpc_low_usd", "cpc_high_usd",
+                        # Discovery context fields — required by Stage 3a (angle_engine.py)
+                        "source_trend", "language_code", "trend_source", "source",
+                        "subreddit", "reddit_score", "original_keyword",
+                        "expansion_seed", "is_branded"]:
                 if key in entry:
                     vetted_entry[key] = entry[key]
             
             survivors.append(vetted_entry)
 
-        # Small polite delay between keywords
-        await asyncio.sleep(0.5)
         return survivors
 
 
 async def vet_all(trends: list) -> list:
-    semaphore = asyncio.Semaphore(5)  # max 5 concurrent SERP checks (rate limit respect)
-    executor  = ThreadPoolExecutor(max_workers=5)
+    # Load the SERP cache once at entry. Hits skip the SearXNG/DDG/Brave
+    # cascade entirely — fixes run-to-run variance caused by SearXNG
+    # rate-limit degradation (2026-04-20 bridge experiments v2=77 vs v2b=35).
+    loaded = load_serp_cache()
+    print(f"  [SERP cache] loaded {loaded} entries (TTL {SERP_CACHE_TTL}s)")
+
+    semaphore = asyncio.Semaphore(15)  # 15 concurrent SERP checks (3× faster)
+    executor  = ThreadPoolExecutor(max_workers=15)
 
     async with aiohttp.ClientSession() as session:
         tasks = [vet_keyword(entry, session, executor, semaphore) for entry in trends]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    executor.shutdown(wait=False)
+    executor.shutdown(wait=True)
     all_vetted = []
     for r in results:
         if isinstance(r, list):
@@ -243,8 +403,9 @@ if __name__ == "__main__":
     commercial_keywords = json.loads(INPUT.read_text())
     
     if not commercial_keywords:
-        print(f"❌  {INPUT.name} is empty — keyword_extractor.py must have failed.")
-        raise SystemExit(1)
+        print(f"⚠️  {INPUT.name} is empty — skipping vetting (nothing to vet)")
+        OUTPUT.write_text("[]")
+        raise SystemExit(0)
     
     # Filter out news headlines before vetting
     original_count = len(commercial_keywords)
@@ -255,7 +416,74 @@ if __name__ == "__main__":
     filtered_count = original_count - len(commercial_keywords)
     if filtered_count > 0:
         print(f"  [News Filter] Removed {filtered_count} news headlines from {original_count} keywords")
-    
+
+    # When ALL keywords have CPC=0 (DFS expansion skipped this run), only vet
+    # keywords in high-value verticals with high LLM confidence — the rest have
+    # no price signal and produce only UNSCORED results, wasting Brave quota.
+    HIGH_VALUE_VERTICALS = {
+        "finance", "insurance", "legal", "health", "real_estate", "education",
+        "software", "saas", "tech", "travel", "automotive",
+        "cybersecurity", "government_benefits",  # Sprint 2: money-flow archetypes
+    }
+    all_cpc_zero = all(float(kw.get("cpc_usd") or 0) == 0 for kw in commercial_keywords)
+    if all_cpc_zero:
+        before_zero_filter = len(commercial_keywords)
+        commercial_keywords = [
+            kw for kw in commercial_keywords
+            if (
+                (kw.get("vertical", "general") in HIGH_VALUE_VERTICALS
+                 or kw.get("commercial_category", "general") in HIGH_VALUE_VERTICALS)
+                and kw.get("confidence", "") in ("high", "medium")
+            )
+        ]
+        dropped_zero = before_zero_filter - len(commercial_keywords)
+        if dropped_zero > 0:
+            print(f"  [Zero-CPC Filter] All {before_zero_filter} keywords have CPC=0 "
+                  f"(DFS expansion skipped) — retained {len(commercial_keywords)} "
+                  f"high-value-vertical keywords, dropped {dropped_zero}")
+        if not commercial_keywords:
+            print("  [Zero-CPC Filter] No high-value keywords to vet — writing empty output")
+            OUTPUT.write_text("[]")
+            print(f"✅ Vetting complete: 0 opportunities (no actionable keywords) → {OUTPUT.name}")
+            raise SystemExit(0)
+
+    # Deduplicate by (keyword, country) before SERP calls — saves DDG/Brave quota.
+    # Keep the first occurrence (preserves ordering from prior sort/filter).
+    _seen_kw_country = set()
+    _deduped = []
+    for kw in commercial_keywords:
+        _key = (kw.get("keyword", "").strip().lower(), kw.get("country", "").strip().upper())
+        if _key not in _seen_kw_country:
+            _seen_kw_country.add(_key)
+            _deduped.append(kw)
+    _dedup_dropped = len(commercial_keywords) - len(_deduped)
+    if _dedup_dropped > 0:
+        print(f"  [Dedup] Removed {_dedup_dropped} duplicate kw+country pairs "
+              f"({len(commercial_keywords)} → {len(_deduped)})")
+    commercial_keywords = _deduped
+
+    # Cap at 2000 keywords to keep vetting within the 3600s heartbeat timeout.
+    # At 8s DDG timeout × 2000 kw / 15 concurrent ≈ 1067s worst-case.
+    # Prioritise by CPC × volume (highest commercial value first).
+    VETTING_CAP = 2000
+    if len(commercial_keywords) > VETTING_CAP:
+        # Stable tiebreak: sha1(keyword|country) ensures rows with identical
+        # CPC×volume scores (e.g. bridged consequence_generator placeholders)
+        # always sort the same way regardless of file order. Prevents bridge
+        # experimentation from shuffling survivor sets run-to-run.
+        import hashlib
+        def _stable_tiebreak(k):
+            key = f"{k.get('keyword','')}|{k.get('country','')}".encode('utf-8')
+            return hashlib.sha1(key).hexdigest()
+        commercial_keywords = sorted(
+            commercial_keywords,
+            key=lambda k: (
+                -((k.get("cpc_usd") or 0) * (k.get("search_volume") or 0)),
+                _stable_tiebreak(k),
+            ),
+        )[:VETTING_CAP]
+        print(f"  [Cap] Trimmed to top {VETTING_CAP} keywords by CPC×volume for vetting")
+
     all_vetted = asyncio.run(vet_all(commercial_keywords))
 
     OUTPUT.write_text(json.dumps(all_vetted, indent=2))

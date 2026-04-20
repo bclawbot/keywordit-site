@@ -3,15 +3,98 @@
 .env.local
 .telegram_chat_id
 
-# Caches & databases
-*.db
-*.sqlite3
-__pycache__/
-*.pyc
-
 # OS
 .DS_Store
-.Thumbs.db
+Thumbs.db
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+
+# Databases & WAL files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+
+# Vector stores
+**/lancedb/
+
+# Backend (separate git repo)
+backend/
+
+# Generated JSONL (pipeline logs & history)
+*.jsonl
+# Keep the two permanent history files
+!trends_all_history.jsonl
+!explosive_trends_history.jsonl
+
+# Generated JSON (pipeline outputs, regenerated every run)
+golden_opportunities.json
+validated_opportunities.json
+vetted_opportunities.json
+latest_trends.json
+explosive_trends.json
+reddit_intelligence.json
+subreddit_registry.json
+angle_candidates.json
+entity_registry.json
+entity_registry.json.backup_*
+transformed_keywords_validated.json
+discovery_rejected.json
+
+# Data directory (large generated outputs)
+data/opportunities.json
+data/angles.json
+data/intelligence_reports/
+data/filtered_out.log
+data/expansion_log.jsonl
+data/taboola_keyword_index.json
+data/proven_keywords.json
+data/proven_rpc_lookup.json
+data/proven_templates.json
+data/country_intelligence.json
+
+# Generated HTML
+dashboard.html
+index.html
+
+# Articles (generated content)
+articles/
 
 # Backup files
 *.bak
+*.bak.*
+*.backup_*
+
+# Runtime state & checkpoints
+.keyword_extractor_llm_checkpoint.json
+.last_deploy_hash
+.last_deploy_hash.bak
+discovery_last_run.txt
+
+# Node.js
+node_modules/
+
+# Claude Code metadata
+.claude/
+
+# STEP 9 smoke-test artifacts
+*.bak_step9*
+angle_candidates.json.bak_*
+
+# STEP 9 bridge transients
+bridge_consequence_to_commercial.py
+commercial_keywords.json.bak_step9_bridge
+
+# SERP cache (T3)
+cache/
+
+# STEP 9 snapshot payloads — metadata and report are committed, JSONs are not
+implementation/snapshots/step9_final/commercial_keywords.json
+implementation/snapshots/step9_final/vetted_opportunities.json
+implementation/snapshots/step9_final/validated_opportunities.json
+implementation/snapshots/step9_final/angle_candidates.json

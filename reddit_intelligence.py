@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 import aiohttp
 
-BASE = Path("/Users/newmac/.openclaw/workspace")
+BASE = Path(__file__).resolve().parent
 OUTPUT = BASE / "reddit_intelligence.json"
 HISTORY = BASE / "reddit_intel_history.jsonl"
 REGISTRY_FILE = BASE / "subreddit_registry.json"

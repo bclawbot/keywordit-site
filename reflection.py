@@ -1,8 +1,9 @@
 import json
+import os
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
-BASE          = Path("/Users/newmac/.openclaw/workspace")
+BASE          = Path(__file__).resolve().parent
 HISTORY_LOG   = BASE / "trends_all_history.jsonl"
 VALIDATED_FILE = BASE / "validated_opportunities.json"
 MEMORY_FILE   = BASE / "MEMORY.md"
@@ -104,7 +105,7 @@ for geo, weight in sorted(signal_weights.items(), key=lambda x: -x[1])[:20]:
 
 new_section += "\n---\n"
 
-MAX_MEMORY_LINES = 2000
+MAX_MEMORY_LINES = 400
 
 if MEMORY_FILE.exists():
     existing = MEMORY_FILE.read_text()
@@ -123,6 +124,62 @@ else:
     existing = "# OpenClaw Memory\n\n"
 
 MEMORY_FILE.write_text(existing + new_section)
+
+# ── Phase 1.1: Export signal_weights.json (closed feedback loop) ─────────────
+
+TIER_CPC = {
+    'US': 0.5, 'GB': 0.45, 'CA': 0.45, 'AU': 0.45, 'DE': 0.40, 'FR': 0.35,
+    'JP': 0.25, 'KR': 0.20, 'IT': 0.20, 'ES': 0.18, 'NL': 0.25, 'SE': 0.25,
+    'BR': 0.08, 'MX': 0.06, 'IN': 0.03, 'ID': 0.03, 'TH': 0.04, 'PH': 0.02,
+    'PL': 0.10, 'TR': 0.05, 'ZA': 0.15,
+    'NG': 0.05, 'KE': 0.05, 'EG': 0.06, 'SA': 0.08, 'BD': 0.04, 'PK': 0.04,
+}
+
+def _get_tier_min_cpc(country):
+    return TIER_CPC.get(country, 0.10)
+
+def export_signal_weights():
+    """Write per-country dynamic thresholds to signal_weights.json.
+    Read by trends_postprocess.py (Stage 1b) at startup."""
+    weights = {}
+    for geo, counts in country_golden.items():
+        total  = counts['total']
+        golden = counts['golden']
+        if total < 100:
+            continue  # skip countries with insufficient data (plan: HAVING total > 100)
+        golden_rate = golden / total if total > 0 else 0.0
+        base_cpc = _get_tier_min_cpc(geo)
+
+        if golden_rate < 0.001:
+            weights[geo] = {
+                'min_cpc': round(base_cpc * 1.5, 3),
+                'golden_rate': round(golden_rate, 6),
+                'filter_mode': 'max_strict',
+            }
+        elif golden_rate > 0.01:
+            weights[geo] = {
+                'min_cpc': round(base_cpc * 0.8, 3),
+                'golden_rate': round(golden_rate, 6),
+                'filter_mode': 'relaxed',
+            }
+        else:
+            weights[geo] = {
+                'min_cpc': base_cpc,
+                'golden_rate': round(golden_rate, 6),
+                'filter_mode': 'strict',
+            }
+
+    weights['updated_at'] = datetime.now(timezone.utc).isoformat()
+    out_path = Path(os.path.expanduser('~/.openclaw/signal_weights.json'))
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(weights, indent=2), encoding='utf-8')
+    country_count = sum(1 for k in weights if k != 'updated_at')
+    print(f"  [Signal Weights] Exported signal_weights.json — {country_count} countries")
+
+try:
+    export_signal_weights()
+except Exception as _sw_err:
+    print(f"  ⚠️  signal_weights export failed: {_sw_err}")
 
 # ── Summary ─────────────────────────────────────────────────────────────────
 print(

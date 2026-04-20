@@ -1,0 +1,33 @@
+snapshot_utc=20260420T122155Z
+commercial_keywords.json: 4562742 bytes, mtime=2026-04-20 14:07:48.097053677 +0300
+vetted_opportunities.json: 383364 bytes, mtime=2026-04-20 14:09:21.163519765 +0300
+validated_opportunities.json: 464320 bytes, mtime=2026-04-20 14:11:09.386191786 +0300
+angle_candidates.json: 51997043 bytes, mtime=2026-04-20 14:20:07.127492154 +0300
+
+STEP 9 Final Measurement — Baseline (before any heartbeat overwrite)
+================================================================
+Snapshot taken: snapshot_utc=20260420T122155Z
+
+Data files (live, pre-heartbeat-activity):
+  commercial_keywords.json:     6108 rows
+    consequence_generator:      199
+  vetted_opportunities.json:    404 rows
+    consequence_generator:      35
+  validated_opportunities.json: 252 rows
+  angle_candidates.json:        11306 clusters
+
+STEP 9 core metric — trend-grounded commercial_transform clusters:
+  Total commercial_transform clusters:  1618
+  ...with source_trend populated:       131    <<< STEP 9 LIFT
+    processed 2026-04-20 (today's run): 30
+    processed 2026-04-19:               89
+    processed earlier:                  12
+
+Title quality check:
+  ct-with-trend clusters whose title starts-with or contains " best " as word: 28
+  (Note: "best" in keyword itself is keyword-substitution, not a fix regression)
+
+Baseline (pre STEP 9 fix, per Claude Code's earlier measurement):
+  Trend-grounded commercial_transform clusters: 0
+
+Net STEP 9 impact: 0 -> 131 trend-grounded clusters across 11 countries.
