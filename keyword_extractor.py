@@ -22,6 +22,7 @@ import json
 import math
 import os
 import re
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor as _ThreadPoolExecutor, as_completed as _as_completed
 from datetime import datetime
@@ -215,7 +216,7 @@ def _llm_post_direct(user_message: str) -> dict:
         messages,
         max_tokens=4096,
         temperature=0.3,
-        timeout="generous",
+        timeout="normal",              # was "generous"; 120s/tier is plenty for batch-of-5 seed extraction
         stage="keyword_extractor/llm",
     )
     return {"choices": [{"message": {"content": content}}]}
@@ -234,7 +235,7 @@ def llm_extract_keywords(batch: list, _retry: bool = True) -> list:
         for t in batch
     ], ensure_ascii=False)
 
-    for attempt in range(2):
+    for attempt in range(1):          # was range(2); JSON-clarification retry deleted — cost not worth it
         try:
             resp_data = _llm_post_direct(user_message)
             raw_content = resp_data["choices"][0]["message"]["content"]
@@ -256,15 +257,7 @@ def llm_extract_keywords(batch: list, _retry: bool = True) -> list:
             return [k for k in keywords if k.get("confidence") in ("high", "medium") and k.get("seed_keyword")]
 
         except json.JSONDecodeError:
-            if attempt == 0:
-                print("  ⚠️  LLM JSON parse failed — retrying with clarification…")
-                user_message = (
-                    "Your previous response was not valid JSON. "
-                    "Please return ONLY the JSON array with no other text.\n\n"
-                    + user_message
-                )
-                continue
-            _log_error("keyword_extractor/llm", "JSON parse failed after retry")
+            _log_error("keyword_extractor/llm", "JSON parse failed — not retrying (see STEP_9_KEYWORD_EXTRACTOR_HANG_FIX)")
             return []
 
         except LLMError:
@@ -280,8 +273,6 @@ def llm_extract_keywords(batch: list, _retry: bool = True) -> list:
 
         except Exception as e:
             _log_error("keyword_extractor/llm", str(e))
-            if attempt == 0:
-                continue
             return []
 
     return []
@@ -661,6 +652,8 @@ def dfs_labs_keyword_ideas(seed_objects: list) -> list:
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
+    sys.stdout.reconfigure(line_buffering=True)   # STEP 9 — make background tails live
+    sys.stderr.reconfigure(line_buffering=True)
     if not INPUT.exists():
         print(f"⚠️  {INPUT} not found — run trends_postprocess.py first")
         raise SystemExit(1)
@@ -770,9 +763,15 @@ def main():
             break
         batch     = raw_trends[i : i + LLM_BATCH_SIZE]
         batch_num = i // LLM_BATCH_SIZE + 1
-        print(f"  → LLM batch {batch_num}/{total_batches} ({len(batch)} trends)…")
+        _batch_started = time.time()
+        print(f"  [batch {batch_num}/{total_batches}] size={len(batch)} starting at {datetime.now().isoformat(timespec='seconds')}", flush=True)
         try:
             extracted = llm_extract_keywords(batch)
+            _batch_elapsed = time.time() - _batch_started
+            if _batch_elapsed > 420:
+                print(f"  ⚠️  [batch {batch_num}/{total_batches}] took {_batch_elapsed:.0f}s (> 420s soft cap). Possible retry storm — check error_log.jsonl.", flush=True)
+            else:
+                print(f"  [batch {batch_num}/{total_batches}] done in {_batch_elapsed:.0f}s — {len(extracted)} seeds", flush=True)
             # Backfill trend_source (source identifier) from the originating trend record.
             # The LLM returns source_trend (raw term) but drops the source name.
             term_to_source = {t.get("term", "").lower(): t.get("source", "") for t in batch}
