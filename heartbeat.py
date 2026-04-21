@@ -712,6 +712,15 @@ try:
 except Exception as _fresh_err:
     print(f"  [Freshness] monitor run failed: {_fresh_err}")
 
+# Sprint 4 Task 4.2: schema sidecars on every pipeline artifact.
+try:
+    from lib.schema_version import write_all_sidecars
+    _sidecars = write_all_sidecars(BASE)
+    if _sidecars:
+        print(f"  [Schema] wrote {len(_sidecars)} sidecar(s)")
+except Exception as _sv_err:
+    print(f"  [Schema] sidecar sweep failed: {_sv_err}")
+
 print()
 status = f"{len(errors)} error(s)" if errors else "all stages OK"
 print(f"✅ Heartbeat complete — {status}")
