@@ -651,12 +651,25 @@ def dfs_labs_keyword_ideas(seed_objects: list) -> list:
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
+ALIVE_DIR = Path(os.environ.get("HEARTBEAT_ALIVE_DIR", str(Path.home() / ".openclaw" / "logs")))
+ALIVE_FILE = ALIVE_DIR / "keyword_extractor.alive"
+
+
+def _touch_alive() -> None:
+    try:
+        ALIVE_DIR.mkdir(parents=True, exist_ok=True)
+        ALIVE_FILE.touch()
+    except Exception:
+        pass
+
+
 def main():
     sys.stdout.reconfigure(line_buffering=True)   # STEP 9 — make background tails live
     sys.stderr.reconfigure(line_buffering=True)
     if not INPUT.exists():
         print(f"⚠️  {INPUT} not found — run trends_postprocess.py first")
         raise SystemExit(1)
+    _touch_alive()
 
     # ── DB init + maintenance ──────────────────────────────────────────────────
     init_db()
@@ -764,10 +777,14 @@ def main():
         batch     = raw_trends[i : i + LLM_BATCH_SIZE]
         batch_num = i // LLM_BATCH_SIZE + 1
         _batch_started = time.time()
-        print(f"  [batch {batch_num}/{total_batches}] size={len(batch)} starting at {datetime.now().isoformat(timespec='seconds')}", flush=True)
+        _touch_alive()
+        print(f"  [keyword_extractor] batch {batch_num}/{total_batches} size={len(batch)} "
+              f"seeds_so_far={len(seed_objects)} starting at "
+              f"{datetime.now().isoformat(timespec='seconds')}", flush=True)
         try:
             extracted = llm_extract_keywords(batch)
             _batch_elapsed = time.time() - _batch_started
+            _touch_alive()
             if _batch_elapsed > 420:
                 print(f"  ⚠️  [batch {batch_num}/{total_batches}] took {_batch_elapsed:.0f}s (> 420s soft cap). Possible retry storm — check error_log.jsonl.", flush=True)
             else:

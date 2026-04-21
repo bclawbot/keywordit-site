@@ -1,17 +1,38 @@
 import json
 import os
 import re
+import time
 from pathlib import Path
 from datetime import datetime
 
 BASE = Path(__file__).resolve().parent
 
 from llm_client import generate as _llm_generate  # noqa: E402
+from money_flow_classifier import ARCHETYPES as _MF_ARCHETYPES  # noqa: E402
 SNAP = BASE / "latest_trends.json"
 EXP  = BASE / "explosive_trends.json"
 EXP_LOG = BASE / "explosive_trends_history.jsonl"  # append-only
 ERROR_LOG = BASE / "error_log.jsonl"
 DEDUP_LOG = BASE / "dedup_log.jsonl"
+
+# R2-C1: checkpoint + liveness.
+CHECKPOINT_EVERY = 200
+ALIVE_DIR = Path(os.environ.get("HEARTBEAT_ALIVE_DIR", Path.home() / ".openclaw" / "logs"))
+ALIVE_FILE = ALIVE_DIR / "trends_postprocess.alive"
+
+
+def _atomic_save(target: Path, data) -> None:
+    tmp = target.with_suffix(target.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    os.replace(tmp, target)
+
+
+def _touch_alive() -> None:
+    try:
+        ALIVE_DIR.mkdir(parents=True, exist_ok=True)
+        ALIVE_FILE.touch()
+    except Exception:
+        pass
 
 # ── Phase 0.1: Commercial Intent Prefilter ────────────────────────────────────
 SIGNAL_WEIGHTS_PATH = Path(os.path.expanduser('~/.openclaw/signal_weights.json'))
@@ -60,8 +81,13 @@ def commercial_intent_prefilter(trend, country_code, weights):
     title = (trend.get('term', '') + ' ' + trend.get('description', '')).strip()
 
     # Layer 1: Regex hard-kill — non-commercial patterns
+    # EXCEPTION: exempt keywords that match a money-flow archetype.
+    # These look non-commercial on the surface but drive real ad spend
+    # (e.g., "hurricane" → insurance, home_services, legal).
     if NON_COMMERCIAL_PATTERNS.search(title):
-        return False, 'regex_noncommercial'
+        has_money_flow_archetype = any(pat.search(title) for pat in _MF_ARCHETYPES.values())
+        if not has_money_flow_archetype:
+            return False, 'regex_noncommercial'
 
     # Layer 2: Dynamic CPC threshold from signal_weights.json
     country_weights = weights.get(country_code, {})
@@ -100,11 +126,12 @@ def _llm_classify_commercial(title: str) -> bool:
 
 
 try:
-    from vector_store import is_duplicate, add_trend, maintenance as _vs_maintenance
+    from vector_store import is_duplicate, add_trend, maintenance as _vs_maintenance, health_check as _vs_health_check
     _VECTOR_STORE_AVAILABLE = True
 except Exception:
     _VECTOR_STORE_AVAILABLE = False
     _vs_maintenance = None
+    _vs_health_check = None
 
 def score(t):
     val = str(t.get("traffic", "0")).replace("+","").replace(",","")
@@ -116,6 +143,7 @@ def score(t):
 
 
 def main():
+    global _VECTOR_STORE_AVAILABLE
     data = json.loads(SNAP.read_text())
 
     # ── Apply commercial intent prefilter BEFORE explosive filter + LanceDB ───────
@@ -185,9 +213,23 @@ def main():
     explosive = [x for x in data if score(x) >= 20000]
     explosive_sorted = sorted(explosive, key=score, reverse=True)
 
+    # Health check: verify LanceDB trends table and embedding endpoint
+    if _VECTOR_STORE_AVAILABLE and _vs_health_check:
+        _hc = _vs_health_check()
+        if not _hc.get("embedding_ok"):
+            print(f"  [LanceDB] Embedding endpoint unhealthy: {_hc.get('embedding_error', 'unknown')}")
+            _VECTOR_STORE_AVAILABLE = False
+        elif "trends" not in _hc.get("tables", []):
+            print("  [LanceDB] trends table missing — will be created on first add_trend()")
+
     deduped_explosive = []
     skipped_semantic = 0
-    for rec in explosive_sorted:
+    _vs_consecutive_errors = 0
+    _VS_ERROR_THRESHOLD = 3
+    _t0 = time.time()
+    _total = len(explosive_sorted)
+    _touch_alive()
+    for _i, rec in enumerate(explosive_sorted, 1):
         rec['explosive_score'] = score(rec)
         rec['marked_at'] = datetime.now().isoformat()
         keyword = rec.get("term", "")
@@ -206,15 +248,40 @@ def main():
                         }) + "\n")
                     continue
                 add_trend(keyword, country, rec.get("fetched_at", ""), rec.get("source", ""), score(rec))
-            except Exception:
-                pass  # vector store errors are non-fatal
+                _vs_consecutive_errors = 0
+            except Exception as _vs_err:
+                _vs_consecutive_errors += 1
+                if _vs_consecutive_errors >= _VS_ERROR_THRESHOLD:
+                    print(f"  [LanceDB] {_VS_ERROR_THRESHOLD} consecutive errors — disabling dedup for this run")
+                    _VECTOR_STORE_AVAILABLE = False
+                else:
+                    print(f"  [LanceDB] Error indexing '{keyword}': {_vs_err}")
+                try:
+                    with ERROR_LOG.open("a") as _ef:
+                        _ef.write(json.dumps({
+                            "timestamp": datetime.now().isoformat(),
+                            "stage": "trends_postprocess/vector_store",
+                            "error": str(_vs_err),
+                            "keyword": keyword,
+                            "country": country,
+                        }) + "\n")
+                except Exception:
+                    pass
         deduped_explosive.append(rec)
+
+        if _i % CHECKPOINT_EVERY == 0:
+            _atomic_save(EXP, deduped_explosive)
+            _touch_alive()
+            print(f"[trends_postprocess] checkpoint {_i}/{_total} saved "
+                  f"({len(deduped_explosive)} after dedup, {int(time.time()-_t0)}s elapsed)",
+                  flush=True)
 
     if skipped_semantic:
         print(f"Skipped {skipped_semantic} semantic duplicates via LanceDB")
 
     explosive_sorted = deduped_explosive
-    EXP.write_text(json.dumps(explosive_sorted, indent=2))
+    _atomic_save(EXP, explosive_sorted)
+    _touch_alive()
 
     with EXP_LOG.open("a") as f:
         for rec in explosive_sorted:
@@ -227,8 +294,8 @@ def main():
     if _VECTOR_STORE_AVAILABLE and _vs_maintenance:
         try:
             _vs_maintenance()
-        except Exception:
-            pass
+        except Exception as _maint_err:
+            print(f"  [LanceDB] Maintenance error: {_maint_err}")
 
 
 if __name__ == "__main__":

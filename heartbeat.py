@@ -95,6 +95,20 @@ except Exception:
 import time as _time
 _stage_durations: dict = {}  # stage_name -> seconds
 
+# Sprint 2: watchdog + freshness sentinel helpers (R2-C1/C2/C3).
+try:
+    from pipeline_watchdog import (
+        start_watchdog as _start_watchdog,
+        stop_watchdog as _stop_watchdog,
+        write_stale_sentinel as _write_stale_sentinel,
+        clear_stale_sentinel as _clear_stale_sentinel,
+        STAGE_ALIVE_SLA as _STAGE_ALIVE_SLA,
+    )
+    _WATCHDOG_AVAILABLE = True
+except Exception:
+    _WATCHDOG_AVAILABLE = False
+    _STAGE_ALIVE_SLA = {}
+
 # ── Concurrent-run guard (atomic via fcntl.flock) ────────────────────────────
 import fcntl as _fcntl
 import os as _os
@@ -173,8 +187,8 @@ STAGE_TIMEOUTS = {
     "subreddit_discovery.py": 1200,   # increased: async comment mining can be slow
     "reddit_intelligence.py": 300,
     "trends_scraper.py":      1800,
-    "trends_postprocess.py":  3600,   # LanceDB dedup embeds 700+ trends (~30-35 min)
-    "money_flow_classifier.py": 900,  # Regex + Ollama direct (with per-200 checkpoint)
+    "trends_postprocess.py":  5400,   # R2-C1: >60 min on 2780+ trends, per-200 checkpoint
+    "money_flow_classifier.py": 1800, # R2-C2: 900s repeatedly timed out; bump to absorb Ollama variance
     "keyword_expander.py":    600,
     "commercial_keyword_transformer.py": 3600,  # increased: LLM transformation, safety net with think=False
     "consequence_generator.py": 1800, # 30 min — LLM per classified trend (cap 80), local-only
@@ -291,6 +305,15 @@ def _exec_stage(stage_num, script_name) -> bool:
         stderr=subprocess.PIPE,
         text=True,
     )
+    _watchdog_stop = None
+    if _WATCHDOG_AVAILABLE and script_name in _STAGE_ALIVE_SLA:
+        try:
+            _watchdog_stop = _start_watchdog(
+                script_name, proc.pid,
+                error_log_append=lambda rec: errors.append(rec),
+            )
+        except Exception as _wd_err:
+            _log.warning("Watchdog failed to start for %s: %s", script_name, _wd_err)
     try:
         stdout, stderr = proc.communicate(timeout=timeout_secs)
         rc = proc.returncode
@@ -298,14 +321,24 @@ def _exec_stage(stage_num, script_name) -> bool:
     except subprocess.TimeoutExpired:
         proc.kill()
         proc.communicate()
+        if _WATCHDOG_AVAILABLE:
+            try: _write_stale_sentinel(script_name, f"timeout after {timeout_secs}s")
+            except Exception: pass
         msg = f"{script_name} timed out after {timeout_secs}s"
         print(f"[Stage {stage_num}] ❌ Timeout: {msg}")
         _log.error("Stage timeout: %s", msg, extra={"stage": script_name, "duration": timeout_secs})
         errors.append({"timestamp": datetime.now().isoformat(),
                         "stage": str(stage_num), "error": msg})
         return False
+    finally:
+        if _watchdog_stop is not None:
+            try: _stop_watchdog(_watchdog_stop)
+            except Exception: pass
     if rc == 0:
         _mark_stage_done(script_name, _run_id)
+        if _WATCHDOG_AVAILABLE:
+            try: _clear_stale_sentinel(script_name)
+            except Exception: pass
         print(f"[Stage {stage_num}] ✅ Done")
         if stdout.strip():
             for line in stdout.strip().splitlines():
@@ -316,6 +349,9 @@ def _exec_stage(stage_num, script_name) -> bool:
     else:
         stderr_out = stderr.strip() or stdout.strip() or "non-zero exit"
         first_error_line = stderr_out.splitlines()[0] if stderr_out else "unknown error"
+        if _WATCHDOG_AVAILABLE:
+            try: _write_stale_sentinel(script_name, first_error_line[:200])
+            except Exception: pass
         print(f"[Stage {stage_num}] ❌ Failed: {first_error_line}")
         _log.error("Stage failed: %s", first_error_line, extra={"stage": script_name, "duration": _stage_durations.get(script_name, 0)})
         errors.append({"timestamp": datetime.now().isoformat(),

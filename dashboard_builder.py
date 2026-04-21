@@ -158,6 +158,14 @@ dataforseo_count = sum(1 for o in opportunities if 'dataforseo' in (o.get('metri
 # Distinct run dates for date filter reference
 run_dates = sorted({o['run_date'] for o in opportunities if o.get('run_date')})
 
+# Sprint 2 (R2-C1/C2/C3): surface any stage that failed or timed out so the
+# dashboard does not silently ship yesterday's data on a partial run.
+try:
+    from pipeline_watchdog import read_stale_sentinels as _read_stale_sentinels
+    _stale_stages = _read_stale_sentinels()
+except Exception:
+    _stale_stages = []
+
 meta = {
     'generated_at':          datetime.now().isoformat(),
     'total_validated':        total,
@@ -172,6 +180,7 @@ meta = {
     'metrics_from_dataforseo':dataforseo_count,
     'run_dates':              run_dates,
     'accumulated_runs':       len(run_dates),
+    'stale_stages':           _stale_stages,
 }
 
 data_json = json.dumps(opportunities, ensure_ascii=False).replace('</','<\\/')
