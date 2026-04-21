@@ -1,0 +1,9 @@
+{
+  "since_last_run_filter": true,
+  "country_chips":         true,
+  "angle_preview_column":  true,
+  "has_fb_intel_badge":    true,
+  "stale_banner":          true,
+  "golden_only_default":   true,
+  "_note":                 "Sprint 5 feature flags. Flip to false to disable a UI affordance without a code revert. See docs/operator_switches.md."
+}

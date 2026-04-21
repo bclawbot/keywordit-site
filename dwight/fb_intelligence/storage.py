@@ -21,7 +21,7 @@ import json
 import logging
 import sqlite3
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -216,6 +216,7 @@ CREATE TABLE IF NOT EXISTS LandingPages (
     screenshot_path TEXT,
     fetched_at      TEXT,
     metadata        TEXT,  -- JSON
+    html_content    TEXT,  -- raw HTML from Playwright crawl (Phase 5)
     created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 
@@ -267,6 +268,15 @@ CREATE TABLE IF NOT EXISTS Signals (
     metadata    TEXT,  -- JSON
     created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
+
+-- ── Per-cycle ad observation tracking (Phase 2 CCD) ─────────────────────────
+
+CREATE TABLE IF NOT EXISTS AdObservations (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    ad_id        INTEGER NOT NULL REFERENCES Ads(id) ON DELETE CASCADE,
+    scrape_run_id TEXT NOT NULL,
+    observed_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
 """
 
 _INDEXES = """
@@ -296,6 +306,8 @@ CREATE INDEX IF NOT EXISTS idx_landingpages_domain  ON LandingPages(domain);
 CREATE INDEX IF NOT EXISTS idx_dailymetrics_ad_date ON DailyMetrics(ad_id, date);
 CREATE INDEX IF NOT EXISTS idx_signals_ad           ON Signals(ad_id);
 CREATE INDEX IF NOT EXISTS idx_signals_type         ON Signals(signal_type);
+CREATE INDEX IF NOT EXISTS idx_obs_ad               ON AdObservations(ad_id);
+CREATE INDEX IF NOT EXISTS idx_obs_run              ON AdObservations(scrape_run_id);
 """
 
 _FTS = """
@@ -390,10 +402,40 @@ def init_db(db_path: Path | None = None) -> sqlite3.Connection:
     conn.executescript(_INDEXES)
     conn.executescript(_FTS)
 
+    _apply_migrations(conn)
     seed_taxonomies(conn)
 
     logger.info("Database initialized at %s", path)
     return conn
+
+
+def _sanitize_timestamp(ts, now: str) -> str | None:
+    """Reject or clamp timestamps that are in the future.
+
+    Accepts str (ISO-8601) or int/float (Unix epoch seconds) — the FB Ad Library
+    GraphQL API has been observed to return both shapes for the same field. Any
+    other type is coerced via str() rather than raised, so one weird ad does not
+    abort a whole scrape cycle. Returns None if ts is falsy.
+    """
+    if not ts:
+        return None
+    if isinstance(ts, (int, float)):
+        try:
+            ts = datetime.fromtimestamp(float(ts), tz=timezone.utc).isoformat()
+        except (ValueError, OSError, OverflowError):
+            return None
+    elif not isinstance(ts, str):
+        ts = str(ts)
+    try:
+        parsed = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        now_dt = datetime.fromisoformat(now.replace("Z", "+00:00"))
+        # Allow up to 1 day of clock skew
+        if parsed > now_dt + timedelta(days=1):
+            logger.warning("Future timestamp clamped: %s → %s", ts, now)
+            return now
+    except (ValueError, TypeError):
+        pass
+    return ts
 
 
 def compute_content_hash(ad: dict) -> str:
@@ -410,21 +452,32 @@ def ingest_ads(
     conn: sqlite3.Connection,
     ads: list[dict],
     source: str = "api",
+    scrape_run_id: str | None = None,
 ) -> dict:
     """Ingest a list of ad dicts into the database.
 
     Deduplicates on ad_archive_id. Detects creative changes via content_hash.
+    If scrape_run_id is provided, inserts AdObservation rows for per-cycle tracking.
     Returns {new_ads: int, updated_ads: int, unchanged: int, errors: int}.
     """
     now = _now()
+    if scrape_run_id is None:
+        scrape_run_id = now  # use timestamp as default run id
     counts = {"new_ads": 0, "updated_ads": 0, "unchanged": 0, "errors": 0}
 
     for ad in ads:
         try:
-            ad_archive_id = ad.get("ad_archive_id")
-            if not ad_archive_id:
+            raw_id = ad.get("ad_archive_id")
+            if raw_id is None or raw_id == "":
+                logger.warning("fb_intelligence/storage: missing ad_archive_id, skipping")
                 counts["errors"] += 1
                 continue
+            # Normalize to str at the storage boundary so downstream code
+            # (SQL bind, FTS insert, signal messages) can trust the type.
+            # The FB Ad Library API has returned ad_archive_id as both str and
+            # int across calls; upstream coercion was the R2-C4 root cause.
+            ad_archive_id = str(raw_id)
+            ad["ad_archive_id"] = ad_archive_id
 
             # Extract landing domain (before page resolution so we can set domain_id)
             landing_url = ad.get("landing_url")
@@ -442,6 +495,9 @@ def ingest_ads(
                 page_row_id = _ensure_facebook_page(conn, fb_page_id, ad, now, landing_domain)
 
             content_hash = compute_content_hash(ad)
+
+            # Sanitize delivery_start: reject future timestamps
+            delivery_start = _sanitize_timestamp(ad.get("delivery_start"), now)
 
             # Check if ad exists
             row = conn.execute(
@@ -471,7 +527,7 @@ def ingest_ads(
                         landing_domain,
                         ad.get("image_url"),
                         json.dumps(ad.get("platforms")) if ad.get("platforms") else None,
-                        ad.get("delivery_start"),
+                        delivery_start,
                         now,
                         now,
                         content_hash,
@@ -528,7 +584,7 @@ def ingest_ads(
                             landing_domain,
                             ad.get("image_url"),
                             json.dumps(ad.get("platforms")) if ad.get("platforms") else None,
-                            ad.get("delivery_start"),
+                            delivery_start,
                             now,
                             content_hash,
                             now,
@@ -566,6 +622,13 @@ def ingest_ads(
                     WHERE ad_id = ? AND is_current = 1""",
                     (now, ad_row_id),
                 )
+
+            # Record observation for per-cycle tracking (both new and existing ads)
+            conn.execute(
+                """INSERT INTO AdObservations (ad_id, scrape_run_id, observed_at)
+                VALUES (?, ?, ?)""",
+                (ad_row_id, scrape_run_id, now),
+            )
 
         except Exception as exc:
             counts["errors"] += 1
@@ -684,6 +747,15 @@ def get_stale_ads(conn: sqlite3.Connection, hours: int = 24) -> list[dict]:
         (f"-{hours}",),
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+def _apply_migrations(conn: sqlite3.Connection) -> None:
+    """Apply idempotent ALTER TABLE migrations for columns added after v1."""
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(LandingPages)").fetchall()}
+    if "html_content" not in existing:
+        conn.execute("ALTER TABLE LandingPages ADD COLUMN html_content TEXT")
+        logger.info("Migration: added LandingPages.html_content")
+    conn.commit()
 
 
 def seed_taxonomies(conn: sqlite3.Connection) -> None:
