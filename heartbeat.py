@@ -95,6 +95,23 @@ except Exception:
 import time as _time
 _stage_durations: dict = {}  # stage_name -> seconds
 
+# Sprint 3 Task 3.5 (R2-C8): entry-point attribution — log which process
+# triggered us. Makes every unexpected re-entry self-explanatory.
+_ppid_entry = os.getppid()
+_parent_cmd_entry = "(unknown)"
+try:
+    _parent_cmd_entry = subprocess.check_output(
+        ["ps", "-o", "command=", "-p", str(_ppid_entry)],
+        text=True, timeout=2,
+    ).strip() or "(unknown)"
+except Exception:
+    pass
+_log.info(
+    "[heartbeat] start pid=%s ppid=%s parent=%r",
+    os.getpid(), _ppid_entry, _parent_cmd_entry,
+)
+print(f"  [Entry] pid={os.getpid()} ppid={_ppid_entry} parent={_parent_cmd_entry!r}")
+
 # Sprint 2: watchdog + freshness sentinel helpers (R2-C1/C2/C3).
 try:
     from pipeline_watchdog import (
@@ -552,29 +569,87 @@ if _PROM_AVAILABLE and _stage_durations:
         print(f"  [Prometheus] Metrics update failed: {_prom_err}")
 
 # ── Sync to backend ─────────────────────────────────────────────────────────
+# Sprint 3 (R2-C7): operator can disable backend sync by touching
+# config/sync.muted — stops the 500 spam and lets Railway recover without a
+# code change. State transitions (ok→failed, ok→muted, etc.) are alerted
+# once via lib.alerts.
+try:
+    from lib.alerts import alert as _ops_alert
+except Exception:
+    _ops_alert = None  # soft degrade — local log still works via monitors
+
+_SYNC_MUTE_FILE = BASE / "config" / "sync.muted"
+_SYNC_STATE_FILE = Path.home() / ".openclaw" / "logs" / ".sync_last_status.json"
+
+def _read_last_sync_status() -> str:
+    try:
+        return json.loads(_SYNC_STATE_FILE.read_text()).get("status", "unknown")
+    except Exception:
+        return "unknown"
+
+def _write_sync_status(status: str, http_code: int | None = None) -> None:
+    try:
+        _SYNC_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _SYNC_STATE_FILE.write_text(json.dumps({
+            "status": status,
+            "http_code": http_code,
+            "ts": datetime.now().isoformat(),
+        }))
+    except Exception:
+        pass
+
 print()
 print("=" * 56)
 print("  BACKEND SYNC")
 print("=" * 56)
-try:
-    _sync_script = BASE / "sync_to_backend.py"
-    if _sync_script.exists():
-        _sync_env = {**os.environ, "RUN_ID": _run_id, "STARTED_AT": _started_at}
-        _sync_proc = subprocess.run(
-            [sys.executable, str(_sync_script),
-             "--run-id", _run_id, "--started-at", _started_at],
-            env=_sync_env, capture_output=True, text=True, timeout=300
-        )
-        for _line in _sync_proc.stdout.strip().splitlines():
-            print(f"  {_line}")
-        if _sync_proc.returncode != 0:
-            print(f"  ⚠️  sync_to_backend.py exited {_sync_proc.returncode}")
-            if _sync_proc.stderr.strip():
-                print(f"  {_sync_proc.stderr.strip()[:200]}")
-    else:
-        print("  sync_to_backend.py not found — skipping")
-except Exception as _sync_err:
-    print(f"  ⚠️  Backend sync failed: {_sync_err}")
+_prev_sync_status = _read_last_sync_status()
+if _SYNC_MUTE_FILE.exists():
+    print(f"  [sync] Muted via {_SYNC_MUTE_FILE.relative_to(BASE)} — skipping")
+    if _prev_sync_status != "muted" and _ops_alert is not None:
+        _ops_alert("info", "railway-sync-muted",
+                   "Backend sync paused via config/sync.muted",
+                   detail=f"Set by operator; remove the file to re-enable.")
+    _write_sync_status("muted")
+else:
+    try:
+        _sync_script = BASE / "sync_to_backend.py"
+        if _sync_script.exists():
+            _sync_env = {**os.environ, "RUN_ID": _run_id, "STARTED_AT": _started_at}
+            _sync_proc = subprocess.run(
+                [sys.executable, str(_sync_script),
+                 "--run-id", _run_id, "--started-at", _started_at],
+                env=_sync_env, capture_output=True, text=True, timeout=300
+            )
+            for _line in _sync_proc.stdout.strip().splitlines():
+                print(f"  {_line}")
+            # Heuristic: if sync output mentions "upstream 5" at all, treat
+            # the run as degraded. The sync script prints "upstream 500 —
+            # skipping" rather than exiting non-zero.
+            _had_5xx = "upstream 5" in (_sync_proc.stdout or "")
+            if _sync_proc.returncode != 0:
+                print(f"  ⚠️  sync_to_backend.py exited {_sync_proc.returncode}")
+                if _sync_proc.stderr.strip():
+                    print(f"  {_sync_proc.stderr.strip()[:200]}")
+                _new_status = "failed"
+            elif _had_5xx:
+                _new_status = "degraded"
+            else:
+                _new_status = "ok"
+            if _new_status != "ok" and _prev_sync_status == "ok" and _ops_alert is not None:
+                _ops_alert("error", "railway-sync-degraded",
+                           f"Backend sync transitioned ok → {_new_status}",
+                           detail=(_sync_proc.stdout or "")[-1000:])
+            _write_sync_status(_new_status)
+        else:
+            print("  sync_to_backend.py not found — skipping")
+            _write_sync_status("missing")
+    except Exception as _sync_err:
+        print(f"  ⚠️  Backend sync failed: {_sync_err}")
+        if _prev_sync_status == "ok" and _ops_alert is not None:
+            _ops_alert("error", "railway-sync-degraded",
+                       f"Backend sync raised {type(_sync_err).__name__}",
+                       detail=str(_sync_err)[:500])
+        _write_sync_status("failed")
 
 
 def _notify_golden_opportunities():
@@ -626,6 +701,16 @@ def _notify_golden_opportunities():
 
 
 _notify_golden_opportunities()
+
+# Sprint 3 Task 3.3: freshness monitors at end-of-run.
+try:
+    from lib.freshness_monitors import run_all as _run_freshness_monitors
+    _fresh_results = _run_freshness_monitors()
+    _fired = [k for k, v in _fresh_results.items() if v]
+    if _fired:
+        print(f"  [Freshness] alerts fired: {', '.join(_fired)}")
+except Exception as _fresh_err:
+    print(f"  [Freshness] monitor run failed: {_fresh_err}")
 
 print()
 status = f"{len(errors)} error(s)" if errors else "all stages OK"
