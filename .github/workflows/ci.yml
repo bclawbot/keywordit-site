@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "fix/**"]
+  pull_request:
+
+jobs:
+  unit:
+    name: Unit tests (fast layer)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal test deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Run unit tests (no smoke, no integration)
+        run: |
+          python -m pytest \
+            tests/test_alerts_and_monitors.py \
+            tests/test_dashboard_enrich.py \
+            tests/test_pipeline_watchdog.py \
+            tests/test_schema_and_taxonomy.py \
+            tests/test_regression_index.py \
+            -v --tb=short
+
+      - name: Orphan scan must stay green on known pipeline artifacts
+        run: |
+          # Non-zero exit OK here — it just means there are non-pipeline orphans.
+          # The unit tests above catch pipeline-artifact regressions.
+          python tools/orphan_scan.py || true

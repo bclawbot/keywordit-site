@@ -721,6 +721,14 @@ try:
 except Exception as _sv_err:
     print(f"  [Schema] sidecar sweep failed: {_sv_err}")
 
+# Sprint 6 Task 6.5: daily operator digest. Rate-limited to once per 24h
+# via lib.alerts dedupe_window_minutes=1440 — safe to call on every run.
+try:
+    from lib.daily_digest import send_digest as _send_daily_digest
+    _send_daily_digest(workspace=BASE)
+except Exception as _dd_err:
+    print(f"  [Digest] daily digest failed: {_dd_err}")
+
 print()
 status = f"{len(errors)} error(s)" if errors else "all stages OK"
 print(f"✅ Heartbeat complete — {status}")
