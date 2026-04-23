@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="shared/base.css">
 <style>
 /* ============================================================
@@ -1143,6 +1144,90 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
 .perf-awaiting h3 { font-family: var(--font-mono); font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; }
 .perf-awaiting p { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); line-height: 1.8; }
 .perf-awaiting code { background: var(--bg-elevated); padding: 2px 8px; border-radius: 3px; color: var(--accent-text); }
+
+/* ============================================================
+   EXPORT XLSX MODAL
+   ============================================================ */
+#xlsx-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 900;
+  display: none;
+  align-items: center; justify-content: center;
+}
+#xlsx-modal-overlay.visible { display: flex; }
+#xlsx-modal {
+  background: var(--bg-elevated, #1b1f27);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 460px; max-width: 92vw;
+  padding: 18px 20px 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  font-family: var(--font-sans);
+}
+#xlsx-modal h3 {
+  margin: 0 0 14px 0;
+  font-size: 15px; font-weight: 600;
+  letter-spacing: 0.2px;
+}
+#xlsx-modal .xlsx-section {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+#xlsx-modal .xlsx-section:last-of-type { border-bottom: none; }
+#xlsx-modal .xlsx-section-title {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+  color: var(--text-tertiary); margin-bottom: 8px; font-weight: 600;
+}
+#xlsx-modal .xlsx-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; }
+#xlsx-modal .xlsx-row input[type="checkbox"],
+#xlsx-modal .xlsx-row input[type="radio"] { margin: 0; accent-color: var(--c-blue, #4ea8de); }
+#xlsx-modal .xlsx-sub { margin-left: 24px; font-size: 12px; color: var(--text-secondary); }
+#xlsx-modal .xlsx-hint { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+#xlsx-modal .xlsx-hint button {
+  background: none; border: none; color: var(--c-blue, #4ea8de);
+  cursor: pointer; padding: 0; font: inherit; text-decoration: underline;
+}
+#xlsx-modal .xlsx-cols-list {
+  max-height: 180px; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 6px 8px; margin-top: 6px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px;
+  font-size: 12px;
+}
+#xlsx-modal .xlsx-cols-list label {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  padding: 2px 0;
+}
+#xlsx-modal .xlsx-cols-list input[type="checkbox"] { margin: 0; accent-color: var(--c-blue, #4ea8de); }
+#xlsx-modal .xlsx-rowcount {
+  font-size: 12px; color: var(--text-secondary);
+  margin-top: 10px; padding: 6px 10px;
+  background: rgba(255,255,255,0.03); border-radius: var(--radius-sm);
+}
+#xlsx-modal .xlsx-rowcount strong { color: var(--text-primary); }
+#xlsx-modal .xlsx-actions {
+  display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;
+}
+#xlsx-modal .xlsx-actions button {
+  padding: 6px 14px; border-radius: var(--radius-md); cursor: pointer;
+  font: inherit; font-size: 13px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-primary);
+}
+#xlsx-modal .xlsx-actions .xlsx-btn-primary {
+  background: var(--c-blue, #4ea8de); border-color: var(--c-blue, #4ea8de); color: #fff;
+}
+#xlsx-modal .xlsx-actions button:hover { filter: brightness(1.1); }
+#xlsx-toast {
+  position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-elevated, #1b1f27); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 8px 14px; font-size: 12px; z-index: 950;
+  display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+#xlsx-toast.visible { display: block; }
 </style>
 </head>
 <body>
@@ -1236,6 +1321,7 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
     <div class="dropdown-wrap" id="export-dropdown-wrap">
       <button class="btn-cmd" id="export-btn">Export</button>
       <div class="dropdown-menu hidden" id="export-dropdown">
+        <div class="dropdown-item" id="export-xlsx">Export XLSX&hellip;</div>
         <div class="dropdown-item" id="export-csv">Export CSV</div>
         <div class="dropdown-item" id="export-json">Export JSON</div>
       </div>
@@ -1565,6 +1651,11 @@ const COLUMNS = [
   { key: 'scoring_profile', label: 'Profile',      sortKey: 'scoring_profile',   defaultVisible: false, filterable: true, filterType: 'set' },
   { key: 'cpc_high_usd',   label: 'CPC High',     sortKey: 'cpc_high_usd',      defaultVisible: false, filterable: false }
 ];
+
+// Expose state/columns to the XLSX exporter (which lives in a separate IIFE
+// after this block). These two are the only references the exporter needs.
+window.S = S;
+window.COLUMNS = COLUMNS;
 
 // ===== HELPERS =====
 function fmtNum(n) {
@@ -2808,12 +2899,422 @@ function bindEvents() {
 Palette.register([
   { id: 'dash-golden', label: 'Show Golden Only', shortcut: 'g', category: 'Filters', action: function() { var cb = document.querySelector('input[value="GOLDEN_OPPORTUNITY"]'); if(cb && !cb.checked) { cb.checked = true; onFilterChange(); } } },
   { id: 'dash-clear-filters', label: 'Clear All Filters', category: 'Filters', action: function() { var btn = document.getElementById('reset-all-filters'); if(btn) btn.click(); } },
+  { id: 'dash-export-xlsx', label: 'Export as XLSX (with angles)', category: 'Actions', action: function() { if(typeof openXlsxModal === 'function') openXlsxModal(); } },
   { id: 'dash-export-csv', label: 'Export as CSV', category: 'Actions', action: function() { if(typeof runExportWithSpinner === 'function') runExportWithSpinner('CSV', exportCSV); else if(typeof exportCSV === 'function') exportCSV(); } },
   { id: 'dash-export-json', label: 'Export as JSON', category: 'Actions', action: function() { if(typeof runExportWithSpinner === 'function') runExportWithSpinner('JSON', exportJSON); else if(typeof exportJSON === 'function') exportJSON(); } },
   { id: 'dash-toggle-charts', label: 'Toggle Charts', shortcut: 'c', category: 'Actions', action: function() { var btn = document.getElementById('charts-toggle'); if(btn) btn.click(); } },
   { id: 'dash-toggle-filters', label: 'Toggle Filter Panel', shortcut: 'f', category: 'Actions', action: function() { if(typeof toggleFilterPanel === 'function') toggleFilterPanel(); } },
 ]);
 </script>
+
+<!-- ═══════ EXPORT XLSX MODAL ═══════ -->
+<div id="xlsx-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="xlsx-modal-title">
+  <div id="xlsx-modal">
+    <h3 id="xlsx-modal-title">Export XLSX</h3>
+
+    <div class="xlsx-section">
+      <div class="xlsx-section-title">Columns to export</div>
+      <div class="xlsx-hint" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <span><span id="xlsx-col-count">0</span> of <span id="xlsx-col-total">0</span> selected</span>
+        <span>
+          <button type="button" id="xlsx-cols-all">All</button> &middot;
+          <button type="button" id="xlsx-cols-none">None</button> &middot;
+          <button type="button" id="xlsx-cols-visible">Match on-screen</button>
+        </span>
+      </div>
+      <div id="xlsx-cols-list" class="xlsx-cols-list"></div>
+    </div>
+
+    <div class="xlsx-section">
+      <div class="xlsx-section-title">Extras</div>
+
+      <div class="xlsx-row">
+        <input type="checkbox" id="xlsx-include-angles" checked>
+        <label for="xlsx-include-angles">Include angles as collapsible rows under each keyword</label>
+      </div>
+      <div class="xlsx-sub" id="xlsx-angles-scope-wrap">
+        <div class="xlsx-row">
+          <input type="radio" id="xlsx-angles-all" name="xlsx-angles-scope" value="all" checked>
+          <label for="xlsx-angles-all">All angle candidates (~10 per keyword)</label>
+        </div>
+        <div class="xlsx-row">
+          <input type="radio" id="xlsx-angles-selected" name="xlsx-angles-scope" value="selected">
+          <label for="xlsx-angles-selected">Only selected angles (typically 3&ndash;5)</label>
+        </div>
+      </div>
+
+      <div class="xlsx-row" style="margin-top:10px">
+        <input type="checkbox" id="xlsx-include-meta">
+        <label for="xlsx-include-meta">Include run metadata sheet (run_id, timestamp, filters applied)</label>
+      </div>
+    </div>
+
+    <div class="xlsx-rowcount" id="xlsx-rowcount">Loading&hellip;</div>
+
+    <div class="xlsx-actions">
+      <button type="button" id="xlsx-cancel-btn">Cancel</button>
+      <button type="button" id="xlsx-confirm-btn" class="xlsx-btn-primary">Export</button>
+    </div>
+  </div>
+</div>
+<div id="xlsx-toast" role="status" aria-live="polite">Preparing export&hellip;</div>
+
+<script>
+// ═══════ XLSX EXPORT (with angles) ═══════
+// This IIFE runs after the main dashboard IIFE has exposed S and COLUMNS on
+// window. We alias them locally so the rest of the code reads naturally.
+(function() {
+'use strict';
+
+const S = window.S;
+const COLUMNS = window.COLUMNS;
+
+const XLSX_PREFS_KEY = 'keywordit_xlsx_prefs_v1';
+const ANGLE_COL_KEYS = ['angle_title', 'angle_type', 'rsoc_score', 'ad_category', 'selected', 'discovery_boosted'];
+
+function _xlsxToast(msg, visible) {
+  const el = document.getElementById('xlsx-toast');
+  if (!el) return;
+  if (msg) el.textContent = msg;
+  el.classList.toggle('visible', !!visible);
+}
+
+function _xlsxLoadPrefs() {
+  try {
+    const raw = localStorage.getItem(XLSX_PREFS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) || {};
+  } catch (e) { return {}; }
+}
+function _xlsxSavePrefs(prefs) {
+  try { localStorage.setItem(XLSX_PREFS_KEY, JSON.stringify(prefs)); } catch (e) {}
+}
+
+// Lazy-load data/angles.json if not already populated. Callers pass a cb that
+// runs whether the fetch succeeds, fails, or the data was already cached.
+let _anglesLoadingPromise = null;
+function _ensureAnglesLoaded(cb) {
+  const w = window;
+  if (w.ANGLES && Object.keys(w.ANGLES).length) { if (cb) cb(); return; }
+  if (_anglesLoadingPromise) { _anglesLoadingPromise.finally(() => { if (cb) cb(); }); return; }
+  const meta = w.PIPELINE_META || {};
+  const ver = '?v=' + (meta.run_id || Date.now());
+  _anglesLoadingPromise = fetch('data/angles.json' + ver)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(data => { w.ANGLES = data || {}; })
+    .catch(err => { console.warn('[xlsx] failed to load angles.json:', err); w.ANGLES = w.ANGLES || {}; });
+  _anglesLoadingPromise.finally(() => { if (cb) cb(); });
+}
+
+function _xlsxFilename() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const stamp = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes());
+  return 'keywordit_export_' + stamp + '.xlsx';
+}
+
+function _xlsxRenderColsList(seedKeys) {
+  const list = document.getElementById('xlsx-cols-list');
+  if (!list || typeof COLUMNS === 'undefined') return;
+  const seed = new Set(seedKeys || []);
+  list.innerHTML = '';
+  COLUMNS.filter(c => c.key !== '#').forEach(c => {
+    const id = 'xlsx-col-' + c.key;
+    const checked = seed.has(c.key) ? 'checked' : '';
+    const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    list.insertAdjacentHTML('beforeend',
+      '<label for="' + esc(id) + '"><input type="checkbox" id="' + esc(id) + '" data-col-key="' + esc(c.key) + '" ' + checked + '><span>' + esc(c.label || c.key) + '</span></label>'
+    );
+  });
+  list.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', _xlsxUpdatePreview);
+  });
+}
+
+function _xlsxSelectedCols() {
+  const keys = [];
+  document.querySelectorAll('#xlsx-cols-list input[type="checkbox"]:checked').forEach(cb => {
+    keys.push(cb.dataset.colKey);
+  });
+  const set = new Set(keys);
+  return COLUMNS.filter(c => c.key !== '#' && set.has(c.key));
+}
+
+function _xlsxUpdatePreview() {
+  if (typeof COLUMNS === 'undefined' || typeof S === 'undefined') return;
+  const cols = _xlsxSelectedCols();
+  const totalCount = COLUMNS.filter(c => c.key !== '#').length;
+  const colCount = document.getElementById('xlsx-col-count');
+  const colTotal = document.getElementById('xlsx-col-total');
+  if (colCount) colCount.textContent = cols.length;
+  if (colTotal) colTotal.textContent = totalCount;
+
+  const includeAngles = document.getElementById('xlsx-include-angles').checked;
+  const scope = (document.querySelector('input[name="xlsx-angles-scope"]:checked') || {}).value || 'all';
+  const keywordCount = (S.filtered || []).length;
+
+  let angleRows = 0;
+  if (includeAngles && window.ANGLES) {
+    S.filtered.forEach(item => {
+      const key = (item.keyword || '').toLowerCase() + '|' + (item.country || '').toUpperCase();
+      const cl = window.ANGLES[key];
+      if (!cl) return;
+      if (scope === 'selected') {
+        angleRows += Array.isArray(cl.selected_angles) ? cl.selected_angles.length : 0;
+      } else {
+        const sel = Array.isArray(cl.selected_angles) ? cl.selected_angles : [];
+        const all = Array.isArray(cl.all_candidates) ? cl.all_candidates : [];
+        const seen = new Set(sel.map(a => a && a.angle_type));
+        angleRows += sel.length + all.filter(a => a && !seen.has(a.angle_type)).length;
+      }
+    });
+  }
+
+  const total = keywordCount + angleRows;
+  const rc = document.getElementById('xlsx-rowcount');
+  if (rc) {
+    if (includeAngles) {
+      const anglesLoaded = !!(window.ANGLES && Object.keys(window.ANGLES).length);
+      rc.innerHTML = 'Will export <strong>' + keywordCount.toLocaleString() + '</strong> keyword row'
+        + (keywordCount === 1 ? '' : 's') + ' + '
+        + (anglesLoaded ? '<strong>' + angleRows.toLocaleString() + '</strong> angle row' + (angleRows === 1 ? '' : 's')
+                        : '<em>angles (loaded on export)</em>')
+        + ' = <strong>' + (anglesLoaded ? total.toLocaleString() : '&asymp; ' + (keywordCount * 6).toLocaleString()) + '</strong> total rows.'
+        + '<br>Angle rows are grouped under each keyword and collapsed by default in Excel.';
+    } else {
+      rc.innerHTML = 'Will export <strong>' + keywordCount.toLocaleString() + '</strong> keyword row'
+        + (keywordCount === 1 ? '' : 's') + '.';
+    }
+  }
+}
+
+function openXlsxModal() {
+  if (typeof XLSX === 'undefined') {
+    alert('XLSX library failed to load. Check your connection to cdn.sheetjs.com.');
+    return;
+  }
+  if (typeof COLUMNS === 'undefined' || typeof S === 'undefined') {
+    alert('Dashboard is still loading. Try again in a moment.');
+    return;
+  }
+
+  const prefs = _xlsxLoadPrefs();
+
+  let seed;
+  if (Array.isArray(prefs.cols) && prefs.cols.length) {
+    const known = new Set(COLUMNS.map(c => c.key));
+    seed = prefs.cols.filter(k => known.has(k));
+  } else {
+    seed = Array.from(S.visibleCols).filter(k => k !== '#');
+  }
+  _xlsxRenderColsList(seed);
+
+  document.getElementById('xlsx-include-angles').checked = prefs.includeAngles !== false;
+  document.getElementById('xlsx-include-meta').checked = !!prefs.includeMeta;
+  const scope = prefs.anglesScope === 'selected' ? 'selected' : 'all';
+  document.getElementById('xlsx-angles-' + scope).checked = true;
+
+  document.getElementById('xlsx-angles-scope-wrap').style.opacity = prefs.includeAngles === false ? '0.4' : '1';
+  document.querySelectorAll('input[name="xlsx-angles-scope"]').forEach(r => r.disabled = prefs.includeAngles === false);
+
+  _xlsxUpdatePreview();
+
+  if (document.getElementById('xlsx-include-angles').checked) {
+    _ensureAnglesLoaded(function() { _xlsxUpdatePreview(); });
+  }
+
+  document.getElementById('xlsx-modal-overlay').classList.add('visible');
+}
+
+function closeXlsxModal() {
+  document.getElementById('xlsx-modal-overlay').classList.remove('visible');
+}
+
+function confirmXlsxExport() {
+  const cols = _xlsxSelectedCols();
+  if (!cols.length) {
+    alert('Pick at least one column to export.');
+    return;
+  }
+  const includeAngles = document.getElementById('xlsx-include-angles').checked;
+  const includeMeta = document.getElementById('xlsx-include-meta').checked;
+  const anglesScope = document.querySelector('input[name="xlsx-angles-scope"]:checked').value;
+  _xlsxSavePrefs({ includeAngles, includeMeta, anglesScope, cols: cols.map(c => c.key) });
+  closeXlsxModal();
+
+  const opts = { cols, includeAngles, includeMeta, anglesScope };
+
+  if (includeAngles) {
+    _xlsxToast('Preparing export&hellip;', true);
+    _ensureAnglesLoaded(function() {
+      _xlsxToast('', false);
+      _doXlsxExport(opts);
+    });
+  } else {
+    _doXlsxExport(opts);
+  }
+}
+
+function _getAnglesFor(keyword, country) {
+  if (!window.ANGLES) return null;
+  const key = (keyword || '').toLowerCase() + '|' + (country || '').toUpperCase();
+  return window.ANGLES[key] || null;
+}
+
+function _xlsxAngleRow(cols, angle) {
+  const row = cols.map(function() { return ''; });
+  ANGLE_COL_KEYS.forEach(k => {
+    let v = angle[k];
+    if (v == null) v = '';
+    row.push(v);
+  });
+  return row;
+}
+
+function _doXlsxExport(opts) {
+  const cols = (opts && Array.isArray(opts.cols) && opts.cols.length) ? opts.cols : COLUMNS.filter(c => c.key !== '#' && S.visibleCols.has(c.key));
+  const colHeaders = cols.map(c => c.label || c.key);
+  const parentHeader = colHeaders.concat(opts.includeAngles ? ANGLE_COL_KEYS : []);
+
+  const aoa = [parentHeader];
+  const rowLevels = [{ level: 0 }];
+
+  S.filtered.forEach(item => {
+    const parentRow = cols.map(c => {
+      const v = item[c.key];
+      return v == null ? '' : v;
+    });
+    if (opts.includeAngles) for (let i = 0; i < ANGLE_COL_KEYS.length; i++) parentRow.push('');
+    aoa.push(parentRow);
+    rowLevels.push({ level: 0 });
+
+    if (opts.includeAngles) {
+      const cluster = _getAnglesFor(item.keyword, item.country);
+      if (cluster) {
+        const selected = Array.isArray(cluster.selected_angles) ? cluster.selected_angles : [];
+        let angles = selected.slice();
+        if (opts.anglesScope === 'all' && Array.isArray(cluster.all_candidates)) {
+          const seen = new Set(selected.map(a => a && a.angle_type));
+          cluster.all_candidates.forEach(a => { if (a && !seen.has(a.angle_type)) angles.push(a); });
+        }
+        angles.forEach(a => {
+          aoa.push(_xlsxAngleRow(cols, a));
+          rowLevels.push({ level: 1, hidden: true });
+        });
+      }
+    }
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!rows'] = rowLevels;
+  ws['!outline'] = { above: false };
+
+  ws['!cols'] = parentHeader.map((_, i) => {
+    let max = String(parentHeader[i] || '').length;
+    for (let r = 1; r < aoa.length && r < 500; r++) {
+      const cell = aoa[r][i];
+      if (cell != null) max = Math.max(max, String(cell).length);
+    }
+    return { wch: Math.min(Math.max(max + 1, 8), 40) };
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Opportunities');
+
+  if (opts.includeMeta) {
+    const meta = window.PIPELINE_META || {};
+    const metaRows = [['Key', 'Value']];
+    const push = (k, v) => metaRows.push([k, v == null ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v))]);
+    push('Exported at', new Date().toISOString());
+    push('Run ID', meta.run_id);
+    push('Run date', meta.run_date || meta.generated_at);
+    push('Total opportunities (before filter)', (window.OPPORTUNITIES || []).length);
+    push('Exported rows', S.filtered.length);
+    push('Include angles', opts.includeAngles ? ('yes (' + opts.anglesScope + ')') : 'no');
+    push('Search query', S.search || '');
+    push('Sort column', S.sortCol);
+    push('Sort direction', S.sortDir);
+    push('Visible columns', cols.map(c => c.key).join(', '));
+    Object.keys(S.filters || {}).forEach(k => push('filter.' + k, S.filters[k]));
+    const metaWs = XLSX.utils.aoa_to_sheet(metaRows);
+    metaWs['!cols'] = [{ wch: 34 }, { wch: 60 }];
+    XLSX.utils.book_append_sheet(wb, metaWs, 'Run info');
+  }
+
+  XLSX.writeFile(wb, _xlsxFilename());
+}
+
+// Expose for the command palette and keyboard handlers.
+window.openXlsxModal = openXlsxModal;
+window.closeXlsxModal = closeXlsxModal;
+
+// Bind event listeners once the DOM is ready.
+function _xlsxBindEvents() {
+  const btn = document.getElementById('export-xlsx');
+  if (btn) btn.addEventListener('click', () => {
+    openXlsxModal();
+    const dd = document.getElementById('export-dropdown');
+    if (dd) dd.classList.add('hidden');
+  });
+
+  const cancelBtn = document.getElementById('xlsx-cancel-btn');
+  if (cancelBtn) cancelBtn.addEventListener('click', closeXlsxModal);
+
+  const confirmBtn = document.getElementById('xlsx-confirm-btn');
+  if (confirmBtn) confirmBtn.addEventListener('click', confirmXlsxExport);
+
+  const overlay = document.getElementById('xlsx-modal-overlay');
+  if (overlay) overlay.addEventListener('click', (e) => {
+    if (e.target.id === 'xlsx-modal-overlay') closeXlsxModal();
+  });
+
+  const allBtn = document.getElementById('xlsx-cols-all');
+  if (allBtn) allBtn.addEventListener('click', () => {
+    document.querySelectorAll('#xlsx-cols-list input[type="checkbox"]').forEach(cb => cb.checked = true);
+    _xlsxUpdatePreview();
+  });
+  const noneBtn = document.getElementById('xlsx-cols-none');
+  if (noneBtn) noneBtn.addEventListener('click', () => {
+    document.querySelectorAll('#xlsx-cols-list input[type="checkbox"]').forEach(cb => cb.checked = false);
+    _xlsxUpdatePreview();
+  });
+  const visBtn = document.getElementById('xlsx-cols-visible');
+  if (visBtn) visBtn.addEventListener('click', () => {
+    if (typeof S === 'undefined') return;
+    document.querySelectorAll('#xlsx-cols-list input[type="checkbox"]').forEach(cb => {
+      cb.checked = S.visibleCols.has(cb.dataset.colKey);
+    });
+    _xlsxUpdatePreview();
+  });
+
+  const angChk = document.getElementById('xlsx-include-angles');
+  if (angChk) angChk.addEventListener('change', (e) => {
+    document.getElementById('xlsx-angles-scope-wrap').style.opacity = e.target.checked ? '1' : '0.4';
+    document.querySelectorAll('input[name="xlsx-angles-scope"]').forEach(r => r.disabled = !e.target.checked);
+    if (e.target.checked) _ensureAnglesLoaded(function() { _xlsxUpdatePreview(); });
+    else _xlsxUpdatePreview();
+  });
+  document.querySelectorAll('input[name="xlsx-angles-scope"]').forEach(r => {
+    r.addEventListener('change', _xlsxUpdatePreview);
+  });
+
+  // Escape key closes the modal.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const ov = document.getElementById('xlsx-modal-overlay');
+    if (ov && ov.classList.contains('visible')) closeXlsxModal();
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _xlsxBindEvents);
+} else {
+  _xlsxBindEvents();
+}
+
+})();
+</script>
+
 __EXTRA_TABS__
 </body>
 </html>
