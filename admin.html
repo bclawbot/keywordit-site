@@ -614,22 +614,15 @@ async function addUser() {
   if (password.length < 8) { toast('Password must be at least 8 characters'); return; }
 
   try {
-    // Register user via API
-    await auth.register({ username, password, email: email || undefined, name: name || undefined });
-    // Then find user and approve + set role
-    const r = await apiFetch('/api/admin/users');
-    if (r) {
-      const users = await r.json();
-      const newUser = users.find(u => u.username === username);
-      if (newUser) {
-        await apiFetch('/api/admin/users/' + newUser.id + '/approve', { method: 'POST' });
-        if (role !== 'viewer') {
-          await apiFetch('/api/admin/users/' + newUser.id + '/role', {
-            method: 'PUT',
-            body: JSON.stringify({ role })
-          });
-        }
-      }
+    // Register user via API (response is the full UserResponse with id)
+    const newUser = await auth.register({ username, password, email: email || undefined, name: name || undefined });
+    // Use the id from the register response directly — no list scan, no pagination race.
+    await apiFetch('/api/admin/users/' + newUser.id + '/approve', { method: 'POST' });
+    if (role !== 'viewer') {
+      await apiFetch('/api/admin/users/' + newUser.id + '/role', {
+        method: 'PUT',
+        body: JSON.stringify({ role })
+      });
     }
     document.getElementById('add-username').value = '';
     document.getElementById('add-password').value = '';
