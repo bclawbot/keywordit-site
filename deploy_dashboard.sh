@@ -63,6 +63,9 @@ fi
 
 # Copy files to gh-pages worktree
 cp "$DASHBOARD" "$DEPLOY_DIR/index.html"
+# Also overwrite dashboard.html so bookmarked /dashboard.html URLs don't serve
+# a stale artifact frozen in an older commit.
+cp "$DASHBOARD" "$DEPLOY_DIR/dashboard.html"
 [ -f "$WORKSPACE/logo-dark.png" ]  && cp "$WORKSPACE/logo-dark.png"  "$DEPLOY_DIR/"
 [ -f "$WORKSPACE/logo-light.png" ] && cp "$WORKSPACE/logo-light.png" "$DEPLOY_DIR/"
 [ -f "$WORKSPACE/landing.html" ]   && cp "$WORKSPACE/landing.html"   "$DEPLOY_DIR/"
