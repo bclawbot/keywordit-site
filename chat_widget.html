@@ -1,6 +1,6 @@
 <!-- Research Chat Widget -->
 <div id="chat-widget" class="chat-widget" style="display: none;">
-  <button id="chat-toggle" class="chat-toggle" title="Research Assistant">
+  <button id="chat-toggle" class="chat-toggle" title="Research Assistant" aria-label="Open research assistant chat" aria-expanded="false" aria-controls="chat-panel">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
     </svg>
@@ -349,14 +349,23 @@ const ChatWidget = {
   },
   
   togglePanel() {
-    document.getElementById('chat-panel').classList.toggle('hidden');
-    if (!document.getElementById('chat-panel').classList.contains('hidden')) {
+    const panel = document.getElementById('chat-panel');
+    const toggle = document.getElementById('chat-toggle');
+    panel.classList.toggle('hidden');
+    const isOpen = !panel.classList.contains('hidden');
+    toggle.setAttribute('aria-expanded', String(isOpen));
+    toggle.setAttribute('aria-label', isOpen ? 'Close research assistant chat' : 'Open research assistant chat');
+    if (isOpen) {
       document.getElementById('chat-input').focus();
     }
   },
-  
+
   closePanel() {
-    document.getElementById('chat-panel').classList.add('hidden');
+    const panel = document.getElementById('chat-panel');
+    const toggle = document.getElementById('chat-toggle');
+    panel.classList.add('hidden');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open research assistant chat');
   },
   
   async sendMessage() {

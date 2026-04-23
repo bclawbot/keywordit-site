@@ -33,10 +33,14 @@
     const btn = document.getElementById('theme-toggle');
     if (btn) {
       btn.addEventListener('click', toggleTheme);
-      // Update icon based on current theme
+      // Update icon + aria-label based on current theme.
+      // F-046: aria-label reflects the ACTION the button will perform
+      // on next click, so assistive tech announces "Switch to light theme"
+      // when dark is active and vice versa.
       const update = () => {
         const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
         btn.textContent = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+        btn.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
       };
       btn.addEventListener('click', update);
       update();
