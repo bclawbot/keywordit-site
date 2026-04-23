@@ -2756,6 +2756,19 @@ function toggleFilterPanel() {
     panel.removeAttribute('hidden');
     // F-041: remember the trigger so F-042 can restore focus when we close.
     S.filterPanelTrigger = document.activeElement || trigger;
+    // F-042: install focus trap + ESC-to-close while the dialog is open.
+    // stopPropagation on ESC so the pre-existing document-level ESC
+    // handler doesn't also fire and clear the global search as a
+    // side-effect after we've already closed.
+    S.filterPanelKeydown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault(); e.stopPropagation();
+        toggleFilterPanel();
+        return;
+      }
+      _trapTab(panel, e);
+    };
+    panel.addEventListener('keydown', S.filterPanelKeydown);
     // Move focus to the first focusable inside the dialog. Defer by a frame
     // so the browser has applied `hidden` removal before we try to focus.
     requestAnimationFrame(() => {
@@ -2763,8 +2776,12 @@ function toggleFilterPanel() {
       if (first) first.focus();
     });
   } else {
+    // F-042: tear down trap + restore focus to the trigger that opened us.
+    if (S.filterPanelKeydown) {
+      panel.removeEventListener('keydown', S.filterPanelKeydown);
+      S.filterPanelKeydown = null;
+    }
     panel.setAttribute('hidden', '');
-    // F-042: restore focus to the trigger that opened the panel.
     const returnTo = S.filterPanelTrigger || trigger;
     S.filterPanelTrigger = null;
     if (returnTo && typeof returnTo.focus === 'function') returnTo.focus();
