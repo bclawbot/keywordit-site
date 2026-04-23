@@ -927,6 +927,28 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
   z-index: 10000;
 }
 .skip-link:focus { top: 8px; outline: 2px solid #fff; outline-offset: 2px; }
+
+/* F-037: global visible focus ring for keyboard users.
+   Uses :focus-visible so mouse clicks don't draw the ring (keeps the
+   existing `:focus { outline: none }` cosmetic for pointer users intact),
+   but Tab/Shift+Tab/arrow keys always produce a visible outline. Outline
+   (not just box-shadow) so screen-magnifier tools that key off outline
+   bounds can track focus. */
+:focus-visible {
+  outline: 2px solid var(--accent, #4f46e5);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent, #4f46e5);
+  outline-offset: 2px;
+}
 .fp-close {
   background: none; border: none; color: var(--text-tertiary);
   font-size: 18px; padding: 2px 6px; line-height: 1;
