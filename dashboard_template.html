@@ -1157,7 +1157,7 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
 </div>
 
 <!-- ═══════ SYSTEM STATUS BAR ═══════ -->
-<div id="system-bar">
+<section id="system-bar" aria-label="Pipeline status">
   <div class="sys-item">
     <span class="sys-dot ok" id="sys-heartbeat-dot"></span>
     <span class="sys-label">Pipeline</span>
@@ -1198,10 +1198,10 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
   <div class="sys-item">
     <span class="sys-label" id="sys-generated-at"></span>
   </div>
-</div>
+</section>
 
 <!-- ═══════ COMMAND BAR ═══════ -->
-<div id="cmd-bar">
+<header id="cmd-bar">
   <div class="cmd-left">
     <div class="logo">
       <div class="logo-icon">K</div>
@@ -1248,8 +1248,9 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
     <button class="btn-cmd" id="admin-link-btn" style="display:none" onclick="window.location.href='admin.html'">Admin</button>
     <button class="btn-signout" id="signout-btn" onclick="signOut()">Sign Out</button>
   </div>
-</div>
+</header>
 __TAB_NAV__
+<main id="main-content">
 <div id="tab-discovery" class="tab-content active">
 
 <!-- ═══════ KPI STRIP ═══════ -->
@@ -2815,5 +2816,6 @@ Palette.register([
 ]);
 </script>
 __EXTRA_TABS__
+</main>
 </body>
 </html>
