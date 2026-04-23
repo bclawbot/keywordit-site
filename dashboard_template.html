@@ -2123,28 +2123,38 @@ function renderTableHead() {
   const thead = document.getElementById('table-head');
   const visibleCols = COLUMNS.filter(c => S.visibleCols.has(c.key));
   thead.innerHTML = '<tr>' + visibleCols.map(col => {
-    let sortCls = '';
-    if (col.sortKey && S.sortCol === col.sortKey) sortCls = ' sort-' + S.sortDir;
+    const sortKey = col.sortKey || '';
+    const isActive = sortKey && S.sortCol === sortKey;
+    const sortCls = isActive ? ' sort-' + S.sortDir : '';
+    const ariaSort = isActive ? (S.sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
     const hasFilter = S.colFilters[col.key] ? ' has-filter' : '';
     const filterIcon = col.filterable ? `<svg class="th-filter-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="3" x2="11" y2="3"/><line x1="3" y1="6" x2="9" y2="6"/><line x1="5" y1="9" x2="7" y2="9"/></svg>` : '';
-    return `<th data-sort="${col.sortKey||''}" data-colkey="${col.key}" data-filterable="${col.filterable}"${hasFilter ? ' class="has-filter"' : ''}>
+    const role = sortKey ? ' role="button" tabindex="0"' : '';
+    return `<th data-sort="${sortKey}" data-colkey="${col.key}" data-filterable="${col.filterable}" aria-sort="${ariaSort}"${hasFilter ? ' class="has-filter"' : ''}${role}>
       <div class="th-inner${sortCls}">${esc(col.label)}${filterIcon}</div>
     </th>`;
   }).join('') + '</tr>';
 
   thead.querySelectorAll('th').forEach(th => {
-    const inner = th.querySelector('.th-inner');
     const filterIcon = th.querySelector('.th-filter-icon');
 
-    // Clicking the label sorts
-    inner.addEventListener('click', (e) => {
+    // F-027: bind the sort handler to the <th>, not just .th-inner, so clicks
+    // on any part of the column header (including the padded whitespace outside
+    // the inner flex row) trigger the sort.
+    const handleSort = (e) => {
       if (filterIcon && filterIcon.contains(e.target)) return; // filter icon click handled separately
       const sk = th.dataset.sort;
       if (!sk) return;
       closeAllHeaderFilters();
+      // F-027: first click on a new column sorts ascending. Repeat clicks on
+      // the same column toggle asc<->desc.
       if (S.sortCol === sk) S.sortDir = S.sortDir === 'asc' ? 'desc' : 'asc';
-      else { S.sortCol = sk; S.sortDir = 'desc'; }
+      else { S.sortCol = sk; S.sortDir = 'asc'; }
       applyFilters(); renderTable(); saveToHash();
+    };
+    th.addEventListener('click', handleSort);
+    th.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort(e); }
     });
 
     // Clicking the filter icon opens column filter
