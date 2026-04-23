@@ -354,7 +354,7 @@ function showMsg(id, type, text) {
 }
 
 async function doLogin() {
-  const user = document.getElementById('login-user').value.trim();
+  const user = document.getElementById('login-user').value.trim().toLowerCase();
   const pass = document.getElementById('login-pass').value;
   if (!user || !pass) { showMsg('login-msg', 'error', 'Please enter both fields.'); return; }
 
