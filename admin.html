@@ -611,7 +611,7 @@ async function addUser() {
 
   if (!username || !password) { toast('Username and password required'); return; }
   if (username.length < 3) { toast('Username too short'); return; }
-  if (password.length < 8) { toast('Password must be at least 8 characters'); return; }
+  if (password.length < 10) { toast('Password must be at least 10 characters'); return; }
 
   try {
     // Register user via API (response is the full UserResponse with id)
