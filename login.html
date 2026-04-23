@@ -354,7 +354,7 @@ function showMsg(id, type, text) {
 }
 
 async function doLogin() {
-  const user = document.getElementById('login-user').value.trim();
+  const user = document.getElementById('login-user').value.trim().toLowerCase();
   const pass = document.getElementById('login-pass').value;
   if (!user || !pass) { showMsg('login-msg', 'error', 'Please enter both fields.'); return; }
 
@@ -384,10 +384,10 @@ async function doRequest() {
     return;
   }
 
-  // Password required for registration (min 8 chars)
+  // Password required for registration (min 10 chars; backend enforces zxcvbn too)
   const pass = document.getElementById('req-pass') ? document.getElementById('req-pass').value : '';
-  if (!pass || pass.length < 8) {
-    showMsg('request-msg', 'error', 'Password must be at least 8 characters.');
+  if (!pass || pass.length < 10) {
+    showMsg('request-msg', 'error', 'Password must be at least 10 characters.');
     return;
   }
 

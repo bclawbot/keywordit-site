@@ -13,6 +13,9 @@
 (function() {
   'use strict';
 
+  // F-013: purge legacy leaked user data from returning visitors. Remove after 2026-10-22.
+  try { localStorage.removeItem('keywordit_users'); } catch(e) {}
+
   var API_BASE = 'https://keywordit-api-production.up.railway.app';
   var SESSION_KEY = 'keywordit_session';
   var EXPIRY_MS = 24 * 60 * 60 * 1000;

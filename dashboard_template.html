@@ -2123,28 +2123,38 @@ function renderTableHead() {
   const thead = document.getElementById('table-head');
   const visibleCols = COLUMNS.filter(c => S.visibleCols.has(c.key));
   thead.innerHTML = '<tr>' + visibleCols.map(col => {
-    let sortCls = '';
-    if (col.sortKey && S.sortCol === col.sortKey) sortCls = ' sort-' + S.sortDir;
+    const sortKey = col.sortKey || '';
+    const isActive = sortKey && S.sortCol === sortKey;
+    const sortCls = isActive ? ' sort-' + S.sortDir : '';
+    const ariaSort = isActive ? (S.sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
     const hasFilter = S.colFilters[col.key] ? ' has-filter' : '';
     const filterIcon = col.filterable ? `<svg class="th-filter-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="3" x2="11" y2="3"/><line x1="3" y1="6" x2="9" y2="6"/><line x1="5" y1="9" x2="7" y2="9"/></svg>` : '';
-    return `<th data-sort="${col.sortKey||''}" data-colkey="${col.key}" data-filterable="${col.filterable}"${hasFilter ? ' class="has-filter"' : ''}>
+    const role = sortKey ? ' role="button" tabindex="0"' : '';
+    return `<th data-sort="${sortKey}" data-colkey="${col.key}" data-filterable="${col.filterable}" aria-sort="${ariaSort}"${hasFilter ? ' class="has-filter"' : ''}${role}>
       <div class="th-inner${sortCls}">${esc(col.label)}${filterIcon}</div>
     </th>`;
   }).join('') + '</tr>';
 
   thead.querySelectorAll('th').forEach(th => {
-    const inner = th.querySelector('.th-inner');
     const filterIcon = th.querySelector('.th-filter-icon');
 
-    // Clicking the label sorts
-    inner.addEventListener('click', (e) => {
+    // F-027: bind the sort handler to the <th>, not just .th-inner, so clicks
+    // on any part of the column header (including the padded whitespace outside
+    // the inner flex row) trigger the sort.
+    const handleSort = (e) => {
       if (filterIcon && filterIcon.contains(e.target)) return; // filter icon click handled separately
       const sk = th.dataset.sort;
       if (!sk) return;
       closeAllHeaderFilters();
+      // F-027: first click on a new column sorts ascending. Repeat clicks on
+      // the same column toggle asc<->desc.
       if (S.sortCol === sk) S.sortDir = S.sortDir === 'asc' ? 'desc' : 'asc';
-      else { S.sortCol = sk; S.sortDir = 'desc'; }
+      else { S.sortCol = sk; S.sortDir = 'asc'; }
       applyFilters(); renderTable(); saveToHash();
+    };
+    th.addEventListener('click', handleSort);
+    th.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort(e); }
     });
 
     // Clicking the filter icon opens column filter
@@ -2608,6 +2618,34 @@ function downloadFile(name, content, type) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click(); URL.revokeObjectURL(a.href);
 }
 
+// F-029: the serializers above run synchronously on the main thread.
+// Wrap them so users see a spinner and a disabled button for the duration,
+// instead of a frozen-looking UI. `requestAnimationFrame` yields one paint
+// so the "Generating export…" state actually renders before the blocking
+// CSV/JSON.stringify call starts. (The real fix is a web-worker rewrite —
+// tracked as F-029b in ROADMAP.md.)
+function runExportWithSpinner(label, fn) {
+  const btn = document.getElementById('export-btn');
+  if (!btn) { fn(); return; }
+  if (btn.dataset.busy === '1') return; // re-entrancy guard
+  const originalLabel = btn.textContent;
+  btn.dataset.busy = '1';
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+  btn.textContent = 'Generating ' + label + '…';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      try { fn(); }
+      finally {
+        btn.textContent = originalLabel;
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        delete btn.dataset.busy;
+      }
+    });
+  });
+}
+
 // ===== RESET =====
 function resetFilters() {
   document.querySelectorAll('#filter-panel input[type="checkbox"]').forEach(c => c.checked = false);
@@ -2716,8 +2754,14 @@ function bindEvents() {
     document.getElementById('export-dropdown').classList.toggle('hidden');
     document.getElementById('col-dropdown').classList.add('hidden');
   });
-  document.getElementById('export-csv').addEventListener('click', () => { exportCSV(); document.getElementById('export-dropdown').classList.add('hidden'); });
-  document.getElementById('export-json').addEventListener('click', () => { exportJSON(); document.getElementById('export-dropdown').classList.add('hidden'); });
+  document.getElementById('export-csv').addEventListener('click', () => {
+    document.getElementById('export-dropdown').classList.add('hidden');
+    runExportWithSpinner('CSV', exportCSV);
+  });
+  document.getElementById('export-json').addEventListener('click', () => {
+    document.getElementById('export-dropdown').classList.add('hidden');
+    runExportWithSpinner('JSON', exportJSON);
+  });
 
   // Close dropdowns
   document.addEventListener('click', (e) => {
@@ -2764,8 +2808,8 @@ function bindEvents() {
 Palette.register([
   { id: 'dash-golden', label: 'Show Golden Only', shortcut: 'g', category: 'Filters', action: function() { var cb = document.querySelector('input[value="GOLDEN_OPPORTUNITY"]'); if(cb && !cb.checked) { cb.checked = true; onFilterChange(); } } },
   { id: 'dash-clear-filters', label: 'Clear All Filters', category: 'Filters', action: function() { var btn = document.getElementById('reset-all-filters'); if(btn) btn.click(); } },
-  { id: 'dash-export-csv', label: 'Export as CSV', category: 'Actions', action: function() { if(typeof exportCSV === 'function') exportCSV(); } },
-  { id: 'dash-export-json', label: 'Export as JSON', category: 'Actions', action: function() { if(typeof exportJSON === 'function') exportJSON(); } },
+  { id: 'dash-export-csv', label: 'Export as CSV', category: 'Actions', action: function() { if(typeof runExportWithSpinner === 'function') runExportWithSpinner('CSV', exportCSV); else if(typeof exportCSV === 'function') exportCSV(); } },
+  { id: 'dash-export-json', label: 'Export as JSON', category: 'Actions', action: function() { if(typeof runExportWithSpinner === 'function') runExportWithSpinner('JSON', exportJSON); else if(typeof exportJSON === 'function') exportJSON(); } },
   { id: 'dash-toggle-charts', label: 'Toggle Charts', shortcut: 'c', category: 'Actions', action: function() { var btn = document.getElementById('charts-toggle'); if(btn) btn.click(); } },
   { id: 'dash-toggle-filters', label: 'Toggle Filter Panel', shortcut: 'f', category: 'Actions', action: function() { if(typeof toggleFilterPanel === 'function') toggleFilterPanel(); } },
 ]);
