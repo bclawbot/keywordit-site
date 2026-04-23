@@ -908,7 +908,14 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
   border-bottom: 1px solid var(--border);
   position: sticky; top: 0; background: var(--bg-surface); z-index: 1;
 }
-.fp-title { font-size: 13px; font-weight: 600; }
+.fp-title { font-size: 13px; font-weight: 600; margin: 0; }
+
+/* F-039: visually hidden utility for sr-only headings. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
 .fp-close {
   background: none; border: none; color: var(--text-tertiary);
   font-size: 18px; padding: 2px 6px; line-height: 1;
@@ -1251,6 +1258,7 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
 </header>
 __TAB_NAV__
 <main id="main-content">
+<h1 class="sr-only">Keyword Opportunity Dashboard</h1>
 <div id="tab-discovery" class="tab-content active">
 
 <!-- ═══════ KPI STRIP ═══════ -->
@@ -1330,11 +1338,11 @@ __TAB_NAV__
 <div id="filter-overlay"></div>
 <div id="filter-panel" role="dialog" aria-label="Advanced Filters">
   <div class="fp-header">
-    <span class="fp-title">Advanced Filters</span>
+    <h2 class="fp-title" id="filter-panel-title">Advanced Filters</h2>
     <button class="fp-close" id="fp-close-btn" aria-label="Close">&times;</button>
   </div>
   <div class="fp-inner">
-    <div class="fp-section-title">Tag</div>
+    <h3 class="fp-section-title">Tag</h3>
     <div id="filter-tags">
       <div class="fp-row"><input type="checkbox" id="ft-GOLDEN_OPPORTUNITY" value="GOLDEN_OPPORTUNITY"><label for="ft-GOLDEN_OPPORTUNITY">GOLDEN</label></div>
       <div class="fp-row"><input type="checkbox" id="ft-WATCH" value="WATCH"><label for="ft-WATCH">WATCH</label></div>
@@ -1345,20 +1353,20 @@ __TAB_NAV__
       <div class="fp-row"><input type="checkbox" id="ft-UNSCORED" value="UNSCORED"><label for="ft-UNSCORED">UNSCORED</label></div>
     </div>
 
-    <div class="fp-section-title">Keyword Type</div>
+    <h3 class="fp-section-title">Keyword Type</h3>
     <div id="filter-keyword-type">
       <div class="fp-row"><input type="checkbox" id="ft-transformed" value="transformed"><label for="ft-transformed">🔄 Transformed Keywords Only</label></div>
     </div>
 
-    <div class="fp-section-title">Vertical</div>
+    <h3 class="fp-section-title">Vertical</h3>
     <button class="fp-select-all" id="vert-select-all">Select All</button>
     <div id="filter-verticals"></div>
 
-    <div class="fp-section-title">Country</div>
+    <h3 class="fp-section-title">Country</h3>
     <button class="fp-select-all" id="country-select-all">Select All</button>
     <div class="fp-countries-list" id="filter-countries"></div>
 
-    <div class="fp-section-title">Country Tier</div>
+    <h3 class="fp-section-title">Country Tier</h3>
     <div id="filter-tiers">
       <div class="fp-row"><input type="checkbox" id="ftr-1" value="1"><label for="ftr-1">Tier 1</label></div>
       <div class="fp-row"><input type="checkbox" id="ftr-2" value="2"><label for="ftr-2">Tier 2</label></div>
@@ -1366,32 +1374,32 @@ __TAB_NAV__
       <div class="fp-row"><input type="checkbox" id="ftr-4" value="4"><label for="ftr-4">Tier 4</label></div>
     </div>
 
-    <div class="fp-section-title">CPC Range (USD)</div>
+    <h3 class="fp-section-title">CPC Range (USD)</h3>
     <div class="slider-wrap">
       <div class="slider-label"><span>Min: $<span id="cpc-min-label">0</span></span><span>Max: $<span id="cpc-max-label">—</span></span></div>
       <div id="slider-cpc"></div>
     </div>
 
-    <div class="fp-section-title">Search Volume</div>
+    <h3 class="fp-section-title">Search Volume</h3>
     <div class="slider-wrap">
       <div class="slider-label"><span>Min: <span id="vol-min-label">0</span></span><span>Max: <span id="vol-max-label">—</span></span></div>
       <div id="slider-volume"></div>
     </div>
 
-    <div class="fp-section-title">Opportunity Score</div>
+    <h3 class="fp-section-title">Opportunity Score</h3>
     <div class="slider-wrap">
       <div class="slider-label"><span>Min: <span id="score-min-label">0</span></span><span>Max: <span id="score-max-label">—</span></span></div>
       <div id="slider-score"></div>
     </div>
 
-    <div class="fp-section-title">Confidence</div>
+    <h3 class="fp-section-title">Confidence</h3>
     <div id="filter-confidence">
       <div class="fp-row"><input type="radio" name="conf" id="conf-all" value="all" checked><label for="conf-all">All</label></div>
       <div class="fp-row"><input type="radio" name="conf" id="conf-high" value="high"><label for="conf-high">High only</label></div>
       <div class="fp-row"><input type="radio" name="conf" id="conf-medium" value="medium"><label for="conf-medium">Medium+</label></div>
     </div>
 
-    <div class="fp-section-title">Trend Source</div>
+    <h3 class="fp-section-title">Trend Source</h3>
     <div id="filter-sources">
       <div class="fp-row"><input type="checkbox" id="fs-reddit_hot" value="reddit_hot"><label for="fs-reddit_hot">Reddit Hot</label></div>
       <div class="fp-row"><input type="checkbox" id="fs-reddit_rising" value="reddit_rising"><label for="fs-reddit_rising">Reddit Rising</label></div>
@@ -1400,7 +1408,7 @@ __TAB_NAV__
       <div class="fp-row"><input type="checkbox" id="fs-bing_news_rss" value="bing_news_rss"><label for="fs-bing_news_rss">Bing News</label></div>
     </div>
 
-    <div class="fp-section-title">Metrics Source</div>
+    <h3 class="fp-section-title">Metrics Source</h3>
     <div id="filter-metrics-source">
       <div class="fp-row"><input type="checkbox" id="fms-gkp" value="google_keyword_planner"><label for="fms-gkp">Google KP</label></div>
       <div class="fp-row"><input type="checkbox" id="fms-dfs" value="dataforseo"><label for="fms-dfs">DataForSEO</label></div>
@@ -1408,7 +1416,7 @@ __TAB_NAV__
       <div class="fp-row"><input type="checkbox" id="fms-deferred" value="deferred"><label for="fms-deferred">Deferred</label></div>
     </div>
 
-    <div class="fp-section-title">Date Range</div>
+    <h3 class="fp-section-title">Date Range</h3>
     <div class="date-range-wrap">
       <div class="date-input-row">
         <span class="date-input-label">From</span>
