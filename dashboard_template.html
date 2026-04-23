@@ -779,6 +779,11 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
   flex-shrink: 0;
 }
 #detail-drawer.open { width: 340px; overflow: visible; }
+/* F-043: the UA stylesheet makes [hidden] apply display:none, which would
+   kill the width transition on close. Override with our existing display:flex
+   so the drawer animates out cleanly while `hidden` still signals "not
+   relevant to the current page state" to AT. */
+#detail-drawer[hidden] { display: flex; }
 #drawer-body {
   flex: 1; overflow-y: auto;
   padding: 16px;
@@ -1493,7 +1498,7 @@ __TAB_NAV__
   </div>
 
   <!-- DETAIL DRAWER -->
-  <div id="detail-drawer" role="dialog" aria-label="Keyword details">
+  <div id="detail-drawer" role="dialog" aria-label="Keyword details" aria-hidden="true" hidden>
     <div id="drawer-body"></div>
     <div id="drawer-actions">
       <button class="btn-primary" id="drawer-copy-btn">Copy Keyword</button>
@@ -2436,6 +2441,9 @@ function openDrawer(item) {
   S.drawerItem = item;
   const drawer = document.getElementById('detail-drawer');
   const body = document.getElementById('drawer-body');
+  // F-043: take the drawer out of the "hidden" state before animating open.
+  drawer.removeAttribute('hidden');
+  drawer.setAttribute('aria-hidden', 'false');
   drawer.classList.add('open');
   const tag = (item.tag || 'UNSCORED').toUpperCase();
   const cpc = parseFloat(item.cpc_usd)||0;
@@ -2486,7 +2494,13 @@ function openDrawer(item) {
 }
 
 function closeDrawer() {
-  document.getElementById('detail-drawer').classList.remove('open');
+  const drawer = document.getElementById('detail-drawer');
+  drawer.classList.remove('open');
+  // F-043: mark the drawer as not-currently-relevant so screen readers and
+  // tabbing ignore its contents. The CSS override on [hidden] keeps the
+  // width transition visually smooth.
+  drawer.setAttribute('aria-hidden', 'true');
+  drawer.setAttribute('hidden', '');
   document.getElementById('table-body').querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
   S.drawerItem = null;
 }
