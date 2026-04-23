@@ -1455,11 +1455,11 @@ __TAB_NAV__
     <h3 class="fp-section-title">Date Range</h3>
     <div class="date-range-wrap">
       <div class="date-input-row">
-        <span class="date-input-label">From</span>
+        <label for="filter-date-from" class="date-input-label">From</label>
         <input type="date" id="filter-date-from" class="date-input">
       </div>
       <div class="date-input-row">
-        <span class="date-input-label">To</span>
+        <label for="filter-date-to" class="date-input-label">To</label>
         <input type="date" id="filter-date-to" class="date-input">
       </div>
     </div>
@@ -1907,12 +1907,14 @@ function openHeaderFilter(th, colDef) {
   dropdown.className = 'col-filter-dropdown open';
   dropdown.addEventListener('click', e => e.stopPropagation());
 
-  let html = `<div class="cfd-search"><input type="text" placeholder="Search..." class="cfd-search-input"></div>`;
+  const colLabel = colDef.label || colDef.key;
+  let html = `<div class="cfd-search"><input type="text" placeholder="Search..." class="cfd-search-input" aria-label="Filter ${esc(colLabel)} options"></div>`;
   html += `<div class="cfd-actions"><button class="cfd-select-all">All</button><button class="cfd-select-none">None</button></div>`;
   html += `<div class="cfd-list">`;
-  values.forEach(([val, count]) => {
+  values.forEach(([val, count], i) => {
     const checked = currentFilter.length === 0 || currentFilter.includes(val) ? 'checked' : '';
-    html += `<div class="cfd-option"><input type="checkbox" value="${esc(val)}" ${checked}><label>${esc(val)}</label><span class="cfd-count">${count}</span></div>`;
+    const optId = `cfd-${colDef.key}-${i}`;
+    html += `<div class="cfd-option"><input type="checkbox" id="${optId}" value="${esc(val)}" ${checked}><label for="${optId}">${esc(val)}</label><span class="cfd-count">${count}</span></div>`;
   });
   html += `</div>`;
   html += `<div class="cfd-apply"><button>Apply Filter</button></div>`;
