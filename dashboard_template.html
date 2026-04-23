@@ -1652,6 +1652,11 @@ const COLUMNS = [
   { key: 'cpc_high_usd',   label: 'CPC High',     sortKey: 'cpc_high_usd',      defaultVisible: false, filterable: false }
 ];
 
+// Expose state/columns to the XLSX exporter (which lives in a separate IIFE
+// after this block). These two are the only references the exporter needs.
+window.S = S;
+window.COLUMNS = COLUMNS;
+
 // ===== HELPERS =====
 function fmtNum(n) {
   if (n == null || n === '' || isNaN(n)) return '—';
@@ -2956,8 +2961,13 @@ Palette.register([
 
 <script>
 // ═══════ XLSX EXPORT (with angles) ═══════
+// This IIFE runs after the main dashboard IIFE has exposed S and COLUMNS on
+// window. We alias them locally so the rest of the code reads naturally.
 (function() {
 'use strict';
+
+const S = window.S;
+const COLUMNS = window.COLUMNS;
 
 const XLSX_PREFS_KEY = 'keywordit_xlsx_prefs_v1';
 const ANGLE_COL_KEYS = ['angle_title', 'angle_type', 'rsoc_score', 'ad_category', 'selected', 'discovery_boosted'];
