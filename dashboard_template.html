@@ -2444,6 +2444,18 @@ function openDrawer(item) {
   // F-043: take the drawer out of the "hidden" state before animating open.
   drawer.removeAttribute('hidden');
   drawer.setAttribute('aria-hidden', 'false');
+  // F-044: remember what opened us so we can restore focus on close. Install
+  // a keydown listener on the drawer for ESC-to-close + Tab trap.
+  S.drawerTrigger = document.activeElement;
+  S.drawerKeydown = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault(); e.stopPropagation();
+      closeDrawer();
+      return;
+    }
+    _trapTab(drawer, e);
+  };
+  drawer.addEventListener('keydown', S.drawerKeydown);
   drawer.classList.add('open');
   const tag = (item.tag || 'UNSCORED').toUpperCase();
   const cpc = parseFloat(item.cpc_usd)||0;
@@ -2491,10 +2503,21 @@ function openDrawer(item) {
   `;
   document.getElementById('drawer-x-btn').addEventListener('click', closeDrawer);
   document.getElementById('drawer-copy-btn').onclick = () => { if(S.drawerItem) copyToClipboard(S.drawerItem.keyword); };
+  // F-044: move focus to the close button inside the drawer so ESC has an
+  // obvious default and keyboard users are no longer stranded on the row.
+  requestAnimationFrame(() => {
+    const firstBtn = document.getElementById('drawer-x-btn');
+    if (firstBtn) firstBtn.focus();
+  });
 }
 
 function closeDrawer() {
   const drawer = document.getElementById('detail-drawer');
+  // F-044: tear down the focus trap + ESC listener installed in openDrawer.
+  if (S.drawerKeydown) {
+    drawer.removeEventListener('keydown', S.drawerKeydown);
+    S.drawerKeydown = null;
+  }
   drawer.classList.remove('open');
   // F-043: mark the drawer as not-currently-relevant so screen readers and
   // tabbing ignore its contents. The CSS override on [hidden] keeps the
@@ -2503,6 +2526,15 @@ function closeDrawer() {
   drawer.setAttribute('hidden', '');
   document.getElementById('table-body').querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
   S.drawerItem = null;
+  // F-044: restore focus to the row (or whatever opened the drawer) so
+  // keyboard users don't lose their place in the table.
+  const returnTo = S.drawerTrigger;
+  S.drawerTrigger = null;
+  if (returnTo && typeof returnTo.focus === 'function') {
+    // Rows are only focusable if their tabindex was set. If the trigger
+    // isn't focusable, fall back silently -- better than throwing.
+    try { returnTo.focus(); } catch (_) {}
+  }
 }
 
 // ===== FILTER BADGE =====
