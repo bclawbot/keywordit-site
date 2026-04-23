@@ -1372,7 +1372,7 @@ __TAB_NAV__
 
 <!-- ═══════ FILTER PANEL (overlay) ═══════ -->
 <div id="filter-overlay"></div>
-<div id="filter-panel" role="dialog" aria-label="Advanced Filters">
+<div id="filter-panel" role="dialog" aria-modal="true" aria-labelledby="filter-panel-title" hidden>
   <div class="fp-header">
     <h2 class="fp-title" id="filter-panel-title">Advanced Filters</h2>
     <button class="fp-close" id="fp-close-btn" aria-label="Close">&times;</button>
@@ -2742,9 +2742,18 @@ function navigateRow(dir) {
 // ===== TOGGLES =====
 function toggleFilterPanel() {
   S.filterPanelOpen = !S.filterPanelOpen;
-  document.getElementById('filter-panel').classList.toggle('open', S.filterPanelOpen);
-  document.getElementById('filter-overlay').classList.toggle('visible', S.filterPanelOpen);
-  document.getElementById('filter-toggle').classList.toggle('active', S.filterPanelOpen);
+  const panel = document.getElementById('filter-panel');
+  const overlay = document.getElementById('filter-overlay');
+  const trigger = document.getElementById('filter-toggle');
+  panel.classList.toggle('open', S.filterPanelOpen);
+  overlay.classList.toggle('visible', S.filterPanelOpen);
+  trigger.classList.toggle('active', S.filterPanelOpen);
+  // F-040: keep dialog accessibility state in sync with visibility.
+  // aria-expanded lives on the trigger; `hidden` on the panel itself so
+  // the dialog is absent from the a11y tree when closed.
+  trigger.setAttribute('aria-expanded', String(S.filterPanelOpen));
+  if (S.filterPanelOpen) panel.removeAttribute('hidden');
+  else panel.setAttribute('hidden', '');
 }
 
 function toggleCharts() {
