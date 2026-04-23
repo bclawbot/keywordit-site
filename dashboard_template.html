@@ -2752,8 +2752,46 @@ function toggleFilterPanel() {
   // aria-expanded lives on the trigger; `hidden` on the panel itself so
   // the dialog is absent from the a11y tree when closed.
   trigger.setAttribute('aria-expanded', String(S.filterPanelOpen));
-  if (S.filterPanelOpen) panel.removeAttribute('hidden');
-  else panel.setAttribute('hidden', '');
+  if (S.filterPanelOpen) {
+    panel.removeAttribute('hidden');
+    // F-041: remember the trigger so F-042 can restore focus when we close.
+    S.filterPanelTrigger = document.activeElement || trigger;
+    // Move focus to the first focusable inside the dialog. Defer by a frame
+    // so the browser has applied `hidden` removal before we try to focus.
+    requestAnimationFrame(() => {
+      const first = _firstFocusable(panel);
+      if (first) first.focus();
+    });
+  } else {
+    panel.setAttribute('hidden', '');
+    // F-042: restore focus to the trigger that opened the panel.
+    const returnTo = S.filterPanelTrigger || trigger;
+    S.filterPanelTrigger = null;
+    if (returnTo && typeof returnTo.focus === 'function') returnTo.focus();
+  }
+}
+
+// F-041/F-042: generic focus-management helpers for modal-ish surfaces
+// (filter panel now; detail drawer reuses these in F-044). No deps, no
+// npm — just DOM queries.
+function _focusable(container) {
+  if (!container) return [];
+  const sel = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  return Array.from(container.querySelectorAll(sel)).filter(el =>
+    !el.hasAttribute('hidden') && el.offsetParent !== null
+  );
+}
+function _firstFocusable(container) {
+  const list = _focusable(container);
+  return list[0] || null;
+}
+function _trapTab(container, e) {
+  if (e.key !== 'Tab') return;
+  const list = _focusable(container);
+  if (list.length === 0) { e.preventDefault(); return; }
+  const first = list[0], last = list[list.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 
 function toggleCharts() {
