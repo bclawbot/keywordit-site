@@ -2618,6 +2618,34 @@ function downloadFile(name, content, type) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click(); URL.revokeObjectURL(a.href);
 }
 
+// F-029: the serializers above run synchronously on the main thread.
+// Wrap them so users see a spinner and a disabled button for the duration,
+// instead of a frozen-looking UI. `requestAnimationFrame` yields one paint
+// so the "Generating export…" state actually renders before the blocking
+// CSV/JSON.stringify call starts. (The real fix is a web-worker rewrite —
+// tracked as F-029b in ROADMAP.md.)
+function runExportWithSpinner(label, fn) {
+  const btn = document.getElementById('export-btn');
+  if (!btn) { fn(); return; }
+  if (btn.dataset.busy === '1') return; // re-entrancy guard
+  const originalLabel = btn.textContent;
+  btn.dataset.busy = '1';
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+  btn.textContent = 'Generating ' + label + '…';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      try { fn(); }
+      finally {
+        btn.textContent = originalLabel;
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        delete btn.dataset.busy;
+      }
+    });
+  });
+}
+
 // ===== RESET =====
 function resetFilters() {
   document.querySelectorAll('#filter-panel input[type="checkbox"]').forEach(c => c.checked = false);
@@ -2726,8 +2754,14 @@ function bindEvents() {
     document.getElementById('export-dropdown').classList.toggle('hidden');
     document.getElementById('col-dropdown').classList.add('hidden');
   });
-  document.getElementById('export-csv').addEventListener('click', () => { exportCSV(); document.getElementById('export-dropdown').classList.add('hidden'); });
-  document.getElementById('export-json').addEventListener('click', () => { exportJSON(); document.getElementById('export-dropdown').classList.add('hidden'); });
+  document.getElementById('export-csv').addEventListener('click', () => {
+    document.getElementById('export-dropdown').classList.add('hidden');
+    runExportWithSpinner('CSV', exportCSV);
+  });
+  document.getElementById('export-json').addEventListener('click', () => {
+    document.getElementById('export-dropdown').classList.add('hidden');
+    runExportWithSpinner('JSON', exportJSON);
+  });
 
   // Close dropdowns
   document.addEventListener('click', (e) => {
@@ -2774,8 +2808,8 @@ function bindEvents() {
 Palette.register([
   { id: 'dash-golden', label: 'Show Golden Only', shortcut: 'g', category: 'Filters', action: function() { var cb = document.querySelector('input[value="GOLDEN_OPPORTUNITY"]'); if(cb && !cb.checked) { cb.checked = true; onFilterChange(); } } },
   { id: 'dash-clear-filters', label: 'Clear All Filters', category: 'Filters', action: function() { var btn = document.getElementById('reset-all-filters'); if(btn) btn.click(); } },
-  { id: 'dash-export-csv', label: 'Export as CSV', category: 'Actions', action: function() { if(typeof exportCSV === 'function') exportCSV(); } },
-  { id: 'dash-export-json', label: 'Export as JSON', category: 'Actions', action: function() { if(typeof exportJSON === 'function') exportJSON(); } },
+  { id: 'dash-export-csv', label: 'Export as CSV', category: 'Actions', action: function() { if(typeof runExportWithSpinner === 'function') runExportWithSpinner('CSV', exportCSV); else if(typeof exportCSV === 'function') exportCSV(); } },
+  { id: 'dash-export-json', label: 'Export as JSON', category: 'Actions', action: function() { if(typeof runExportWithSpinner === 'function') runExportWithSpinner('JSON', exportJSON); else if(typeof exportJSON === 'function') exportJSON(); } },
   { id: 'dash-toggle-charts', label: 'Toggle Charts', shortcut: 'c', category: 'Actions', action: function() { var btn = document.getElementById('charts-toggle'); if(btn) btn.click(); } },
   { id: 'dash-toggle-filters', label: 'Toggle Filter Panel', shortcut: 'f', category: 'Actions', action: function() { if(typeof toggleFilterPanel === 'function') toggleFilterPanel(); } },
 ]);
