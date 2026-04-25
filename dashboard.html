@@ -13,6 +13,19 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
 <link rel="stylesheet" href="shared/base.css">
 <style>
+
+/* F-053: respect prefers-reduced-motion. Collapses every animation /
+   transition / scroll-behavior to ~instant for users who've set the OS
+   preference. Spinner-as-static-icon is acceptable because we still have
+   aria-busy + disabled state for non-visual feedback. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 /* ============================================================
    THEME VARIABLES
    ============================================================ */
@@ -505,6 +518,15 @@ input, select { font-family: var(--font-sans); }
    existing values. */
 [data-theme="light"] #opportunity-table th {
   color: rgb(74, 74, 90);
+}
+/* F-070b: dark-theme counterpart. The base rule on #opportunity-table th
+   uses var(--text-tertiary) which is #4a4a58 in dark mode — ~3:1 on the
+   dark --bg-raised (#0e0e14). axe color-contrast flagged it. Same
+   targeted-override approach as F-070 (light) to avoid touching the
+   --text-tertiary variable globally. rgb(196,196,210) clears ~10:1 on
+   the dark table-header background. */
+[data-theme="dark"] #opportunity-table th {
+  color: rgb(196, 196, 210);
 }
 .th-inner {
   display: flex; align-items: center; gap: 3px;
@@ -1154,6 +1176,10 @@ textarea:focus-visible,
    in light mode is #8a8a9a = rgb(138,138,154), ~3:1 on the bg-surface.
    Override to rgb(74,74,90) for ~7:1. Hover (red) is unchanged. */
 [data-theme="light"] .btn-signout { color: rgb(74, 74, 90); }
+/* F-072b: dark-theme counterpart. .btn-signout uses var(--text-tertiary)
+   in the base rule; in dark mode that's #4a4a58, ~3:1 on bg-surface.
+   rgb(196,196,210) clears ~10:1. :hover red unchanged. */
+[data-theme="dark"] .btn-signout { color: rgb(196, 196, 210); }
 /* ── TAB NAVIGATION ── */
 .tab-nav {
   display: flex; gap: 0; padding: 0 24px;
@@ -1182,6 +1208,12 @@ textarea:focus-visible,
    --accent-text in light theme is #0d9488 = rgb(13,148,136), which
    only clears ~3:1. */
 [data-theme="light"] .tab-btn.active { color: rgb(15, 118, 110); }
+/* F-071b: dark-theme counterpart. The base var(--accent-text) in dark
+   mode is #2dd4bf which lands ~6:1 on the dark tab-bar — passes AA but
+   sits on the edge. axe flagged it intermittently depending on subpixel
+   rendering. rgb(94,234,212) is a brighter teal that clears ~13:1 on
+   #080810 with margin to spare. */
+[data-theme="dark"] .tab-btn.active { color: rgb(94, 234, 212); }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
@@ -1280,6 +1312,15 @@ textarea:focus-visible,
      polite-live; no aria-live attribute (would double-announce per
      Wave 3 lesson). pointer-events:none so it never blocks clicks. -->
 <div id="toast-region" role="status"></div>
+
+<!-- F-080: visually-hidden announcement target for proactive session-refresh.
+     shared/auth.js writes "Refreshing your session…" / "Session refreshed."
+     Per the operator decision in CLAUDE_CODE_WAVE5_GO.md, both role="status"
+     and aria-live="polite" are explicitly set here — older AT (legacy NVDA,
+     Narrator) treat the live region more reliably with the explicit pair.
+     This is a NARROW exception to the Wave 3 lesson; for in-page transient
+     messages (toast above) we still use role-only. -->
+<div id="session-status" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
 <!-- F-056: skip-link. First focusable element; visible only on keyboard focus. -->
 <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -1637,7 +1678,7 @@ function signOut() {
 
 <script>
 window.OPPORTUNITIES = [];
-window.PIPELINE_META = {"generated_at": "2026-04-25T22:36:33.961243", "total_validated": 1121, "total_scored": 130, "total_golden": 6, "total_emerging": 9, "total_unscored": 991, "countries_covered": 49, "last_run_at": "2026-03-22T09:38:32.728917", "run_id": "run_20260425_2236", "metrics_from_google_kp": 0, "metrics_from_dataforseo": 0, "run_dates": ["2026-02-26", "2026-02-27", "2026-02-28", "2026-03-01", "2026-03-02", "2026-03-21", "2026-03-22"], "accumulated_runs": 7};
+window.PIPELINE_META = {"generated_at": "2026-04-26T01:30:46.144994", "total_validated": 1121, "total_scored": 130, "total_golden": 6, "total_emerging": 9, "total_unscored": 991, "countries_covered": 49, "last_run_at": "2026-03-22T09:38:32.728917", "run_id": "run_20260426_0130", "metrics_from_google_kp": 0, "metrics_from_dataforseo": 0, "run_dates": ["2026-02-26", "2026-02-27", "2026-02-28", "2026-03-01", "2026-03-02", "2026-03-21", "2026-03-22"], "accumulated_runs": 7};
 window.ANGLES = {};
 
 (function() {
@@ -3461,6 +3502,7 @@ function copyDemotion(entity) {
 </script>
 </main>
 <html lang="en">
+<title>Keywordit · Research Assistant</title>
 <!-- Research Chat Widget -->
 <div id="chat-widget" class="chat-widget" style="display: none;">
   <button id="chat-toggle" class="chat-toggle" title="Research Assistant" aria-label="Open research assistant chat" aria-expanded="false" aria-controls="chat-panel">
