@@ -288,8 +288,23 @@ input, select { font-family: var(--font-sans); }
   flex: 1;
   min-width: 0;
   transition: background var(--transition-fast);
+  /* F-026: reset button defaults so the same .kpi-card class applies to
+     both <div> and <button> tiles — no border, no inherited font, left-
+     aligned text. The text-content children render identically. */
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+  color: inherit;
 }
 .kpi-card:hover { background: var(--bg-raised); }
+/* F-026: clickable KPI tiles (button variant) get a pointer cursor and an
+   "active filter" visual when aria-pressed="true". */
+.kpi-clickable { cursor: pointer; }
+.kpi-clickable[aria-pressed="true"] {
+  background: var(--accent-dim);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
 .kpi-label {
   font-size: 9px; color: var(--text-tertiary);
   text-transform: uppercase; letter-spacing: 0.08em;
@@ -1333,16 +1348,16 @@ __TAB_NAV__
     <div class="kpi-value">—</div>
     <div class="kpi-sub">keywords</div>
   </div>
-  <div class="kpi-card" id="kv-golden">
+  <button type="button" class="kpi-card kpi-clickable" id="kv-golden" data-kpi-filter-tag="GOLDEN_OPPORTUNITY" aria-pressed="false" aria-label="Filter to Golden opportunities">
     <div class="kpi-label">Golden</div>
     <div class="kpi-value green">—</div>
     <div class="kpi-sub">high priority</div>
-  </div>
-  <div class="kpi-card" id="kv-emerging">
+  </button>
+  <button type="button" class="kpi-card kpi-clickable" id="kv-emerging" data-kpi-filter-tag="EMERGING" aria-pressed="false" aria-label="Filter to Emerging opportunities">
     <div class="kpi-label">Emerging</div>
     <div class="kpi-value accent">—</div>
     <div class="kpi-sub">rising</div>
-  </div>
+  </button>
   <div class="kpi-card" id="kv-countries">
     <div class="kpi-label">Markets</div>
     <div class="kpi-value">—</div>
@@ -2088,6 +2103,19 @@ function onFilterChange() {
   renderActiveFilters();
   updateCharts();
   saveToHash();
+  // F-026: keep KPI tile pressed-state in sync with the actual filter set,
+  // so clearing a tag from the filter panel or from a chip also un-presses
+  // the corresponding KPI tile.
+  syncKpiPressed();
+}
+
+// F-026: reflect S.filters.tags back to .kpi-clickable[aria-pressed].
+function syncKpiPressed() {
+  document.querySelectorAll('.kpi-clickable').forEach(tile => {
+    const tag = tile.dataset.kpiFilterTag;
+    const active = !!tag && S.filters.tags.indexOf(tag) >= 0;
+    tile.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
 }
 
 function collectFilters() {
@@ -2918,6 +2946,37 @@ function bindEvents() {
     clearBtn.style.display = 'none';
     applyFilters(); renderTable(); renderActiveFilters(); updateCharts(); saveToHash();
   });
+
+  // F-026: clickable KPI tiles. Each .kpi-clickable button has a
+  // data-kpi-filter-tag attribute naming the tag value to toggle.
+  // Toggle works through the existing filter-panel checkbox so there's a
+  // single source of truth for S.filters.tags — clicking the KPI tile is
+  // exactly like ticking the corresponding checkbox in the filter panel.
+  document.querySelectorAll('.kpi-clickable').forEach(tile => {
+    tile.addEventListener('click', () => {
+      const tag = tile.dataset.kpiFilterTag;
+      if (!tag) return;
+      const cb = document.getElementById('ft-' + tag);
+      if (cb) {
+        cb.checked = !cb.checked;
+        onFilterChange();
+        // syncKpiPressed() runs inside onFilterChange via renderActiveFilters
+        // chain — but call it here too in case the chain changes.
+        syncKpiPressed();
+      } else {
+        // Fallback if the panel checkbox doesn't exist (e.g. data-driven
+        // tag value the panel doesn't enumerate). Toggle S.filters.tags
+        // directly.
+        const i = S.filters.tags.indexOf(tag);
+        if (i >= 0) S.filters.tags.splice(i, 1);
+        else S.filters.tags.push(tag);
+        applyFilters(); renderTable(); renderActiveFilters(); updateCharts(); saveToHash();
+        syncKpiPressed();
+      }
+    });
+  });
+  // Initial sync (e.g. if hash-restore landed with a pre-set tag filter).
+  syncKpiPressed();
 
   // Filter toggle
   document.getElementById('filter-toggle').addEventListener('click', toggleFilterPanel);
