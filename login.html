@@ -304,49 +304,53 @@ body::before {
   <div class="auth-panel active" id="panel-login">
     <h2 class="sr-only">Sign in</h2>
     <div class="msg" id="login-msg"></div>
-    <div class="form-group">
-      <label class="form-label">Username</label>
-      <input class="form-input" type="text" id="login-user" placeholder="Enter username" autocomplete="username">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Password</label>
-      <div style="position:relative;">
-        <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" style="padding-right:40px;">
-        <button type="button" onclick="togglePassVis('login-pass', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:4px;" title="Show password" aria-label="Toggle password visibility">&#128065;</button>
+    <form id="form-login">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" type="text" id="login-user" placeholder="Enter username" autocomplete="username">
       </div>
-    </div>
-    <button class="btn-submit" id="login-btn" onclick="doLogin()">Sign In</button>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div style="position:relative;">
+          <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" style="padding-right:40px;">
+          <button type="button" onclick="togglePassVis('login-pass', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:4px;" title="Show password" aria-label="Toggle password visibility">&#128065;</button>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit" id="login-btn">Sign In</button>
+    </form>
   </div>
 
   <!-- REQUEST ACCESS -->
   <div class="auth-panel" id="panel-request">
     <h2 class="sr-only">Request access</h2>
     <div class="msg" id="request-msg"></div>
-    <div class="form-group">
-      <label class="form-label">Full Name</label>
-      <input class="form-input" type="text" id="req-name" placeholder="Your name">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Email</label>
-      <input class="form-input" type="email" id="req-email" placeholder="you@company.com">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Company / Project</label>
-      <input class="form-input" type="text" id="req-company" placeholder="Company name">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Why do you want access?</label>
-      <textarea class="form-textarea" id="req-reason" placeholder="Brief description of your use case..."></textarea>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Preferred Username</label>
-      <input class="form-input" type="text" id="req-username" placeholder="Choose a username">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Password</label>
-      <input class="form-input" type="password" id="req-pass" placeholder="Min 8 characters" autocomplete="new-password">
-    </div>
-    <button class="btn-submit" id="request-btn" onclick="doRequest()">Submit Request</button>
+    <form id="form-request">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" type="text" id="req-name" placeholder="Your name" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="req-email" placeholder="you@company.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Company / Project</label>
+        <input class="form-input" type="text" id="req-company" placeholder="Company name" autocomplete="organization">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Why do you want access?</label>
+        <textarea class="form-textarea" id="req-reason" placeholder="Brief description of your use case..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Preferred Username</label>
+        <input class="form-input" type="text" id="req-username" placeholder="Choose a username" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="req-pass" placeholder="Min 10 characters" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn-submit" id="request-btn">Submit Request</button>
+    </form>
   </div>
 </div>
 
@@ -459,15 +463,18 @@ function togglePassVis(inputId, btn) {
   }
 })();
 
-// Enter key to submit — login form
-document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-document.getElementById('login-user').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
-// Enter key to submit — request form
-['req-name','req-email','req-company','req-reason','req-username'].forEach(id => {
-  document.getElementById(id)?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); doRequest(); }
-  });
+// F-006: form submit binding. Replaces the prior button onclick + per-input
+// Enter keydown listeners. Native <form> submit handles Enter in any field
+// and click on the submit button uniformly. preventDefault() blocks the
+// browser's GET-with-query-string default and lets the existing
+// doLogin/doRequest handlers run.
+document.getElementById('form-login').addEventListener('submit', e => {
+  e.preventDefault();
+  doLogin();
+});
+document.getElementById('form-request').addEventListener('submit', e => {
+  e.preventDefault();
+  doRequest();
 });
 
 </script>
