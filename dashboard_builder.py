@@ -990,12 +990,15 @@ def build_performance_tab():
     lines.append('<div id="tab-performance" class="tab-content">')
 
     if perf_cache is None:
+        # F-009: end-user-facing empty state. The previous copy listed an
+        # ops-only CLI command (`python3 scripts/csv_importer.py ...`)
+        # which read like a leaked TODO. The new copy explains what the
+        # tab will show and when, without leaking implementation detail.
         lines.append('<div class="perf-awaiting">')
-        lines.append('<h3>Awaiting First Weekly CSV Import</h3>')
-        lines.append('<p>Run the weekly import to populate this tab:<br><br>')
-        lines.append('<code>python3 scripts/csv_importer.py /path/to/keywords_report.csv</code><br><br>')
-        lines.append('This will match your KeywordIt CSV data against pipeline output,<br>')
-        lines.append('calculate hit rates, flag promotion candidates, and detect drift.</p>')
+        lines.append('<h3>Performance — coming soon</h3>')
+        lines.append('<p>Weekly performance reports will appear here once the next import cycle runs.<br>')
+        lines.append('We compare keyword pipeline output against your real revenue / RPC numbers and<br>')
+        lines.append('flag promotion candidates and drift. Check back after the weekly import.</p>')
         lines.append('</div></div>')
         return '\n'.join(lines)
 
