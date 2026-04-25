@@ -295,13 +295,13 @@ body::before {
 </div>
 
 <div class="auth-container">
-  <div class="auth-tabs" role="tablist">
-    <button class="auth-tab active" id="tab-login" onclick="switchTab('login')" role="tab" aria-selected="true">Sign In</button>
-    <button class="auth-tab" id="tab-request" onclick="switchTab('request')" role="tab" aria-selected="false">Request Access</button>
+  <div class="auth-tabs" role="tablist" aria-label="Authentication mode">
+    <button class="auth-tab active" id="tab-login" onclick="switchTab('login')" role="tab" aria-selected="true" aria-controls="panel-login" tabindex="0">Sign In</button>
+    <button class="auth-tab" id="tab-request" onclick="switchTab('request')" role="tab" aria-selected="false" aria-controls="panel-request" tabindex="-1">Request Access</button>
   </div>
 
   <!-- LOGIN -->
-  <div class="auth-panel active" id="panel-login">
+  <div class="auth-panel active" id="panel-login" role="tabpanel" aria-labelledby="tab-login">
     <h2 class="sr-only">Sign in</h2>
     <div class="msg" id="login-msg" role="alert"></div>
     <form id="form-login">
@@ -321,7 +321,7 @@ body::before {
   </div>
 
   <!-- REQUEST ACCESS -->
-  <div class="auth-panel" id="panel-request">
+  <div class="auth-panel" id="panel-request" role="tabpanel" aria-labelledby="tab-request">
     <h2 class="sr-only">Request access</h2>
     <div class="msg" id="request-msg"></div>
     <form id="form-request">
@@ -369,9 +369,18 @@ body::before {
 // Auth is handled by shared/auth.js (JWT backend)
 
 function switchTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-tab').forEach(t => {
+    t.classList.remove('active');
+    // F-048: keep aria-selected + tabindex in sync with .active so the
+    // ARIA state matches the visual state.
+    t.setAttribute('aria-selected', 'false');
+    t.setAttribute('tabindex', '-1');
+  });
   document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
+  const activeTab = document.getElementById('tab-' + tab);
+  activeTab.classList.add('active');
+  activeTab.setAttribute('aria-selected', 'true');
+  activeTab.setAttribute('tabindex', '0');
   document.getElementById('panel-' + tab).classList.add('active');
   // Clear messages
   document.querySelectorAll('.msg').forEach(m => { m.className = 'msg'; m.textContent = ''; });
@@ -379,6 +388,36 @@ function switchTab(tab) {
   document.getElementById('request-btn').disabled = false;
   document.getElementById('request-btn').textContent = 'Submit Request';
 }
+
+// F-048: arrow-key navigation on the tablist with automatic activation.
+// Guard: only handle arrows when the event originates on a tab itself,
+// so typing arrows inside username / password / textarea inputs doesn't
+// steal focus to the tabs.
+(function() {
+  const tablist = document.querySelector('.auth-tabs[role="tablist"]');
+  if (!tablist) return;
+  const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+  tablist.addEventListener('keydown', e => {
+    if (!e.target.matches('[role="tab"]')) return;
+    const i = tabs.indexOf(e.target);
+    if (i < 0) return;
+    let next = -1;
+    if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = tabs.length - 1;
+    if (next >= 0) {
+      e.preventDefault();
+      // Automatic activation (focus = activate). Derive the tab key from id
+      // ("tab-login" -> "login") and call the existing switchTab() so all
+      // ARIA state, panel visibility, and message-clearing stay together
+      // in one code path.
+      const tabKey = tabs[next].id.replace(/^tab-/, '');
+      switchTab(tabKey);
+      tabs[next].focus();
+    }
+  });
+})();
 
 function showMsg(id, type, text) {
   const el = document.getElementById(id);
