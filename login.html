@@ -307,12 +307,12 @@ body::before {
     <form id="form-login">
       <div class="form-group">
         <label class="form-label" for="login-user">Username</label>
-        <input class="form-input" type="text" id="login-user" placeholder="Enter username" autocomplete="username">
+        <input class="form-input" type="text" id="login-user" placeholder="Enter username" autocomplete="username" required aria-required="true">
       </div>
       <div class="form-group">
         <label class="form-label" for="login-pass">Password</label>
         <div style="position:relative;">
-          <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" style="padding-right:40px;">
+          <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" style="padding-right:40px;" required aria-required="true">
           <button type="button" onclick="togglePassVis('login-pass', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:4px;" title="Show password" aria-label="Toggle password visibility">&#128065;</button>
         </div>
       </div>
@@ -327,11 +327,11 @@ body::before {
     <form id="form-request">
       <div class="form-group">
         <label class="form-label" for="req-name">Full Name</label>
-        <input class="form-input" type="text" id="req-name" placeholder="Your name" autocomplete="name">
+        <input class="form-input" type="text" id="req-name" placeholder="Your name" autocomplete="name" required aria-required="true">
       </div>
       <div class="form-group">
         <label class="form-label" for="req-email">Email</label>
-        <input class="form-input" type="email" id="req-email" placeholder="you@company.com" autocomplete="email">
+        <input class="form-input" type="email" id="req-email" placeholder="you@company.com" autocomplete="email" required aria-required="true">
       </div>
       <div class="form-group">
         <label class="form-label" for="req-company">Company / Project</label>
@@ -343,11 +343,11 @@ body::before {
       </div>
       <div class="form-group">
         <label class="form-label" for="req-username">Preferred Username</label>
-        <input class="form-input" type="text" id="req-username" placeholder="Choose a username" autocomplete="username">
+        <input class="form-input" type="text" id="req-username" placeholder="Choose a username" autocomplete="username" required aria-required="true">
       </div>
       <div class="form-group">
         <label class="form-label" for="req-pass">Password</label>
-        <input class="form-input" type="password" id="req-pass" placeholder="Min 10 characters" autocomplete="new-password">
+        <input class="form-input" type="password" id="req-pass" placeholder="Min 10 characters" autocomplete="new-password" required aria-required="true">
       </div>
       <button type="submit" class="btn-submit" id="request-btn">Submit Request</button>
     </form>
