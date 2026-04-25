@@ -322,7 +322,19 @@ body {
 #auth-gate .msg {
   font-size: 14px; color: var(--text-dim);
 }
-#admin-main { display: none; }
+#main-content { display: none; }
+#main-content:focus { outline: none; }
+
+/* Skip-link CSS — keep in sync with other pages until shared/skip-link.css exists (Wave 4 candidate). */
+.skip-link {
+  position: absolute; top: -40px; left: 8px;
+  padding: 8px 14px;
+  background: var(--accent, #4f46e5); color: #fff;
+  font-family: var(--font-mono, monospace); font-size: 12px;
+  border-radius: 4px; text-decoration: none;
+  z-index: 10000;
+}
+.skip-link:focus { top: 8px; outline: 2px solid #fff; outline-offset: 2px; }
 
 /* Toast */
 .toast {
@@ -351,6 +363,9 @@ body {
 </head>
 <body>
 
+<!-- F-051: skip-link. First focusable element; visible only on keyboard focus. -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
 <div id="auth-gate">
   <div class="nav-logo" style="margin-bottom:8px">
     <div class="nav-logo-icon">K</div>
@@ -359,7 +374,7 @@ body {
   <div class="msg">Verifying admin access...</div>
 </div>
 
-<div id="admin-main">
+<main id="main-content" tabindex="-1">
   <!-- NAV -->
   <div class="admin-nav">
     <div class="nav-left">
@@ -469,7 +484,7 @@ body {
       <tbody id="users-body"></tbody>
     </table>
   </div>
-</div>
+</main>
 
 <div class="toast" id="toast"></div>
 
@@ -502,7 +517,7 @@ async function apiFetch(path, opts) {
 // ═══ AUTH CHECK ═══
 requireAuth({ requireAdmin: true, onSuccess: function(s) {
   document.getElementById('auth-gate').style.display = 'none';
-  document.getElementById('admin-main').style.display = 'block';
+  document.getElementById('main-content').style.display = 'block';
   document.getElementById('admin-user-label').textContent = s.user + ' (admin)';
   renderAll();
 } });

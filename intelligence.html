@@ -406,9 +406,24 @@ button { cursor: pointer; font-family: var(--font-sans); }
   .btn-cmd, .btn-signout { font-size: 10px; padding: 5px 10px; }
   #health-bar { flex-wrap: wrap; height: auto; padding: 8px 16px; gap: 8px; }
 }
+
+/* Skip-link CSS — keep in sync with other pages until shared/skip-link.css exists (Wave 4 candidate). */
+.skip-link {
+  position: absolute; top: -40px; left: 8px;
+  padding: 8px 14px;
+  background: var(--accent, #4f46e5); color: #fff;
+  font-family: var(--font-mono, monospace); font-size: 12px;
+  border-radius: 4px; text-decoration: none;
+  z-index: 10000;
+}
+.skip-link:focus { top: 8px; outline: 2px solid #fff; outline-offset: 2px; }
+#main-content:focus { outline: none; }
 </style>
 </head>
 <body>
+
+<!-- F-051: skip-link. First focusable element; visible only on keyboard focus. -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- ═══ AUTH GATE ═══ -->
 <div id="auth-gate"><div class="msg">Authenticating...</div></div>
@@ -438,6 +453,8 @@ button { cursor: pointer; font-family: var(--font-sans); }
   <button class="tab-btn" data-tab="matrix" role="tab" aria-selected="false">Matrix</button>
   <button class="tab-btn" data-tab="analysis" role="tab" aria-selected="false">Analysis</button>
 </nav>
+
+<main id="main-content" tabindex="-1">
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      SECTION A — NETWORK WAR ROOM
@@ -556,6 +573,8 @@ button { cursor: pointer; font-family: var(--font-sans); }
   <span>Active: <span id="hb-active">--</span></span>
   <span>Pending KW: <span id="hb-pending">--</span></span>
 </div>
+
+</main>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      JAVASCRIPT

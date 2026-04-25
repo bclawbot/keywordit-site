@@ -255,14 +255,30 @@ body::before {
 [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 [data-theme="light"] .theme-toggle .icon-sun { display: none; }
 [data-theme="light"] .theme-toggle .icon-moon { display: block; }
+
+/* Skip-link CSS — keep in sync with other pages until shared/skip-link.css exists (Wave 4 candidate). */
+.skip-link {
+  position: absolute; top: -40px; left: 8px;
+  padding: 8px 14px;
+  background: var(--accent, #4f46e5); color: #fff;
+  font-family: var(--font-mono, monospace); font-size: 12px;
+  border-radius: 4px; text-decoration: none;
+  z-index: 10000;
+}
+.skip-link:focus { top: 8px; outline: 2px solid #fff; outline-offset: 2px; }
 </style>
 </head>
 <body>
+
+<!-- F-051: skip-link. First focusable element; visible only on keyboard focus. -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
   <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
   <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
 </button>
+
+<main id="main-content" tabindex="-1">
 
 <div class="logo-area">
   <div class="logo-icon">K</div>
@@ -328,6 +344,8 @@ body::before {
 </div>
 
 <div class="login-footer">Access is reviewed manually · Typical approval: &lt;24h</div>
+
+</main>
 
 <script src="shared/theme.js"></script>
 <script src="shared/palette.js"></script>
