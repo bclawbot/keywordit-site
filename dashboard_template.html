@@ -1105,7 +1105,19 @@ textarea:focus-visible,
   transition: all var(--transition-fast);
 }
 .tab-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
-.tab-btn.active { color: var(--accent-text); border-bottom-color: var(--accent); }
+.tab-btn.active {
+  color: var(--accent-text);
+  border-bottom-color: var(--accent);
+  /* F-071: bump active tab to 14px so the selected tab is visibly distinct from
+     the 12px inactive tabs and the text itself meets axe's >24px combined-rule
+     for "large text" tolerance. */
+  font-size: 14px;
+}
+/* F-071: light-theme active tab darkens to rgb(15,118,110) for >4.5:1
+   contrast on the light tab-bar background (#ffffff). The base
+   --accent-text in light theme is #0d9488 = rgb(13,148,136), which
+   only clears ~3:1. */
+[data-theme="light"] .tab-btn.active { color: rgb(15, 118, 110); }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
