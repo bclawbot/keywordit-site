@@ -256,6 +256,18 @@ body::before {
 [data-theme="light"] .theme-toggle .icon-sun { display: none; }
 [data-theme="light"] .theme-toggle .icon-moon { display: block; }
 
+/* F-002: submit-button busy state — inline spinner + dimmed label.
+   Pairs with aria-busy="true" set by setBtnBusy() in JS. */
+.btn-busy { cursor: wait; opacity: 0.85; }
+.btn-busy::before {
+  content: ''; display: inline-block;
+  width: 12px; height: 12px; margin-right: 8px; vertical-align: -2px;
+  border: 2px solid currentColor; border-top-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.7s linear infinite;
+}
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+
 /* F-005: visually-hidden utility for sr-only headings. */
 .sr-only {
   position: absolute; width: 1px; height: 1px;
@@ -425,17 +437,42 @@ function showMsg(id, type, text) {
   el.textContent = text;
 }
 
+// F-002: shared busy-state helper for the submit buttons. Toggles the
+// inline spinner CSS class, the disabled property (so accidental
+// double-submit is prevented), and aria-busy for screen readers.
+// Stashes the original button text on the element so restore is exact.
+function setBtnBusy(btn, busy, busyText) {
+  if (!btn) return;
+  if (busy) {
+    if (btn._origText == null) btn._origText = btn.textContent;
+    btn.textContent = busyText || btn._origText;
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.classList.add('btn-busy');
+  } else {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    btn.classList.remove('btn-busy');
+    if (btn._origText) { btn.textContent = btn._origText; btn._origText = null; }
+  }
+}
+
 async function doLogin() {
   const user = document.getElementById('login-user').value.trim().toLowerCase();
   const pass = document.getElementById('login-pass').value;
   if (!user || !pass) { showMsg('login-msg', 'error', 'Please enter both fields.'); return; }
 
+  const btn = document.getElementById('login-btn');
   showMsg('login-msg', 'info', 'Signing in...');
+  setBtnBusy(btn, true, 'Signing in…');
   try {
     await auth.login(user, pass);
     showMsg('login-msg', 'success', 'Authenticated. Redirecting...');
+    // Leave the button in busy state through the redirect so it doesn't
+    // visually "snap back" before the navigation completes.
     setTimeout(() => { window.location.href = 'dashboard.html'; }, 600);
   } catch(e) {
+    setBtnBusy(btn, false);
     showMsg('login-msg', 'error', e.message || 'Login failed.');
   }
 }
@@ -463,12 +500,18 @@ async function doRequest() {
     return;
   }
 
+  const reqBtn = document.getElementById('request-btn');
   showMsg('request-msg', 'info', 'Submitting...');
+  setBtnBusy(reqBtn, true, 'Submitting…');
   try {
     await auth.register({ username: username, password: pass, email: email, name: name });
     showMsg('request-msg', 'success', 'Account created! Please wait for admin approval.');
-    document.getElementById('request-btn').disabled = true;
-    document.getElementById('request-btn').textContent = 'Submitted';
+    // Leave busy state on success so the user can't double-submit; the
+    // post-submit confirmation block (F-019) takes over the visual UX.
+    reqBtn.disabled = true;
+    reqBtn.textContent = 'Submitted';
+    reqBtn.classList.remove('btn-busy');
+    reqBtn.removeAttribute('aria-busy');
     document.getElementById('req-name').value = '';
     document.getElementById('req-email').value = '';
     document.getElementById('req-company').value = '';
@@ -476,6 +519,7 @@ async function doRequest() {
     document.getElementById('req-username').value = '';
     if (document.getElementById('req-pass')) document.getElementById('req-pass').value = '';
   } catch(e) {
+    setBtnBusy(reqBtn, false);
     showMsg('request-msg', 'error', e.message || 'Registration failed.');
   }
 }
