@@ -418,6 +418,66 @@ button { cursor: pointer; font-family: var(--font-sans); }
 }
 .skip-link:focus { top: 8px; outline: 2px solid #fff; outline-offset: 2px; }
 #main-content:focus { outline: none; }
+
+/* F-065: metric-info button + tooltip pattern. Trigger is a small "i"
+   button sitting next to a metric label; the tooltip appears on hover OR
+   keyboard focus and dismisses on blur OR Escape (per WAI-ARIA APG
+   Tooltip pattern). No JS library — CSS handles the show/hide; a single
+   document-level keydown handler closes the active tooltip on Escape. */
+.metric-info {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px;
+  margin-left: 4px;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-tertiary, #888);
+  font-family: var(--font-sans, sans-serif);
+  font-size: 10px; font-weight: 700; line-height: 1;
+  cursor: help;
+  vertical-align: middle;
+  padding: 0;
+}
+.metric-info:hover, .metric-info:focus { color: var(--accent, #2dd4bf); border-color: var(--accent, #2dd4bf); }
+.metric-info-wrap {
+  display: inline-flex; align-items: center;
+  position: relative;
+}
+.metric-tooltip {
+  position: absolute;
+  top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  min-width: 220px; max-width: 280px;
+  padding: 8px 12px;
+  background: var(--bg-elevated, #14141c);
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: 6px;
+  color: var(--text-primary, #e8e8f0);
+  font-family: var(--font-sans, sans-serif);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  z-index: 1000;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.metric-info-wrap:hover .metric-tooltip,
+.metric-info-wrap:focus-within .metric-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+/* F-065: Escape sets data-hidden="true" on the active wrapper; CSS forces
+   the tooltip closed even while focus/hover is still on the trigger. */
+.metric-info-wrap[data-hidden="true"] .metric-tooltip {
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
 </style>
 </head>
 <body>
@@ -470,8 +530,8 @@ button { cursor: pointer; font-family: var(--font-sans); }
         <th data-col="new_today">Today <span class="sort-arrow">&#9650;</span></th>
         <th data-col="new_7d">7d <span class="sort-arrow">&#9650;</span></th>
         <th data-col="new_30d">30d <span class="sort-arrow">&#9650;</span></th>
-        <th data-col="avg_durability">Durability <span class="sort-arrow">&#9650;</span></th>
-        <th data-col="velocity_7d">Velocity <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="avg_durability"><span class="metric-info-wrap">Durability <button type="button" class="metric-info" aria-label="What is Durability?" aria-describedby="tt-durability-avg">i</button><span class="metric-tooltip" role="tooltip" id="tt-durability-avg">Average days a keyword stayed in the top 100 over the last scrape window. Higher = more stable opportunity.</span></span> <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="velocity_7d"><span class="metric-info-wrap">Velocity <button type="button" class="metric-info" aria-label="What is Velocity?" aria-describedby="tt-velocity-7d">i</button><span class="metric-tooltip" role="tooltip" id="tt-velocity-7d">Trend score from Google Trends RSS, scaled 0–1000. Higher = trending faster right now.</span></span> <span class="sort-arrow">&#9650;</span></th>
         <th>Top Verticals</th>
         <th data-col="last_scrape">Last Scrape <span class="sort-arrow">&#9650;</span></th>
       </tr></thead>
@@ -510,7 +570,7 @@ button { cursor: pointer; font-family: var(--font-sans); }
       <thead><tr>
         <th data-col="keyword">Keyword <span class="sort-arrow">&#9650;</span></th>
         <th data-col="network_count">Networks <span class="sort-arrow">&#9650;</span></th>
-        <th data-col="max_durability">Durability <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="max_durability"><span class="metric-info-wrap">Durability <button type="button" class="metric-info" aria-label="What is Durability?" aria-describedby="tt-durability-max">i</button><span class="metric-tooltip" role="tooltip" id="tt-durability-max">Average days a keyword stayed in the top 100 over the last scrape window. Higher = more stable opportunity.</span></span> <span class="sort-arrow">&#9650;</span></th>
         <th>Vertical</th>
         <th data-col="volume">Volume <span class="sort-arrow">&#9650;</span></th>
         <th data-col="cpc_usd">CPC <span class="sort-arrow">&#9650;</span></th>
@@ -1066,6 +1126,23 @@ window.fetchKeywords = fetchKeywords;
 loadWarRoom(); loaded.warroom = true;
 loadHealth();
 setInterval(loadHealth, 60000);
+
+// F-065: Escape on a focused .metric-info trigger forces its tooltip
+// closed (per WAI-ARIA APG Tooltip pattern). The tooltip naturally
+// reopens on the next hover/focus. Listener is on document so it runs
+// regardless of which tooltip the user activated.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const trigger = document.activeElement;
+  if (!trigger || !trigger.classList || !trigger.classList.contains('metric-info')) return;
+  const wrap = trigger.closest('.metric-info-wrap');
+  if (!wrap) return;
+  wrap.setAttribute('data-hidden', 'true');
+  trigger.blur();
+  // Reset the data-hidden flag once focus moves away so the next
+  // hover/focus opens the tooltip normally.
+  setTimeout(() => wrap.removeAttribute('data-hidden'), 0);
+});
 
 })();
 </script>
