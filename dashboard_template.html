@@ -398,6 +398,10 @@ input, select { font-family: var(--font-sans); }
   font-size: 11px; font-weight: 500;
   white-space: nowrap;
   transition: all var(--transition-fast);
+  /* F-075: chip is a <button>; reset font/cursor so the same .af-pill class
+     works on the button element with the existing visual design. */
+  font-family: inherit;
+  cursor: pointer;
 }
 .af-pill:hover { background: var(--accent-hover); }
 .af-pill .af-x {
@@ -2113,12 +2117,18 @@ function renderActiveFilters() {
   S.filters.metricsSources.forEach(s => pills.push({ type: 'panel-ms', value: s, label: `Data: ${metricsLabel(s)}` }));
 
   bar.classList.toggle('visible', pills.length > 0);
-  pillsDiv.innerHTML = pills.map((p, i) => `<span class="af-pill" data-idx="${i}">${esc(p.label)}<span class="af-x" data-idx="${i}">&times;</span></span>`).join('');
+  // F-075: chips are <button> elements, not span+role. The entire chip is
+  // the click target; the ✕ glyph is decorative (aria-hidden). aria-label
+  // names the action so AT users hear "Remove Tag: GOLDEN_OPPORTUNITY
+  // filter, button" instead of just the chip text.
+  pillsDiv.innerHTML = pills.map((p, i) =>
+    `<button type="button" class="af-pill" data-idx="${i}" aria-label="Remove ${esc(p.label)} filter">${esc(p.label)}<span class="af-x" aria-hidden="true">&times;</span></button>`
+  ).join('');
 
-  pillsDiv.querySelectorAll('.af-x').forEach(x => {
-    x.addEventListener('click', (e) => {
+  pillsDiv.querySelectorAll('.af-pill').forEach(btn => {
+    btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const idx = parseInt(x.dataset.idx);
+      const idx = parseInt(btn.dataset.idx);
       const pill = pills[idx];
       if (pill.type === 'col') {
         const arr = S.colFilters[pill.colKey];
