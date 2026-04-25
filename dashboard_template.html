@@ -1204,6 +1204,12 @@ textarea:focus-visible,
    --accent-text in light theme is #0d9488 = rgb(13,148,136), which
    only clears ~3:1. */
 [data-theme="light"] .tab-btn.active { color: rgb(15, 118, 110); }
+/* F-071b: dark-theme counterpart. The base var(--accent-text) in dark
+   mode is #2dd4bf which lands ~6:1 on the dark tab-bar — passes AA but
+   sits on the edge. axe flagged it intermittently depending on subpixel
+   rendering. rgb(94,234,212) is a brighter teal that clears ~13:1 on
+   #080810 with margin to spare. */
+[data-theme="dark"] .tab-btn.active { color: rgb(94, 234, 212); }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
