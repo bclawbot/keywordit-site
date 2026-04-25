@@ -1176,6 +1176,10 @@ textarea:focus-visible,
    in light mode is #8a8a9a = rgb(138,138,154), ~3:1 on the bg-surface.
    Override to rgb(74,74,90) for ~7:1. Hover (red) is unchanged. */
 [data-theme="light"] .btn-signout { color: rgb(74, 74, 90); }
+/* F-072b: dark-theme counterpart. .btn-signout uses var(--text-tertiary)
+   in the base rule; in dark mode that's #4a4a58, ~3:1 on bg-surface.
+   rgb(196,196,210) clears ~10:1. :hover red unchanged. */
+[data-theme="dark"] .btn-signout { color: rgb(196, 196, 210); }
 /* ── TAB NAVIGATION ── */
 .tab-nav {
   display: flex; gap: 0; padding: 0 24px;
