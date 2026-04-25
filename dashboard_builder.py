@@ -885,9 +885,9 @@ def build_experimental_tab():
 
     # Filters
     lines.append('<div class="exp-filters">')
-    lines.append('<button class="exp-filter-btn active" data-exp-filter="all">All</button>')
-    lines.append('<button class="exp-filter-btn" data-exp-filter="confirmed">Confirmed Only</button>')
-    lines.append('<button class="exp-filter-btn" data-exp-filter="inherited">Inherited Only</button>')
+    lines.append('<button class="exp-filter-btn active" data-exp-filter="all" aria-pressed="true">All</button>')
+    lines.append('<button class="exp-filter-btn" data-exp-filter="confirmed" aria-pressed="false">Confirmed Only</button>')
+    lines.append('<button class="exp-filter-btn" data-exp-filter="inherited" aria-pressed="false">Inherited Only</button>')
     lines.append('<div class="exp-sort-label">Sort by: <select id="exp-sort"><option value="revenue">Source Revenue</option><option value="cpc">Est. CPC</option><option value="entity">Entity Status</option></select></div>')
     lines.append('</div>')
 
@@ -1177,8 +1177,14 @@ extra_tabs_js = '''<script>
 (function(){
   document.querySelectorAll('[data-exp-filter]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-exp-filter]').forEach(b => b.classList.remove('active'));
+      // F-064: clear both .active and aria-pressed on every sibling so AT
+      // sees the same single-active state as sighted users.
+      document.querySelectorAll('[data-exp-filter]').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
       const f = btn.dataset.expFilter;
       document.querySelectorAll('.tmpl-expansions li').forEach(li => {
         if (f === 'all') li.style.display = '';

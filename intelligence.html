@@ -486,9 +486,9 @@ button { cursor: pointer; font-family: var(--font-sans); }
      ══════════════════════════════════════════════════════════════════════════ -->
 <div id="tab-activity" class="tab-content">
   <div class="filter-bar">
-    <button class="filter-btn" data-period="1">Today</button>
-    <button class="filter-btn active" data-period="7">7 Days</button>
-    <button class="filter-btn" data-period="30">30 Days</button>
+    <button class="filter-btn" data-period="1" aria-pressed="false">Today</button>
+    <button class="filter-btn active" data-period="7" aria-pressed="true">7 Days</button>
+    <button class="filter-btn" data-period="30" aria-pressed="false">30 Days</button>
   </div>
   <div class="activity-list" id="act-list"></div>
   <button class="load-more-btn hidden" id="act-more">Load More</button>
@@ -774,8 +774,15 @@ async function loadActivity() {
     loadActivity._listenersBound = true;
     document.querySelectorAll('#tab-activity .filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('#tab-activity .filter-btn').forEach(b => b.classList.remove('active'));
+        // F-064: keep aria-pressed in sync with the .active class so AT users
+        // get the single-active state. Loop clears both before setting both
+        // on the clicked button.
+        document.querySelectorAll('#tab-activity .filter-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
         btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
         actPeriod = btn.dataset.period;
         actPage = 1;
         fetchActivity(false);
