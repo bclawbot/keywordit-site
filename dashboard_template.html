@@ -1205,7 +1205,7 @@ textarea:focus-visible,
 </div>
 
 <!-- ═══════ SYSTEM STATUS BAR ═══════ -->
-<section id="system-bar" aria-label="Pipeline status">
+<section id="system-bar" aria-label="Pipeline status" tabindex="0">
   <div class="sys-item">
     <span class="sys-dot ok" id="sys-heartbeat-dot"></span>
     <span class="sys-label">Pipeline</span>
@@ -1498,7 +1498,7 @@ __TAB_NAV__
   </div>
 
   <!-- DETAIL DRAWER -->
-  <div id="detail-drawer" role="dialog" aria-label="Keyword details" aria-hidden="true" hidden>
+  <div id="detail-drawer" role="dialog" aria-label="Keyword details" hidden>
     <div id="drawer-body"></div>
     <div id="drawer-actions">
       <button class="btn-primary" id="drawer-copy-btn">Copy Keyword</button>
@@ -2442,8 +2442,10 @@ function openDrawer(item) {
   const drawer = document.getElementById('detail-drawer');
   const body = document.getElementById('drawer-body');
   // F-043: take the drawer out of the "hidden" state before animating open.
+  // F-043b: don't also flip aria-hidden — `hidden` already removes the
+  // element from the a11y tree, and aria-hidden on focusable content
+  // (the buttons inside) trips axe's aria-hidden-focus rule.
   drawer.removeAttribute('hidden');
-  drawer.setAttribute('aria-hidden', 'false');
   // F-044: remember what opened us so we can restore focus on close. Install
   // a keydown listener on the drawer for ESC-to-close + Tab trap.
   S.drawerTrigger = document.activeElement;
@@ -2521,8 +2523,9 @@ function closeDrawer() {
   drawer.classList.remove('open');
   // F-043: mark the drawer as not-currently-relevant so screen readers and
   // tabbing ignore its contents. The CSS override on [hidden] keeps the
-  // width transition visually smooth.
-  drawer.setAttribute('aria-hidden', 'true');
+  // width transition visually smooth. (F-043b: `hidden` alone is enough;
+  // adding aria-hidden="true" here while the drawer's focusable buttons
+  // are still in the DOM trips axe's aria-hidden-focus rule.)
   drawer.setAttribute('hidden', '');
   document.getElementById('table-body').querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
   S.drawerItem = null;

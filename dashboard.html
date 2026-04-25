@@ -1205,7 +1205,7 @@ textarea:focus-visible,
 </div>
 
 <!-- ═══════ SYSTEM STATUS BAR ═══════ -->
-<section id="system-bar" aria-label="Pipeline status">
+<section id="system-bar" aria-label="Pipeline status" tabindex="0">
   <div class="sys-item">
     <span class="sys-dot ok" id="sys-heartbeat-dot"></span>
     <span class="sys-label">Pipeline</span>
@@ -1515,7 +1515,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   </div>
 
   <!-- DETAIL DRAWER -->
-  <div id="detail-drawer" role="dialog" aria-label="Keyword details" aria-hidden="true" hidden>
+  <div id="detail-drawer" role="dialog" aria-label="Keyword details" hidden>
     <div id="drawer-body"></div>
     <div id="drawer-actions">
       <button class="btn-primary" id="drawer-copy-btn">Copy Keyword</button>
@@ -1548,7 +1548,7 @@ function signOut() {
 
 <script>
 window.OPPORTUNITIES = [];
-window.PIPELINE_META = {"generated_at": "2026-04-23T21:31:29.144356", "total_validated": 1121, "total_scored": 130, "total_golden": 6, "total_emerging": 9, "total_unscored": 991, "countries_covered": 49, "last_run_at": "2026-03-22T09:38:32.728917", "run_id": "run_20260423_2131", "metrics_from_google_kp": 0, "metrics_from_dataforseo": 0, "run_dates": ["2026-02-26", "2026-02-27", "2026-02-28", "2026-03-01", "2026-03-02", "2026-03-21", "2026-03-22"], "accumulated_runs": 7};
+window.PIPELINE_META = {"generated_at": "2026-04-25T14:03:48.392217", "total_validated": 1121, "total_scored": 130, "total_golden": 6, "total_emerging": 9, "total_unscored": 991, "countries_covered": 49, "last_run_at": "2026-03-22T09:38:32.728917", "run_id": "run_20260425_1403", "metrics_from_google_kp": 0, "metrics_from_dataforseo": 0, "run_dates": ["2026-02-26", "2026-02-27", "2026-02-28", "2026-03-01", "2026-03-02", "2026-03-21", "2026-03-22"], "accumulated_runs": 7};
 window.ANGLES = {};
 
 (function() {
@@ -2459,8 +2459,10 @@ function openDrawer(item) {
   const drawer = document.getElementById('detail-drawer');
   const body = document.getElementById('drawer-body');
   // F-043: take the drawer out of the "hidden" state before animating open.
+  // F-043b: don't also flip aria-hidden — `hidden` already removes the
+  // element from the a11y tree, and aria-hidden on focusable content
+  // (the buttons inside) trips axe's aria-hidden-focus rule.
   drawer.removeAttribute('hidden');
-  drawer.setAttribute('aria-hidden', 'false');
   // F-044: remember what opened us so we can restore focus on close. Install
   // a keydown listener on the drawer for ESC-to-close + Tab trap.
   S.drawerTrigger = document.activeElement;
@@ -2538,8 +2540,9 @@ function closeDrawer() {
   drawer.classList.remove('open');
   // F-043: mark the drawer as not-currently-relevant so screen readers and
   // tabbing ignore its contents. The CSS override on [hidden] keeps the
-  // width transition visually smooth.
-  drawer.setAttribute('aria-hidden', 'true');
+  // width transition visually smooth. (F-043b: `hidden` alone is enough;
+  // adding aria-hidden="true" here while the drawer's focusable buttons
+  // are still in the DOM trips axe's aria-hidden-focus rule.)
   drawer.setAttribute('hidden', '');
   document.getElementById('table-body').querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
   S.drawerItem = null;
