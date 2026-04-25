@@ -2896,13 +2896,22 @@ function bindEvents() {
   setupIntersection();
   bindKeys();
 
-  // Search
+  // Search — F-030: debounce 300ms so each keystroke doesn't trigger
+  // a full applyFilters/renderTable/updateCharts pass. Stopgap for the
+  // perf work tracked under F-001 (virtualized rendering); the heavy
+  // operations only fire 300ms after the user pauses typing.
   const searchEl = document.getElementById('global-search');
   const clearBtn = document.getElementById('search-clear-btn');
+  let searchDebounceTimer = null;
   searchEl.addEventListener('input', () => {
-    S.search = searchEl.value;
-    clearBtn.style.display = S.search ? 'block' : 'none';
-    applyFilters(); renderTable(); updateFilterBadge(); renderActiveFilters(); updateCharts(); saveToHash();
+    // Cheap UI updates (clear-button visibility) stay synchronous so the
+    // affordance reacts instantly.
+    clearBtn.style.display = searchEl.value ? 'block' : 'none';
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      S.search = searchEl.value;
+      applyFilters(); renderTable(); updateFilterBadge(); renderActiveFilters(); updateCharts(); saveToHash();
+    }, 300);
   });
   clearBtn.addEventListener('click', () => {
     searchEl.value = ''; S.search = '';
