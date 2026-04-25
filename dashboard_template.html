@@ -160,6 +160,23 @@ input, select { font-family: var(--font-sans); }
   display: flex; align-items: center; gap: 5px;
   white-space: nowrap;
 }
+/* F-068: pipeline ribbon counters that act as filter toggles. Reset button
+   defaults so the same .sys-item layout works for both <div> and <button>. */
+.sys-counter {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background var(--transition-fast);
+}
+.sys-counter:hover { background: var(--bg-hover); }
+.sys-counter[aria-pressed="true"] {
+  background: var(--accent-dim);
+  outline: 1px solid var(--accent);
+}
 .sys-dot {
   width: 7px; height: 7px; border-radius: 50%;
   flex-shrink: 0;
@@ -1261,20 +1278,20 @@ textarea:focus-visible,
     <span class="sys-value" id="sys-run-count">—</span>
   </div>
   <div class="sys-sep"></div>
-  <div class="sys-item">
+  <button type="button" class="sys-item sys-counter" data-pipeline-filter-ms="google_keyword_planner" aria-pressed="false" aria-label="Filter to rows scored by Google Keyword Planner">
     <span class="sys-label">GKP</span>
     <span class="sys-value" id="sys-gkp-count">—</span>
-  </div>
+  </button>
   <div class="sys-sep"></div>
-  <div class="sys-item">
+  <button type="button" class="sys-item sys-counter" data-pipeline-filter-ms="dataforseo" aria-pressed="false" aria-label="Filter to rows scored by DataForSEO">
     <span class="sys-label">DFS</span>
     <span class="sys-value" id="sys-dfs-count">—</span>
-  </div>
+  </button>
   <div class="sys-sep"></div>
-  <div class="sys-item">
+  <button type="button" class="sys-item sys-counter" data-pipeline-filter-tag="UNSCORED" aria-pressed="false" aria-label="Filter to unscored opportunities">
     <span class="sys-label">Unscored</span>
     <span class="sys-value" id="sys-unscored-count">—</span>
-  </div>
+  </button>
   <div class="sys-sep"></div>
   <div class="sys-item">
     <span class="sys-dot off" id="sys-errors-dot"></span>
@@ -2103,10 +2120,11 @@ function onFilterChange() {
   renderActiveFilters();
   updateCharts();
   saveToHash();
-  // F-026: keep KPI tile pressed-state in sync with the actual filter set,
-  // so clearing a tag from the filter panel or from a chip also un-presses
-  // the corresponding KPI tile.
+  // F-026 / F-068: keep KPI tiles + system-bar counter buttons synced with
+  // the active filter set, so clearing a tag from the panel or via a chip
+  // also un-presses the matching button.
   syncKpiPressed();
+  syncSysCounterPressed();
 }
 
 // F-026: reflect S.filters.tags back to .kpi-clickable[aria-pressed].
@@ -2115,6 +2133,19 @@ function syncKpiPressed() {
     const tag = tile.dataset.kpiFilterTag;
     const active = !!tag && S.filters.tags.indexOf(tag) >= 0;
     tile.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+}
+
+// F-068: reflect S.filters.tags + S.filters.metricsSources back to the
+// pipeline-ribbon counter buttons.
+function syncSysCounterPressed() {
+  document.querySelectorAll('.sys-counter').forEach(btn => {
+    const tag = btn.dataset.pipelineFilterTag;
+    const ms  = btn.dataset.pipelineFilterMs;
+    let active = false;
+    if (tag) active = S.filters.tags.indexOf(tag) >= 0;
+    else if (ms) active = (S.filters.metricsSources || []).indexOf(ms) >= 0;
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
 }
 
@@ -2977,6 +3008,30 @@ function bindEvents() {
   });
   // Initial sync (e.g. if hash-restore landed with a pre-set tag filter).
   syncKpiPressed();
+
+  // F-068: pipeline-ribbon counters (GKP, DFS, Unscored) become button
+  // filter toggles. Same single-source-of-truth approach as F-026: route
+  // through the existing filter-panel checkboxes so S.filters never has
+  // two writers. Errors counter stays as a non-interactive <div> — no
+  // matching errors-tag filter exists today, ship-other-3-and-defer per
+  // brief.
+  document.querySelectorAll('.sys-counter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tag = btn.dataset.pipelineFilterTag;
+      const ms  = btn.dataset.pipelineFilterMs;
+      let cb = null;
+      if (tag) cb = document.getElementById('ft-' + tag);
+      else if (ms) cb = document.querySelector('#filter-metrics-source input[value="' + ms + '"]');
+      if (cb) {
+        cb.checked = !cb.checked;
+        onFilterChange();
+      }
+      // syncSysCounterPressed runs from onFilterChange via the chain;
+      // call here too in case the chain skips it.
+      syncSysCounterPressed();
+    });
+  });
+  syncSysCounterPressed();
 
   // Filter toggle
   document.getElementById('filter-toggle').addEventListener('click', toggleFilterPanel);
