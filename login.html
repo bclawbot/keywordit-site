@@ -272,6 +272,31 @@ body::before {
   border-color: var(--red);
 }
 
+/* F-019: success confirmation block. Only shown after a Request Access
+   POST resolves; replaces the form area inside #panel-request. role="status"
+   alone (NO aria-live) — role implies polite live; doubling causes
+   double-announcement (Wave 3 antipattern lesson). */
+.confirm-block {
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.25);
+  border-radius: 8px;
+  padding: 20px 24px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.55;
+  margin-top: 12px;
+}
+.confirm-block .confirm-title {
+  font-size: 15px; font-weight: 600;
+  color: var(--green);
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.confirm-block strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
 /* F-002: submit-button busy state — inline spinner + dimmed label.
    Pairs with aria-busy="true" set by setBtnBusy() in JS. */
 .btn-busy { cursor: wait; opacity: 0.85; }
@@ -519,6 +544,27 @@ function clearAllRequestErrors() {
   ['req-name','req-email','req-username','req-pass'].forEach(id => setFieldError(id, ''));
 }
 
+// F-019: render the post-submit confirmation block. Replaces the form
+// inside #panel-request with a role="status" block. textContent on the
+// email span so anything the user typed can't inject markup.
+function showRequestSubmitted(email) {
+  const panel = document.getElementById('panel-request');
+  if (!panel) return;
+  const form = document.getElementById('form-request');
+  if (form) form.remove();
+  const block = document.createElement('div');
+  block.className = 'confirm-block';
+  block.id = 'request-confirm';
+  block.setAttribute('role', 'status');  // implies aria-live="polite" — do NOT also set aria-live
+  block.innerHTML =
+    '<div class="confirm-title"><span aria-hidden="true">✓</span><span>Request submitted</span></div>' +
+    '<div>We\'ll review your access request within 24 hours and email approval to ' +
+    '<strong id="confirm-email"></strong>. Check your spam folder if you don\'t hear back. You can close this tab.</div>';
+  panel.appendChild(block);
+  // textContent on the user-supplied email so any HTML/special chars don't render.
+  document.getElementById('confirm-email').textContent = email;
+}
+
 async function doRequest() {
   const name = document.getElementById('req-name').value.trim();
   const email = document.getElementById('req-email').value.trim();
@@ -553,19 +599,11 @@ async function doRequest() {
   setBtnBusy(reqBtn, true, 'Submitting…');
   try {
     await auth.register({ username: username, password: pass, email: email, name: name });
-    showMsg('request-msg', 'success', 'Account created! Please wait for admin approval.');
-    // Leave busy state on success so the user can't double-submit; the
-    // post-submit confirmation block (F-019) takes over the visual UX.
-    reqBtn.disabled = true;
-    reqBtn.textContent = 'Submitted';
-    reqBtn.classList.remove('btn-busy');
-    reqBtn.removeAttribute('aria-busy');
-    document.getElementById('req-name').value = '';
-    document.getElementById('req-email').value = '';
-    document.getElementById('req-company').value = '';
-    document.getElementById('req-reason').value = '';
-    document.getElementById('req-username').value = '';
-    if (document.getElementById('req-pass')) document.getElementById('req-pass').value = '';
+    // F-019: replace the whole request form with a styled confirmation
+    // block (role="status" only, no aria-live — role already implies
+    // polite-live; doubling causes double-announcement).
+    showMsg('request-msg', '', '');
+    showRequestSubmitted(email);
   } catch(e) {
     setBtnBusy(reqBtn, false);
     // F-018: route server errors to the matching field where possible so the
