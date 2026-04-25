@@ -2554,7 +2554,13 @@ function bindRowEvents(tbody, startIdx) {
         return;
       }
       const idx = parseInt(tr.dataset.idx);
-      openDrawer(S.filtered[idx]);
+      // F-034: pass the row's ⌘ button as the focus-restoration target so
+      // ESC-to-close lands focus on something focusable inside the row
+      // (rows themselves aren't focusable per Wave 2's known F-044
+      // limitation). Falls back to body via openDrawer's default if the
+      // copy button isn't found.
+      const rowCopyBtn = tr.querySelector('.copy-btn');
+      openDrawer(S.filtered[idx], rowCopyBtn);
       tbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
       tr.classList.add('selected');
       S.focusedRowIdx = idx;
@@ -2586,7 +2592,7 @@ function setupIntersection() {
 }
 
 // ===== DRAWER =====
-function openDrawer(item) {
+function openDrawer(item, trigger) {
   if (!item) return;
   S.drawerItem = item;
   const drawer = document.getElementById('detail-drawer');
@@ -2598,7 +2604,10 @@ function openDrawer(item) {
   drawer.removeAttribute('hidden');
   // F-044: remember what opened us so we can restore focus on close. Install
   // a keydown listener on the drawer for ESC-to-close + Tab trap.
-  S.drawerTrigger = document.activeElement;
+  // F-034: callers can pass an explicit trigger element (typically a
+  // focusable child of the row, since <tr> itself isn't focusable). When
+  // not supplied, fall back to document.activeElement.
+  S.drawerTrigger = trigger || document.activeElement;
   S.drawerKeydown = (e) => {
     if (e.key === 'Escape') {
       e.preventDefault(); e.stopPropagation();
@@ -2925,7 +2934,15 @@ function bindKeys() {
       if (e.key === 'c') { toggleCharts(); return; }
       if (e.key === 'j') { navigateRow(1); return; }
       if (e.key === 'k') { navigateRow(-1); return; }
-      if (e.key === 'Enter' && S.focusedRowIdx >= 0) { openDrawer(S.filtered[S.focusedRowIdx]); return; }
+      if (e.key === 'Enter' && S.focusedRowIdx >= 0) {
+        // F-034: keyboard activation routes through the same row → drawer
+        // path as mouse click. Pass the focused row's ⌘ button as the
+        // restore target.
+        const focusedRow = document.querySelector(`#table-body tr[data-idx="${S.focusedRowIdx}"]`);
+        const rowCopyBtn = focusedRow ? focusedRow.querySelector('.copy-btn') : null;
+        openDrawer(S.filtered[S.focusedRowIdx], rowCopyBtn);
+        return;
+      }
     }
   });
 }
