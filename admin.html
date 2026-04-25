@@ -526,26 +526,36 @@ Palette.register([
   { id: 'admin-add-user', label: 'Add New User', category: 'Admin', action: function() { document.getElementById('add-username').focus(); } },
 ]);
 
+// F-008: single source for the "pending users" set. Both the counter
+// (#stat-pending + #pending-badge) and the requests table (#requests-body)
+// derive from this array. Computed once in renderAll() and read by the
+// downstream render paths so they can never disagree.
+let _pendingUsers = [];
+
 async function renderAll() {
   try {
     const r = await apiFetch('/api/admin/users');
     if (!r) return;
     _allUsers = await r.json();
   } catch(e) { _allUsers = []; }
+  // F-008: compute the pending set ONCE from the freshly-fetched _allUsers.
+  // renderUsers() and renderStats() both read this — never re-filter — so
+  // the pending counter and pending table can't drift apart.
+  _pendingUsers = _allUsers.filter(u => u.status === 'pending');
   renderUsers();
   renderStats();
 }
 
 function renderStats() {
   const users = _allUsers;
-  const pending = users.filter(u => u.status === 'pending');
   const active = users.filter(u => u.status === 'active');
   const suspended = users.filter(u => u.status === 'suspended');
   document.getElementById('stat-total').textContent = users.length;
-  document.getElementById('stat-pending').textContent = pending.length;
+  // F-008: read _pendingUsers directly — same source as the requests table.
+  document.getElementById('stat-pending').textContent = _pendingUsers.length;
   document.getElementById('stat-approved').textContent = active.length;
   document.getElementById('stat-declined').textContent = suspended.length;
-  document.getElementById('pending-badge').textContent = pending.length + ' pending';
+  document.getElementById('pending-badge').textContent = _pendingUsers.length + ' pending';
 }
 
 function renderRequests() {
@@ -554,7 +564,8 @@ function renderRequests() {
 }
 
 function renderUsers() {
-  const pending = _allUsers.filter(u => u.status === 'pending');
+  // F-008: read _pendingUsers from renderAll's single computation.
+  const pending = _pendingUsers;
   const reqTbody = document.getElementById('requests-body');
   if (pending.length === 0) {
     reqTbody.innerHTML = '<tr class="empty-row"><td colspan="7">No pending requests</td></tr>';
