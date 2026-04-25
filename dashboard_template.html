@@ -438,6 +438,14 @@ input, select { font-family: var(--font-sans); }
   position: relative;
   font-family: var(--font-mono);
 }
+/* F-070: light-theme table header text gets darker for ≈8:1 contrast on
+   the table's --bg-raised (#f0f0f3). Targeted override on the table header
+   selector only — leaves the global --text-tertiary variable alone so other
+   light-theme uses (button borders, secondary metadata, etc.) keep their
+   existing values. */
+[data-theme="light"] #opportunity-table th {
+  color: rgb(74, 74, 90);
+}
 .th-inner {
   display: flex; align-items: center; gap: 3px;
   padding: 7px 10px;
