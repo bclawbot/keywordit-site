@@ -342,7 +342,7 @@ def build_intel_tab():
         lines.append(f'<summary style="padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;">')
         lines.append(f'<span style="flex:1;font-weight:600;color:#cdd6f4;">{esc(keyword[:60])}</span>')
         if network:
-            lines.append(f'<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:#45475a;color:#a6adc8;">{esc(network)}</span>')
+            lines.append(f'<span style="font-size: 12px;padding:2px 8px;border-radius:4px;background:#45475a;color:#a6adc8;">{esc(network)}</span>')
         lines.append(f'<span style="color:#a6e3a1;font-weight:700;min-width:65px;text-align:right;">{cpc_display}</span>')
         lines.append(f'<span style="color:#a6adc8;font-size:12px;min-width:60px;text-align:right;">{vol_display} vol</span>')
         lines.append(f'<span style="font-size:12px;color:#585b70;">{len(angles)} angles</span>')
@@ -477,7 +477,7 @@ def build_content_tab():
         lines.append(
             f'<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;'
             f'padding:12px 18px;min-width:130px">'
-            f'<div style="font-size:11px;color:#888;text-transform:uppercase">{label}</div>'
+            f'<div style="font-size: 12px;color:#888;text-transform:uppercase">{label}</div>'
             f'<div style="font-size:24px;font-weight:700;color:{color}">{value}</div>'
             f'</div>'
         )
@@ -549,7 +549,7 @@ def build_content_tab():
                 f'{rec.get("word_count",0)}</td>'
                 f'<td style="padding:6px 7px;text-align:right;color:{q_col}">{q_score:.2f}</td>'
                 f'<td style="padding:6px 7px;text-align:right;color:{risk_col}">{esc(risk)}</td>'
-                f'<td style="padding:6px 7px;color:#888;font-size:11px;max-width:150px;'
+                f'<td style="padding:6px 7px;color:#888;font-size: 12px;max-width:150px;'
                 f'overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{esc(rec.get("file_path",""))}">'
                 f'{esc(fname)}</td>'
                 f'</tr>'
@@ -635,7 +635,7 @@ def build_content_tab():
                     f' data-signal="{_esc(row["signal_text"])}"'
                     f' onclick="generateArticle(this)"'
                     f' style="cursor:pointer;background:#1565c0;color:#fff;border:none;'
-                    f'border-radius:4px;padding:4px 10px;font-size:11px;white-space:nowrap"'
+                    f'border-radius:4px;padding:4px 10px;font-size: 12px;white-space:nowrap"'
                     f'>Generate</button>'
                 )
 
@@ -1074,7 +1074,7 @@ def build_performance_tab():
         lines.append(f'<div class="perf-alert">Pipeline drift detected: Tier C keywords at {tier_c_pct}% (baseline {tier_c_base}%)</div>')
 
     if promo:
-        lines.append('<div style="margin-bottom:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);">PROMOTION CANDIDATES (entity crossed $50 threshold):</div>')
+        lines.append('<div style="margin-bottom:8px;font-family:var(--font-mono);font-size: 12px;color:var(--text-secondary);">PROMOTION CANDIDATES (entity crossed $50 threshold):</div>')
         ent_perf = pc.get('entity_performance', {})
         for ent_name in promo:
             ep = ent_perf.get(ent_name, {})
@@ -1084,7 +1084,7 @@ def build_performance_tab():
             lines.append(f'<button class="perf-promo-btn" onclick="copyPromotion(\'{esc(ent_name)}\')">COPY PROMOTION JSON</button></div>')
 
     if demo:
-        lines.append('<div style="margin-top:12px;margin-bottom:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);">DEMOTION CANDIDATES (&lt; $10 for 4 weeks):</div>')
+        lines.append('<div style="margin-top:12px;margin-bottom:8px;font-family:var(--font-mono);font-size: 12px;color:var(--text-secondary);">DEMOTION CANDIDATES (&lt; $10 for 4 weeks):</div>')
         ent_perf = pc.get('entity_performance', {})
         for ent_name in demo:
             ep = ent_perf.get(ent_name, {})
@@ -1095,7 +1095,7 @@ def build_performance_tab():
             lines.append(f'<button class="perf-demo-btn" onclick="copyDemotion(\'{esc(ent_name)}\')">COPY DEMOTION JSON</button></div>')
 
     if not promo and not demo:
-        lines.append('<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);padding:8px 0;">No promotion or demotion candidates this cycle.</div>')
+        lines.append('<div style="font-family:var(--font-mono);font-size: 12px;color:var(--text-tertiary);padding:8px 0;">No promotion or demotion candidates this cycle.</div>')
     lines.append('</div>')
 
     # Traffic Activation Rate
@@ -1133,7 +1133,7 @@ def build_performance_tab():
         if _mape_opps:
             _mape = round(sum(abs(o['rpc_actual'] - o['rpc_expected']) / o['rpc_expected']
                               for o in _mape_opps) / len(_mape_opps) * 100, 1)
-            lines.append(f'<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);padding:4px 0;">Overall model MAPE (≥50 clicks): {_mape}% &nbsp;|&nbsp; Sample: {len(_mape_opps)} keywords</div>')
+            lines.append(f'<div style="font-family:var(--font-mono);font-size: 12px;color:var(--text-secondary);padding:4px 0;">Overall model MAPE (≥50 clicks): {_mape}% &nbsp;|&nbsp; Sample: {len(_mape_opps)} keywords</div>')
 
         # Vertical breakdown
         from collections import defaultdict as _dd
@@ -1154,7 +1154,7 @@ def build_performance_tab():
                 _vert_ratios.append((v, ratio, d['count']))
 
         if _vert_ratios:
-            lines.append('<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);margin-top:6px;margin-bottom:2px;">Vertical RPC ratio (actual / expected):</div>')
+            lines.append('<div style="font-family:var(--font-mono);font-size: 12px;color:var(--text-secondary);margin-top:6px;margin-bottom:2px;">Vertical RPC ratio (actual / expected):</div>')
             for v, ratio, count in sorted(_vert_ratios, key=lambda x: -(x[1] or 0)):
                 if ratio is None:
                     continue
@@ -1164,7 +1164,7 @@ def build_performance_tab():
                     badge, cls = '▼', 'color:#ef4444'
                 else:
                     badge, cls = '●', 'color:var(--text-tertiary)'
-                lines.append(f'<div style="font-family:var(--font-mono);font-size:11px;padding:1px 0;">'
+                lines.append(f'<div style="font-family:var(--font-mono);font-size: 12px;padding:1px 0;">'
                               f'<span style="{cls}">{badge}</span>&nbsp;'
                               f'{esc(v)}: <b>{ratio:.2f}x</b>&nbsp;'
                               f'<span style="color:var(--text-tertiary)">({count} kw)</span></div>')
