@@ -255,14 +255,39 @@ body::before {
 [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 [data-theme="light"] .theme-toggle .icon-sun { display: none; }
 [data-theme="light"] .theme-toggle .icon-moon { display: block; }
+
+/* F-005: visually-hidden utility for sr-only headings. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+
+/* Skip-link CSS — keep in sync with other pages until shared/skip-link.css exists (Wave 4 candidate). */
+.skip-link {
+  position: absolute; top: -40px; left: 8px;
+  padding: 8px 14px;
+  background: var(--accent, #4f46e5); color: #fff;
+  font-family: var(--font-mono, monospace); font-size: 12px;
+  border-radius: 4px; text-decoration: none;
+  z-index: 10000;
+}
+.skip-link:focus { top: 8px; outline: 2px solid #fff; outline-offset: 2px; }
 </style>
 </head>
 <body>
 
+<!-- F-051: skip-link. First focusable element; visible only on keyboard focus. -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
 <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
-  <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
-  <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+  <svg class="icon-sun" aria-hidden="true" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
+  <svg class="icon-moon" aria-hidden="true" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
 </button>
+
+<main id="main-content" tabindex="-1">
+
+<h1 class="sr-only">Sign in to Keywordit</h1>
 
 <div class="logo-area">
   <div class="logo-icon">K</div>
@@ -270,56 +295,62 @@ body::before {
 </div>
 
 <div class="auth-container">
-  <div class="auth-tabs" role="tablist">
-    <button class="auth-tab active" id="tab-login" onclick="switchTab('login')" role="tab" aria-selected="true">Sign In</button>
-    <button class="auth-tab" id="tab-request" onclick="switchTab('request')" role="tab" aria-selected="false">Request Access</button>
+  <div class="auth-tabs" role="tablist" aria-label="Authentication mode">
+    <button class="auth-tab active" id="tab-login" onclick="switchTab('login')" role="tab" aria-selected="true" aria-controls="panel-login" tabindex="0">Sign In</button>
+    <button class="auth-tab" id="tab-request" onclick="switchTab('request')" role="tab" aria-selected="false" aria-controls="panel-request" tabindex="-1">Request Access</button>
   </div>
 
   <!-- LOGIN -->
-  <div class="auth-panel active" id="panel-login">
-    <div class="msg" id="login-msg"></div>
-    <div class="form-group">
-      <label class="form-label">Username</label>
-      <input class="form-input" type="text" id="login-user" placeholder="Enter username" autocomplete="username">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Password</label>
-      <div style="position:relative;">
-        <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" style="padding-right:40px;">
-        <button type="button" onclick="togglePassVis('login-pass', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:4px;" title="Show password" aria-label="Toggle password visibility">&#128065;</button>
+  <div class="auth-panel active" id="panel-login" role="tabpanel" aria-labelledby="tab-login">
+    <h2 class="sr-only">Sign in</h2>
+    <div class="msg" id="login-msg" role="alert"></div>
+    <form id="form-login">
+      <div class="form-group">
+        <label class="form-label" for="login-user">Username</label>
+        <input class="form-input" type="text" id="login-user" placeholder="Enter username" autocomplete="username" required aria-required="true">
       </div>
-    </div>
-    <button class="btn-submit" id="login-btn" onclick="doLogin()">Sign In</button>
+      <div class="form-group">
+        <label class="form-label" for="login-pass">Password</label>
+        <div style="position:relative;">
+          <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" style="padding-right:40px;" required aria-required="true">
+          <button type="button" onclick="togglePassVis('login-pass', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:4px;" title="Show password" aria-label="Toggle password visibility">&#128065;</button>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit" id="login-btn">Sign In</button>
+    </form>
   </div>
 
   <!-- REQUEST ACCESS -->
-  <div class="auth-panel" id="panel-request">
+  <div class="auth-panel" id="panel-request" role="tabpanel" aria-labelledby="tab-request">
+    <h2 class="sr-only">Request access</h2>
     <div class="msg" id="request-msg"></div>
-    <div class="form-group">
-      <label class="form-label">Full Name</label>
-      <input class="form-input" type="text" id="req-name" placeholder="Your name">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Email</label>
-      <input class="form-input" type="email" id="req-email" placeholder="you@company.com">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Company / Project</label>
-      <input class="form-input" type="text" id="req-company" placeholder="Company name">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Why do you want access?</label>
-      <textarea class="form-textarea" id="req-reason" placeholder="Brief description of your use case..."></textarea>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Preferred Username</label>
-      <input class="form-input" type="text" id="req-username" placeholder="Choose a username">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Password</label>
-      <input class="form-input" type="password" id="req-pass" placeholder="Min 8 characters" autocomplete="new-password">
-    </div>
-    <button class="btn-submit" id="request-btn" onclick="doRequest()">Submit Request</button>
+    <form id="form-request">
+      <div class="form-group">
+        <label class="form-label" for="req-name">Full Name</label>
+        <input class="form-input" type="text" id="req-name" placeholder="Your name" autocomplete="name" required aria-required="true">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="req-email">Email</label>
+        <input class="form-input" type="email" id="req-email" placeholder="you@company.com" autocomplete="email" required aria-required="true">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="req-company">Company / Project</label>
+        <input class="form-input" type="text" id="req-company" placeholder="Company name" autocomplete="organization">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="req-reason">Why do you want access?</label>
+        <textarea class="form-textarea" id="req-reason" placeholder="Brief description of your use case..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="req-username">Preferred Username</label>
+        <input class="form-input" type="text" id="req-username" placeholder="Choose a username" autocomplete="username" required aria-required="true">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="req-pass">Password</label>
+        <input class="form-input" type="password" id="req-pass" placeholder="Min 10 characters" autocomplete="new-password" required aria-required="true">
+      </div>
+      <button type="submit" class="btn-submit" id="request-btn">Submit Request</button>
+    </form>
   </div>
 </div>
 
@@ -329,6 +360,8 @@ body::before {
 
 <div class="login-footer">Access is reviewed manually · Typical approval: &lt;24h</div>
 
+</main>
+
 <script src="shared/theme.js"></script>
 <script src="shared/palette.js"></script>
 <script src="shared/auth.js"></script>
@@ -336,9 +369,18 @@ body::before {
 // Auth is handled by shared/auth.js (JWT backend)
 
 function switchTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-tab').forEach(t => {
+    t.classList.remove('active');
+    // F-048: keep aria-selected + tabindex in sync with .active so the
+    // ARIA state matches the visual state.
+    t.setAttribute('aria-selected', 'false');
+    t.setAttribute('tabindex', '-1');
+  });
   document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
+  const activeTab = document.getElementById('tab-' + tab);
+  activeTab.classList.add('active');
+  activeTab.setAttribute('aria-selected', 'true');
+  activeTab.setAttribute('tabindex', '0');
   document.getElementById('panel-' + tab).classList.add('active');
   // Clear messages
   document.querySelectorAll('.msg').forEach(m => { m.className = 'msg'; m.textContent = ''; });
@@ -346,6 +388,36 @@ function switchTab(tab) {
   document.getElementById('request-btn').disabled = false;
   document.getElementById('request-btn').textContent = 'Submit Request';
 }
+
+// F-048: arrow-key navigation on the tablist with automatic activation.
+// Guard: only handle arrows when the event originates on a tab itself,
+// so typing arrows inside username / password / textarea inputs doesn't
+// steal focus to the tabs.
+(function() {
+  const tablist = document.querySelector('.auth-tabs[role="tablist"]');
+  if (!tablist) return;
+  const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+  tablist.addEventListener('keydown', e => {
+    if (!e.target.matches('[role="tab"]')) return;
+    const i = tabs.indexOf(e.target);
+    if (i < 0) return;
+    let next = -1;
+    if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = tabs.length - 1;
+    if (next >= 0) {
+      e.preventDefault();
+      // Automatic activation (focus = activate). Derive the tab key from id
+      // ("tab-login" -> "login") and call the existing switchTab() so all
+      // ARIA state, panel visibility, and message-clearing stay together
+      // in one code path.
+      const tabKey = tabs[next].id.replace(/^tab-/, '');
+      switchTab(tabKey);
+      tabs[next].focus();
+    }
+  });
+})();
 
 function showMsg(id, type, text) {
   const el = document.getElementById(id);
@@ -430,15 +502,18 @@ function togglePassVis(inputId, btn) {
   }
 })();
 
-// Enter key to submit — login form
-document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-document.getElementById('login-user').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
-// Enter key to submit — request form
-['req-name','req-email','req-company','req-reason','req-username'].forEach(id => {
-  document.getElementById(id)?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); doRequest(); }
-  });
+// F-006: form submit binding. Replaces the prior button onclick + per-input
+// Enter keydown listeners. Native <form> submit handles Enter in any field
+// and click on the submit button uniformly. preventDefault() blocks the
+// browser's GET-with-query-string default and lets the existing
+// doLogin/doRequest handlers run.
+document.getElementById('form-login').addEventListener('submit', e => {
+  e.preventDefault();
+  doLogin();
+});
+document.getElementById('form-request').addEventListener('submit', e => {
+  e.preventDefault();
+  doRequest();
 });
 
 </script>
