@@ -342,7 +342,7 @@ def build_intel_tab():
         lines.append(f'<summary style="padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;">')
         lines.append(f'<span style="flex:1;font-weight:600;color:#cdd6f4;">{esc(keyword[:60])}</span>')
         if network:
-            lines.append(f'<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:#45475a;color:#a6adc8;">{esc(network)}</span>')
+            lines.append(f'<span style="font-size: 12px;padding:2px 8px;border-radius:4px;background:#45475a;color:#a6adc8;">{esc(network)}</span>')
         lines.append(f'<span style="color:#a6e3a1;font-weight:700;min-width:65px;text-align:right;">{cpc_display}</span>')
         lines.append(f'<span style="color:#a6adc8;font-size:12px;min-width:60px;text-align:right;">{vol_display} vol</span>')
         lines.append(f'<span style="font-size:12px;color:#585b70;">{len(angles)} angles</span>')
@@ -477,7 +477,7 @@ def build_content_tab():
         lines.append(
             f'<div style="background:#1e1e2e;border:1px solid #333;border-radius:8px;'
             f'padding:12px 18px;min-width:130px">'
-            f'<div style="font-size:11px;color:#888;text-transform:uppercase">{label}</div>'
+            f'<div style="font-size: 12px;color:#888;text-transform:uppercase">{label}</div>'
             f'<div style="font-size:24px;font-weight:700;color:{color}">{value}</div>'
             f'</div>'
         )
@@ -549,7 +549,7 @@ def build_content_tab():
                 f'{rec.get("word_count",0)}</td>'
                 f'<td style="padding:6px 7px;text-align:right;color:{q_col}">{q_score:.2f}</td>'
                 f'<td style="padding:6px 7px;text-align:right;color:{risk_col}">{esc(risk)}</td>'
-                f'<td style="padding:6px 7px;color:#888;font-size:11px;max-width:150px;'
+                f'<td style="padding:6px 7px;color:#888;font-size: 12px;max-width:150px;'
                 f'overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{esc(rec.get("file_path",""))}">'
                 f'{esc(fname)}</td>'
                 f'</tr>'
@@ -635,7 +635,7 @@ def build_content_tab():
                     f' data-signal="{_esc(row["signal_text"])}"'
                     f' onclick="generateArticle(this)"'
                     f' style="cursor:pointer;background:#1565c0;color:#fff;border:none;'
-                    f'border-radius:4px;padding:4px 10px;font-size:11px;white-space:nowrap"'
+                    f'border-radius:4px;padding:4px 10px;font-size: 12px;white-space:nowrap"'
                     f'>Generate</button>'
                 )
 
@@ -885,9 +885,9 @@ def build_experimental_tab():
 
     # Filters
     lines.append('<div class="exp-filters">')
-    lines.append('<button class="exp-filter-btn active" data-exp-filter="all">All</button>')
-    lines.append('<button class="exp-filter-btn" data-exp-filter="confirmed">Confirmed Only</button>')
-    lines.append('<button class="exp-filter-btn" data-exp-filter="inherited">Inherited Only</button>')
+    lines.append('<button class="exp-filter-btn active" data-exp-filter="all" aria-pressed="true">All</button>')
+    lines.append('<button class="exp-filter-btn" data-exp-filter="confirmed" aria-pressed="false">Confirmed Only</button>')
+    lines.append('<button class="exp-filter-btn" data-exp-filter="inherited" aria-pressed="false">Inherited Only</button>')
     lines.append('<div class="exp-sort-label">Sort by: <select id="exp-sort"><option value="revenue">Source Revenue</option><option value="cpc">Est. CPC</option><option value="entity">Entity Status</option></select></div>')
     lines.append('</div>')
 
@@ -990,12 +990,15 @@ def build_performance_tab():
     lines.append('<div id="tab-performance" class="tab-content">')
 
     if perf_cache is None:
+        # F-009: end-user-facing empty state. The previous copy listed an
+        # ops-only CLI command (`python3 scripts/csv_importer.py ...`)
+        # which read like a leaked TODO. The new copy explains what the
+        # tab will show and when, without leaking implementation detail.
         lines.append('<div class="perf-awaiting">')
-        lines.append('<h3>Awaiting First Weekly CSV Import</h3>')
-        lines.append('<p>Run the weekly import to populate this tab:<br><br>')
-        lines.append('<code>python3 scripts/csv_importer.py /path/to/keywords_report.csv</code><br><br>')
-        lines.append('This will match your KeywordIt CSV data against pipeline output,<br>')
-        lines.append('calculate hit rates, flag promotion candidates, and detect drift.</p>')
+        lines.append('<h3>Performance — coming soon</h3>')
+        lines.append('<p>Weekly performance reports will appear here once the next import cycle runs.<br>')
+        lines.append('We compare keyword pipeline output against your real revenue / RPC numbers and<br>')
+        lines.append('flag promotion candidates and drift. Check back after the weekly import.</p>')
         lines.append('</div></div>')
         return '\n'.join(lines)
 
@@ -1071,7 +1074,7 @@ def build_performance_tab():
         lines.append(f'<div class="perf-alert">Pipeline drift detected: Tier C keywords at {tier_c_pct}% (baseline {tier_c_base}%)</div>')
 
     if promo:
-        lines.append('<div style="margin-bottom:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);">PROMOTION CANDIDATES (entity crossed $50 threshold):</div>')
+        lines.append('<div style="margin-bottom:8px;font-family:var(--font-mono);font-size: 12px;color:var(--text-secondary);">PROMOTION CANDIDATES (entity crossed $50 threshold):</div>')
         ent_perf = pc.get('entity_performance', {})
         for ent_name in promo:
             ep = ent_perf.get(ent_name, {})
@@ -1081,7 +1084,7 @@ def build_performance_tab():
             lines.append(f'<button class="perf-promo-btn" onclick="copyPromotion(\'{esc(ent_name)}\')">COPY PROMOTION JSON</button></div>')
 
     if demo:
-        lines.append('<div style="margin-top:12px;margin-bottom:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);">DEMOTION CANDIDATES (&lt; $10 for 4 weeks):</div>')
+        lines.append('<div style="margin-top:12px;margin-bottom:8px;font-family:var(--font-mono);font-size: 12px;color:var(--text-secondary);">DEMOTION CANDIDATES (&lt; $10 for 4 weeks):</div>')
         ent_perf = pc.get('entity_performance', {})
         for ent_name in demo:
             ep = ent_perf.get(ent_name, {})
@@ -1092,7 +1095,7 @@ def build_performance_tab():
             lines.append(f'<button class="perf-demo-btn" onclick="copyDemotion(\'{esc(ent_name)}\')">COPY DEMOTION JSON</button></div>')
 
     if not promo and not demo:
-        lines.append('<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);padding:8px 0;">No promotion or demotion candidates this cycle.</div>')
+        lines.append('<div style="font-family:var(--font-mono);font-size: 12px;color:var(--text-tertiary);padding:8px 0;">No promotion or demotion candidates this cycle.</div>')
     lines.append('</div>')
 
     # Traffic Activation Rate
@@ -1130,7 +1133,7 @@ def build_performance_tab():
         if _mape_opps:
             _mape = round(sum(abs(o['rpc_actual'] - o['rpc_expected']) / o['rpc_expected']
                               for o in _mape_opps) / len(_mape_opps) * 100, 1)
-            lines.append(f'<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);padding:4px 0;">Overall model MAPE (≥50 clicks): {_mape}% &nbsp;|&nbsp; Sample: {len(_mape_opps)} keywords</div>')
+            lines.append(f'<div style="font-family:var(--font-mono);font-size: 12px;color:var(--text-secondary);padding:4px 0;">Overall model MAPE (≥50 clicks): {_mape}% &nbsp;|&nbsp; Sample: {len(_mape_opps)} keywords</div>')
 
         # Vertical breakdown
         from collections import defaultdict as _dd
@@ -1151,7 +1154,7 @@ def build_performance_tab():
                 _vert_ratios.append((v, ratio, d['count']))
 
         if _vert_ratios:
-            lines.append('<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);margin-top:6px;margin-bottom:2px;">Vertical RPC ratio (actual / expected):</div>')
+            lines.append('<div style="font-family:var(--font-mono);font-size: 12px;color:var(--text-secondary);margin-top:6px;margin-bottom:2px;">Vertical RPC ratio (actual / expected):</div>')
             for v, ratio, count in sorted(_vert_ratios, key=lambda x: -(x[1] or 0)):
                 if ratio is None:
                     continue
@@ -1161,7 +1164,7 @@ def build_performance_tab():
                     badge, cls = '▼', 'color:#ef4444'
                 else:
                     badge, cls = '●', 'color:var(--text-tertiary)'
-                lines.append(f'<div style="font-family:var(--font-mono);font-size:11px;padding:1px 0;">'
+                lines.append(f'<div style="font-family:var(--font-mono);font-size: 12px;padding:1px 0;">'
                               f'<span style="{cls}">{badge}</span>&nbsp;'
                               f'{esc(v)}: <b>{ratio:.2f}x</b>&nbsp;'
                               f'<span style="color:var(--text-tertiary)">({count} kw)</span></div>')
@@ -1177,8 +1180,14 @@ extra_tabs_js = '''<script>
 (function(){
   document.querySelectorAll('[data-exp-filter]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-exp-filter]').forEach(b => b.classList.remove('active'));
+      // F-064: clear both .active and aria-pressed on every sibling so AT
+      // sees the same single-active state as sighted users.
+      document.querySelectorAll('[data-exp-filter]').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
       const f = btn.dataset.expFilter;
       document.querySelectorAll('.tmpl-expansions li').forEach(li => {
         if (f === 'all') li.style.display = '';
@@ -1353,6 +1362,25 @@ function copyDemotion(entity) {
 def build_pipeline_tab():
     """Build the Pipeline Status tab showing stage timeline, run history, and errors."""
     import os
+    # F-010: ship empty-state copy by default; the rich pipeline UI below
+    # was rendering incorrectly (broken stage timeline, missing run-history
+    # data) and is hidden behind this short-circuit until product re-enables.
+    # Tab class corrected from "tab-panel" to "tab-content" + standard
+    # display toggle so the tab strip's existing show/hide JS handles it
+    # the same way as the other tabs (was inline display:none with a
+    # non-matching class — the source of the "renders incorrectly" symptom).
+    return (
+        '<div id="tab-pipeline" class="tab-content">'
+        '<div class="perf-awaiting">'
+        '<h3>Pipeline — coming soon</h3>'
+        '<p>Live pipeline status (stage progress, run history, error feed)<br>'
+        'will appear here once the rich pipeline UI is ready. Until then,<br>'
+        'the system status bar at the top of the page shows the headline numbers<br>'
+        '(last run, runs total, GKP / DFS / Unscored counts, errors).</p>'
+        '</div></div>'
+    )
+
+    # --- pre-Wave-4 rich pipeline UI kept below for future re-enable ---
     lines = ['<div class="tab-panel" id="tab-pipeline" style="display:none;">']
     lines.append('<div class="pipeline-grid">')
 
