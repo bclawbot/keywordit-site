@@ -322,6 +322,30 @@ input, select { font-family: var(--font-sans); }
   outline: 1px solid var(--accent);
   outline-offset: -1px;
 }
+
+/* F-028: toast region for copy-confirmation. role="status" only on the
+   container (set in HTML); no aria-live. position: fixed top-right so the
+   toast doesn't push content. The .visible class fades it in for ~2s. */
+#toast-region {
+  position: fixed;
+  top: 16px; right: 16px;
+  z-index: 1100;
+  pointer-events: none;
+}
+#toast-region .toast {
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  color: var(--text-primary);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  margin-bottom: 8px;
+  opacity: 0; transform: translateY(-4px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+#toast-region .toast.visible { opacity: 1; transform: translateY(0); }
 .kpi-label {
   font-size: 9px; color: var(--text-tertiary);
   text-transform: uppercase; letter-spacing: 0.08em;
@@ -1248,6 +1272,11 @@ textarea:focus-visible,
 </head>
 <body>
 
+<!-- F-028: toast region for ⌘-copy confirmations. role="status" implies
+     polite-live; no aria-live attribute (would double-announce per
+     Wave 3 lesson). pointer-events:none so it never blocks clicks. -->
+<div id="toast-region" role="status"></div>
+
 <!-- F-056: skip-link. First focusable element; visible only on keyboard focus. -->
 <a href="#main-content" class="skip-link">Skip to main content</a>
 
@@ -1753,6 +1782,28 @@ function copyToClipboard(text) {
     el.select(); document.execCommand('copy');
     document.body.removeChild(el);
   });
+}
+
+// F-028: transient toast. Appends a styled child to #toast-region (which
+// has role="status" so the message gets a polite-live announcement
+// without an explicit aria-live attribute — pairing them caused
+// double-announcement in Wave 3, fixed there in F-047). Auto-dismiss at
+// 2.0s. Multiple toasts stack vertically.
+function showToast(message) {
+  const region = document.getElementById('toast-region');
+  if (!region) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;  // textContent — never innerHTML — so the
+                                // copied keyword can't inject markup.
+  region.appendChild(toast);
+  // RAF so the visible class lands on a separate frame and the transition
+  // actually plays.
+  requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('visible')));
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    setTimeout(() => toast.remove(), 220);
+  }, 2000);
 }
 
 // ===== INIT =====
@@ -2325,7 +2376,7 @@ function buildRow(item, idx) {
       case 'keyword': {
         const transformBadge = item.transformed_at ?
           `<span class="transform-badge" data-original="${esc(item.original_keyword)}" data-relationship="${esc(item.transformation_relationship||'')}" data-confidence="${item.transformation_confidence||0}" title="Transformed from: ${esc(item.original_keyword)}">🔄 TRANSFORMED</span>` : '';
-        return `<td class="td-keyword"><span class="keyword-text" title="${esc(item.keyword)}">${esc(item.keyword)}</span>${intentBadge}${transformBadge}<button class="copy-btn" data-kw="${esc(item.keyword)}" title="Copy">⎘</button></td>`;
+        return `<td class="td-keyword"><span class="keyword-text" title="${esc(item.keyword)}">${esc(item.keyword)}</span>${intentBadge}${transformBadge}<button type="button" class="copy-btn" data-kw="${esc(item.keyword)}" title="Copy" aria-label="Copy keyword: ${esc(item.keyword)}">⎘</button></td>`;
       }
       case 'tag': return `<td><span class="tag-badge tag-${tag}">${tag.replace('GOLDEN_OPPORTUNITY','GOLDEN')}</span></td>`;
       case 'country': return `<td style="font-size:11px">${esc(item.country||'—')}</td>`;
@@ -2493,7 +2544,15 @@ function bindRowEvents(tbody, startIdx) {
     : [...tbody.querySelectorAll('tr:not(.group-row)')];
   rows.forEach(tr => {
     tr.addEventListener('click', (e) => {
-      if (e.target.classList.contains('copy-btn')) { copyToClipboard(e.target.dataset.kw); return; }
+      // Defensive: if a click somehow reaches the row from the copy button
+      // (e.g. its handler missed stopPropagation), copy + toast and bail
+      // before opening the drawer.
+      if (e.target.classList.contains('copy-btn')) {
+        const kw = e.target.dataset.kw;
+        copyToClipboard(kw);
+        showToast('Copied: ' + kw);
+        return;
+      }
       const idx = parseInt(tr.dataset.idx);
       openDrawer(S.filtered[idx]);
       tbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
@@ -2501,7 +2560,15 @@ function bindRowEvents(tbody, startIdx) {
       S.focusedRowIdx = idx;
     });
     const copyBtn = tr.querySelector('.copy-btn');
-    if (copyBtn) copyBtn.addEventListener('click', e => { e.stopPropagation(); copyToClipboard(copyBtn.dataset.kw); });
+    if (copyBtn) copyBtn.addEventListener('click', e => {
+      // F-028: stopPropagation is critical — without it, the row click
+      // handler ALSO fires and opens the drawer (F-034). The two flows
+      // must work independently.
+      e.stopPropagation();
+      const kw = copyBtn.dataset.kw;
+      copyToClipboard(kw);
+      showToast('Copied: ' + kw);
+    });
   });
 }
 
