@@ -1362,6 +1362,25 @@ function copyDemotion(entity) {
 def build_pipeline_tab():
     """Build the Pipeline Status tab showing stage timeline, run history, and errors."""
     import os
+    # F-010: ship empty-state copy by default; the rich pipeline UI below
+    # was rendering incorrectly (broken stage timeline, missing run-history
+    # data) and is hidden behind this short-circuit until product re-enables.
+    # Tab class corrected from "tab-panel" to "tab-content" + standard
+    # display toggle so the tab strip's existing show/hide JS handles it
+    # the same way as the other tabs (was inline display:none with a
+    # non-matching class — the source of the "renders incorrectly" symptom).
+    return (
+        '<div id="tab-pipeline" class="tab-content">'
+        '<div class="perf-awaiting">'
+        '<h3>Pipeline — coming soon</h3>'
+        '<p>Live pipeline status (stage progress, run history, error feed)<br>'
+        'will appear here once the rich pipeline UI is ready. Until then,<br>'
+        'the system status bar at the top of the page shows the headline numbers<br>'
+        '(last run, runs total, GKP / DFS / Unscored counts, errors).</p>'
+        '</div></div>'
+    )
+
+    # --- pre-Wave-4 rich pipeline UI kept below for future re-enable ---
     lines = ['<div class="tab-panel" id="tab-pipeline" style="display:none;">']
     lines.append('<div class="pipeline-grid">')
 
