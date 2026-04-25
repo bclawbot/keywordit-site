@@ -13,6 +13,19 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
 <style>
+
+/* F-053: respect prefers-reduced-motion. Collapses every animation /
+   transition / scroll-behavior to ~instant for users who've set the OS
+   preference. Spinner-as-static-icon is acceptable because we still have
+   aria-busy + disabled state for non-visual feedback. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 /* ============================================================
    THEME VARIABLES (mirrored from dashboard.html)
    ============================================================ */
