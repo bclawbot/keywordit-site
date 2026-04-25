@@ -519,6 +519,15 @@ input, select { font-family: var(--font-sans); }
 [data-theme="light"] #opportunity-table th {
   color: rgb(74, 74, 90);
 }
+/* F-070b: dark-theme counterpart. The base rule on #opportunity-table th
+   uses var(--text-tertiary) which is #4a4a58 in dark mode — ~3:1 on the
+   dark --bg-raised (#0e0e14). axe color-contrast flagged it. Same
+   targeted-override approach as F-070 (light) to avoid touching the
+   --text-tertiary variable globally. rgb(196,196,210) clears ~10:1 on
+   the dark table-header background. */
+[data-theme="dark"] #opportunity-table th {
+  color: rgb(196, 196, 210);
+}
 .th-inner {
   display: flex; align-items: center; gap: 3px;
   padding: 7px 10px;
