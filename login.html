@@ -306,11 +306,11 @@ body::before {
     <div class="msg" id="login-msg"></div>
     <form id="form-login">
       <div class="form-group">
-        <label class="form-label">Username</label>
+        <label class="form-label" for="login-user">Username</label>
         <input class="form-input" type="text" id="login-user" placeholder="Enter username" autocomplete="username">
       </div>
       <div class="form-group">
-        <label class="form-label">Password</label>
+        <label class="form-label" for="login-pass">Password</label>
         <div style="position:relative;">
           <input class="form-input" type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" style="padding-right:40px;">
           <button type="button" onclick="togglePassVis('login-pass', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:4px;" title="Show password" aria-label="Toggle password visibility">&#128065;</button>
@@ -326,27 +326,27 @@ body::before {
     <div class="msg" id="request-msg"></div>
     <form id="form-request">
       <div class="form-group">
-        <label class="form-label">Full Name</label>
+        <label class="form-label" for="req-name">Full Name</label>
         <input class="form-input" type="text" id="req-name" placeholder="Your name" autocomplete="name">
       </div>
       <div class="form-group">
-        <label class="form-label">Email</label>
+        <label class="form-label" for="req-email">Email</label>
         <input class="form-input" type="email" id="req-email" placeholder="you@company.com" autocomplete="email">
       </div>
       <div class="form-group">
-        <label class="form-label">Company / Project</label>
+        <label class="form-label" for="req-company">Company / Project</label>
         <input class="form-input" type="text" id="req-company" placeholder="Company name" autocomplete="organization">
       </div>
       <div class="form-group">
-        <label class="form-label">Why do you want access?</label>
+        <label class="form-label" for="req-reason">Why do you want access?</label>
         <textarea class="form-textarea" id="req-reason" placeholder="Brief description of your use case..."></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">Preferred Username</label>
+        <label class="form-label" for="req-username">Preferred Username</label>
         <input class="form-input" type="text" id="req-username" placeholder="Choose a username" autocomplete="username">
       </div>
       <div class="form-group">
-        <label class="form-label">Password</label>
+        <label class="form-label" for="req-pass">Password</label>
         <input class="form-input" type="password" id="req-pass" placeholder="Min 10 characters" autocomplete="new-password">
       </div>
       <button type="submit" class="btn-submit" id="request-btn">Submit Request</button>
