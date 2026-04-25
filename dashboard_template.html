@@ -779,6 +779,11 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
   flex-shrink: 0;
 }
 #detail-drawer.open { width: 340px; overflow: visible; }
+/* F-043: the UA stylesheet makes [hidden] apply display:none, which would
+   kill the width transition on close. Override with our existing display:flex
+   so the drawer animates out cleanly while `hidden` still signals "not
+   relevant to the current page state" to AT. */
+#detail-drawer[hidden] { display: flex; }
 #drawer-body {
   flex: 1; overflow-y: auto;
   padding: 16px;
@@ -908,7 +913,47 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
   border-bottom: 1px solid var(--border);
   position: sticky; top: 0; background: var(--bg-surface); z-index: 1;
 }
-.fp-title { font-size: 13px; font-weight: 600; }
+.fp-title { font-size: 13px; font-weight: 600; margin: 0; }
+
+/* F-039: visually hidden utility for sr-only headings. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+
+/* F-056: keyboard-only skip-link. Hidden off-screen until focused. */
+.skip-link {
+  position: absolute; top: -40px; left: 8px;
+  padding: 8px 14px;
+  background: var(--accent, #4f46e5); color: #fff;
+  font-family: var(--font-mono, monospace); font-size: 12px;
+  border-radius: 4px; text-decoration: none;
+  z-index: 10000;
+}
+.skip-link:focus { top: 8px; outline: 2px solid #fff; outline-offset: 2px; }
+
+/* F-037: global visible focus ring for keyboard users.
+   Uses :focus-visible so mouse clicks don't draw the ring (keeps the
+   existing `:focus { outline: none }` cosmetic for pointer users intact),
+   but Tab/Shift+Tab/arrow keys always produce a visible outline. Outline
+   (not just box-shadow) so screen-magnifier tools that key off outline
+   bounds can track focus. */
+:focus-visible {
+  outline: 2px solid var(--accent, #4f46e5);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent, #4f46e5);
+  outline-offset: 2px;
+}
 .fp-close {
   background: none; border: none; color: var(--text-tertiary);
   font-size: 18px; padding: 2px 6px; line-height: 1;
@@ -1147,6 +1192,9 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
 </head>
 <body>
 
+<!-- F-056: skip-link. First focusable element; visible only on keyboard focus. -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
 <!-- ═══════ AUTH GATE ═══════ -->
 <div id="auth-gate">
   <div class="gate-logo">
@@ -1157,7 +1205,7 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
 </div>
 
 <!-- ═══════ SYSTEM STATUS BAR ═══════ -->
-<div id="system-bar">
+<section id="system-bar" aria-label="Pipeline status">
   <div class="sys-item">
     <span class="sys-dot ok" id="sys-heartbeat-dot"></span>
     <span class="sys-label">Pipeline</span>
@@ -1198,10 +1246,10 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
   <div class="sys-item">
     <span class="sys-label" id="sys-generated-at"></span>
   </div>
-</div>
+</section>
 
 <!-- ═══════ COMMAND BAR ═══════ -->
-<div id="cmd-bar">
+<header id="cmd-bar">
   <div class="cmd-left">
     <div class="logo">
       <div class="logo-icon">K</div>
@@ -1240,7 +1288,7 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
         <div class="dropdown-item" id="export-json">Export JSON</div>
       </div>
     </div>
-    <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Switch to light theme">
       <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
       <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
     </button>
@@ -1248,8 +1296,10 @@ tr.angle-expanded > td:first-child::before { content:'▾'; position:absolute; l
     <button class="btn-cmd" id="admin-link-btn" style="display:none" onclick="window.location.href='admin.html'">Admin</button>
     <button class="btn-signout" id="signout-btn" onclick="signOut()">Sign Out</button>
   </div>
-</div>
+</header>
 __TAB_NAV__
+<main id="main-content">
+<h1 class="sr-only">Keyword Opportunity Dashboard</h1>
 <div id="tab-discovery" class="tab-content active">
 
 <!-- ═══════ KPI STRIP ═══════ -->
@@ -1327,13 +1377,13 @@ __TAB_NAV__
 
 <!-- ═══════ FILTER PANEL (overlay) ═══════ -->
 <div id="filter-overlay"></div>
-<div id="filter-panel" role="dialog" aria-label="Advanced Filters">
+<div id="filter-panel" role="dialog" aria-modal="true" aria-labelledby="filter-panel-title" hidden>
   <div class="fp-header">
-    <span class="fp-title">Advanced Filters</span>
+    <h2 class="fp-title" id="filter-panel-title">Advanced Filters</h2>
     <button class="fp-close" id="fp-close-btn" aria-label="Close">&times;</button>
   </div>
   <div class="fp-inner">
-    <div class="fp-section-title">Tag</div>
+    <h3 class="fp-section-title">Tag</h3>
     <div id="filter-tags">
       <div class="fp-row"><input type="checkbox" id="ft-GOLDEN_OPPORTUNITY" value="GOLDEN_OPPORTUNITY"><label for="ft-GOLDEN_OPPORTUNITY">GOLDEN</label></div>
       <div class="fp-row"><input type="checkbox" id="ft-WATCH" value="WATCH"><label for="ft-WATCH">WATCH</label></div>
@@ -1344,20 +1394,20 @@ __TAB_NAV__
       <div class="fp-row"><input type="checkbox" id="ft-UNSCORED" value="UNSCORED"><label for="ft-UNSCORED">UNSCORED</label></div>
     </div>
 
-    <div class="fp-section-title">Keyword Type</div>
+    <h3 class="fp-section-title">Keyword Type</h3>
     <div id="filter-keyword-type">
       <div class="fp-row"><input type="checkbox" id="ft-transformed" value="transformed"><label for="ft-transformed">🔄 Transformed Keywords Only</label></div>
     </div>
 
-    <div class="fp-section-title">Vertical</div>
+    <h3 class="fp-section-title">Vertical</h3>
     <button class="fp-select-all" id="vert-select-all">Select All</button>
     <div id="filter-verticals"></div>
 
-    <div class="fp-section-title">Country</div>
+    <h3 class="fp-section-title">Country</h3>
     <button class="fp-select-all" id="country-select-all">Select All</button>
     <div class="fp-countries-list" id="filter-countries"></div>
 
-    <div class="fp-section-title">Country Tier</div>
+    <h3 class="fp-section-title">Country Tier</h3>
     <div id="filter-tiers">
       <div class="fp-row"><input type="checkbox" id="ftr-1" value="1"><label for="ftr-1">Tier 1</label></div>
       <div class="fp-row"><input type="checkbox" id="ftr-2" value="2"><label for="ftr-2">Tier 2</label></div>
@@ -1365,32 +1415,32 @@ __TAB_NAV__
       <div class="fp-row"><input type="checkbox" id="ftr-4" value="4"><label for="ftr-4">Tier 4</label></div>
     </div>
 
-    <div class="fp-section-title">CPC Range (USD)</div>
+    <h3 class="fp-section-title">CPC Range (USD)</h3>
     <div class="slider-wrap">
       <div class="slider-label"><span>Min: $<span id="cpc-min-label">0</span></span><span>Max: $<span id="cpc-max-label">—</span></span></div>
       <div id="slider-cpc"></div>
     </div>
 
-    <div class="fp-section-title">Search Volume</div>
+    <h3 class="fp-section-title">Search Volume</h3>
     <div class="slider-wrap">
       <div class="slider-label"><span>Min: <span id="vol-min-label">0</span></span><span>Max: <span id="vol-max-label">—</span></span></div>
       <div id="slider-volume"></div>
     </div>
 
-    <div class="fp-section-title">Opportunity Score</div>
+    <h3 class="fp-section-title">Opportunity Score</h3>
     <div class="slider-wrap">
       <div class="slider-label"><span>Min: <span id="score-min-label">0</span></span><span>Max: <span id="score-max-label">—</span></span></div>
       <div id="slider-score"></div>
     </div>
 
-    <div class="fp-section-title">Confidence</div>
+    <h3 class="fp-section-title">Confidence</h3>
     <div id="filter-confidence">
       <div class="fp-row"><input type="radio" name="conf" id="conf-all" value="all" checked><label for="conf-all">All</label></div>
       <div class="fp-row"><input type="radio" name="conf" id="conf-high" value="high"><label for="conf-high">High only</label></div>
       <div class="fp-row"><input type="radio" name="conf" id="conf-medium" value="medium"><label for="conf-medium">Medium+</label></div>
     </div>
 
-    <div class="fp-section-title">Trend Source</div>
+    <h3 class="fp-section-title">Trend Source</h3>
     <div id="filter-sources">
       <div class="fp-row"><input type="checkbox" id="fs-reddit_hot" value="reddit_hot"><label for="fs-reddit_hot">Reddit Hot</label></div>
       <div class="fp-row"><input type="checkbox" id="fs-reddit_rising" value="reddit_rising"><label for="fs-reddit_rising">Reddit Rising</label></div>
@@ -1399,7 +1449,7 @@ __TAB_NAV__
       <div class="fp-row"><input type="checkbox" id="fs-bing_news_rss" value="bing_news_rss"><label for="fs-bing_news_rss">Bing News</label></div>
     </div>
 
-    <div class="fp-section-title">Metrics Source</div>
+    <h3 class="fp-section-title">Metrics Source</h3>
     <div id="filter-metrics-source">
       <div class="fp-row"><input type="checkbox" id="fms-gkp" value="google_keyword_planner"><label for="fms-gkp">Google KP</label></div>
       <div class="fp-row"><input type="checkbox" id="fms-dfs" value="dataforseo"><label for="fms-dfs">DataForSEO</label></div>
@@ -1407,14 +1457,14 @@ __TAB_NAV__
       <div class="fp-row"><input type="checkbox" id="fms-deferred" value="deferred"><label for="fms-deferred">Deferred</label></div>
     </div>
 
-    <div class="fp-section-title">Date Range</div>
+    <h3 class="fp-section-title">Date Range</h3>
     <div class="date-range-wrap">
       <div class="date-input-row">
-        <span class="date-input-label">From</span>
+        <label for="filter-date-from" class="date-input-label">From</label>
         <input type="date" id="filter-date-from" class="date-input">
       </div>
       <div class="date-input-row">
-        <span class="date-input-label">To</span>
+        <label for="filter-date-to" class="date-input-label">To</label>
         <input type="date" id="filter-date-to" class="date-input">
       </div>
     </div>
@@ -1448,7 +1498,7 @@ __TAB_NAV__
   </div>
 
   <!-- DETAIL DRAWER -->
-  <div id="detail-drawer" role="dialog" aria-label="Keyword details">
+  <div id="detail-drawer" role="dialog" aria-label="Keyword details" aria-hidden="true" hidden>
     <div id="drawer-body"></div>
     <div id="drawer-actions">
       <button class="btn-primary" id="drawer-copy-btn">Copy Keyword</button>
@@ -1862,12 +1912,14 @@ function openHeaderFilter(th, colDef) {
   dropdown.className = 'col-filter-dropdown open';
   dropdown.addEventListener('click', e => e.stopPropagation());
 
-  let html = `<div class="cfd-search"><input type="text" placeholder="Search..." class="cfd-search-input"></div>`;
+  const colLabel = colDef.label || colDef.key;
+  let html = `<div class="cfd-search"><input type="text" placeholder="Search..." class="cfd-search-input" aria-label="Filter ${esc(colLabel)} options"></div>`;
   html += `<div class="cfd-actions"><button class="cfd-select-all">All</button><button class="cfd-select-none">None</button></div>`;
   html += `<div class="cfd-list">`;
-  values.forEach(([val, count]) => {
+  values.forEach(([val, count], i) => {
     const checked = currentFilter.length === 0 || currentFilter.includes(val) ? 'checked' : '';
-    html += `<div class="cfd-option"><input type="checkbox" value="${esc(val)}" ${checked}><label>${esc(val)}</label><span class="cfd-count">${count}</span></div>`;
+    const optId = `cfd-${colDef.key}-${i}`;
+    html += `<div class="cfd-option"><input type="checkbox" id="${optId}" value="${esc(val)}" ${checked}><label for="${optId}">${esc(val)}</label><span class="cfd-count">${count}</span></div>`;
   });
   html += `</div>`;
   html += `<div class="cfd-apply"><button>Apply Filter</button></div>`;
@@ -2389,6 +2441,21 @@ function openDrawer(item) {
   S.drawerItem = item;
   const drawer = document.getElementById('detail-drawer');
   const body = document.getElementById('drawer-body');
+  // F-043: take the drawer out of the "hidden" state before animating open.
+  drawer.removeAttribute('hidden');
+  drawer.setAttribute('aria-hidden', 'false');
+  // F-044: remember what opened us so we can restore focus on close. Install
+  // a keydown listener on the drawer for ESC-to-close + Tab trap.
+  S.drawerTrigger = document.activeElement;
+  S.drawerKeydown = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault(); e.stopPropagation();
+      closeDrawer();
+      return;
+    }
+    _trapTab(drawer, e);
+  };
+  drawer.addEventListener('keydown', S.drawerKeydown);
   drawer.classList.add('open');
   const tag = (item.tag || 'UNSCORED').toUpperCase();
   const cpc = parseFloat(item.cpc_usd)||0;
@@ -2436,12 +2503,38 @@ function openDrawer(item) {
   `;
   document.getElementById('drawer-x-btn').addEventListener('click', closeDrawer);
   document.getElementById('drawer-copy-btn').onclick = () => { if(S.drawerItem) copyToClipboard(S.drawerItem.keyword); };
+  // F-044: move focus to the close button inside the drawer so ESC has an
+  // obvious default and keyboard users are no longer stranded on the row.
+  requestAnimationFrame(() => {
+    const firstBtn = document.getElementById('drawer-x-btn');
+    if (firstBtn) firstBtn.focus();
+  });
 }
 
 function closeDrawer() {
-  document.getElementById('detail-drawer').classList.remove('open');
+  const drawer = document.getElementById('detail-drawer');
+  // F-044: tear down the focus trap + ESC listener installed in openDrawer.
+  if (S.drawerKeydown) {
+    drawer.removeEventListener('keydown', S.drawerKeydown);
+    S.drawerKeydown = null;
+  }
+  drawer.classList.remove('open');
+  // F-043: mark the drawer as not-currently-relevant so screen readers and
+  // tabbing ignore its contents. The CSS override on [hidden] keeps the
+  // width transition visually smooth.
+  drawer.setAttribute('aria-hidden', 'true');
+  drawer.setAttribute('hidden', '');
   document.getElementById('table-body').querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
   S.drawerItem = null;
+  // F-044: restore focus to the row (or whatever opened the drawer) so
+  // keyboard users don't lose their place in the table.
+  const returnTo = S.drawerTrigger;
+  S.drawerTrigger = null;
+  if (returnTo && typeof returnTo.focus === 'function') {
+    // Rows are only focusable if their tabindex was set. If the trigger
+    // isn't focusable, fall back silently -- better than throwing.
+    try { returnTo.focus(); } catch (_) {}
+  }
 }
 
 // ===== FILTER BADGE =====
@@ -2695,9 +2788,73 @@ function navigateRow(dir) {
 // ===== TOGGLES =====
 function toggleFilterPanel() {
   S.filterPanelOpen = !S.filterPanelOpen;
-  document.getElementById('filter-panel').classList.toggle('open', S.filterPanelOpen);
-  document.getElementById('filter-overlay').classList.toggle('visible', S.filterPanelOpen);
-  document.getElementById('filter-toggle').classList.toggle('active', S.filterPanelOpen);
+  const panel = document.getElementById('filter-panel');
+  const overlay = document.getElementById('filter-overlay');
+  const trigger = document.getElementById('filter-toggle');
+  panel.classList.toggle('open', S.filterPanelOpen);
+  overlay.classList.toggle('visible', S.filterPanelOpen);
+  trigger.classList.toggle('active', S.filterPanelOpen);
+  // F-040: keep dialog accessibility state in sync with visibility.
+  // aria-expanded lives on the trigger; `hidden` on the panel itself so
+  // the dialog is absent from the a11y tree when closed.
+  trigger.setAttribute('aria-expanded', String(S.filterPanelOpen));
+  if (S.filterPanelOpen) {
+    panel.removeAttribute('hidden');
+    // F-041: remember the trigger so F-042 can restore focus when we close.
+    S.filterPanelTrigger = document.activeElement || trigger;
+    // F-042: install focus trap + ESC-to-close while the dialog is open.
+    // stopPropagation on ESC so the pre-existing document-level ESC
+    // handler doesn't also fire and clear the global search as a
+    // side-effect after we've already closed.
+    S.filterPanelKeydown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault(); e.stopPropagation();
+        toggleFilterPanel();
+        return;
+      }
+      _trapTab(panel, e);
+    };
+    panel.addEventListener('keydown', S.filterPanelKeydown);
+    // Move focus to the first focusable inside the dialog. Defer by a frame
+    // so the browser has applied `hidden` removal before we try to focus.
+    requestAnimationFrame(() => {
+      const first = _firstFocusable(panel);
+      if (first) first.focus();
+    });
+  } else {
+    // F-042: tear down trap + restore focus to the trigger that opened us.
+    if (S.filterPanelKeydown) {
+      panel.removeEventListener('keydown', S.filterPanelKeydown);
+      S.filterPanelKeydown = null;
+    }
+    panel.setAttribute('hidden', '');
+    const returnTo = S.filterPanelTrigger || trigger;
+    S.filterPanelTrigger = null;
+    if (returnTo && typeof returnTo.focus === 'function') returnTo.focus();
+  }
+}
+
+// F-041/F-042: generic focus-management helpers for modal-ish surfaces
+// (filter panel now; detail drawer reuses these in F-044). No deps, no
+// npm — just DOM queries.
+function _focusable(container) {
+  if (!container) return [];
+  const sel = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  return Array.from(container.querySelectorAll(sel)).filter(el =>
+    !el.hasAttribute('hidden') && el.offsetParent !== null
+  );
+}
+function _firstFocusable(container) {
+  const list = _focusable(container);
+  return list[0] || null;
+}
+function _trapTab(container, e) {
+  if (e.key !== 'Tab') return;
+  const list = _focusable(container);
+  if (list.length === 0) { e.preventDefault(); return; }
+  const first = list[0], last = list[list.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 
 function toggleCharts() {
@@ -2815,5 +2972,6 @@ Palette.register([
 ]);
 </script>
 __EXTRA_TABS__
+</main>
 </body>
 </html>
