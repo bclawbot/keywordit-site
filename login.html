@@ -256,6 +256,22 @@ body::before {
 [data-theme="light"] .theme-toggle .icon-sun { display: none; }
 [data-theme="light"] .theme-toggle .icon-moon { display: block; }
 
+/* F-018: inline per-field error message. Hidden by default; .visible reveals.
+   Pairs with aria-invalid="true" set by validateRequest() on submit. */
+.field-error {
+  display: none;
+  font-size: 12px;
+  color: var(--red);
+  margin-top: 4px;
+  font-family: var(--font);
+  line-height: 1.3;
+}
+.field-error.visible { display: block; }
+.form-input[aria-invalid="true"],
+.form-textarea[aria-invalid="true"] {
+  border-color: var(--red);
+}
+
 /* F-002: submit-button busy state — inline spinner + dimmed label.
    Pairs with aria-busy="true" set by setBtnBusy() in JS. */
 .btn-busy { cursor: wait; opacity: 0.85; }
@@ -339,11 +355,13 @@ body::before {
     <form id="form-request">
       <div class="form-group">
         <label class="form-label" for="req-name">Full Name</label>
-        <input class="form-input" type="text" id="req-name" placeholder="Your name" autocomplete="name" required aria-required="true">
+        <input class="form-input" type="text" id="req-name" placeholder="Your name" autocomplete="name" required aria-required="true" aria-describedby="req-name-err">
+        <span class="field-error" id="req-name-err"></span>
       </div>
       <div class="form-group">
         <label class="form-label" for="req-email">Email</label>
-        <input class="form-input" type="email" id="req-email" placeholder="you@company.com" autocomplete="email" required aria-required="true">
+        <input class="form-input" type="email" id="req-email" placeholder="you@company.com" autocomplete="email" required aria-required="true" aria-describedby="req-email-err">
+        <span class="field-error" id="req-email-err"></span>
       </div>
       <div class="form-group">
         <label class="form-label" for="req-company">Company / Project</label>
@@ -355,11 +373,13 @@ body::before {
       </div>
       <div class="form-group">
         <label class="form-label" for="req-username">Preferred Username</label>
-        <input class="form-input" type="text" id="req-username" placeholder="Choose a username" autocomplete="username" required aria-required="true">
+        <input class="form-input" type="text" id="req-username" placeholder="Choose a username" autocomplete="username" required aria-required="true" aria-describedby="req-username-err">
+        <span class="field-error" id="req-username-err"></span>
       </div>
       <div class="form-group">
         <label class="form-label" for="req-pass">Password</label>
-        <input class="form-input" type="password" id="req-pass" placeholder="Min 10 characters" autocomplete="new-password" required aria-required="true">
+        <input class="form-input" type="password" id="req-pass" placeholder="Min 10 characters" autocomplete="new-password" required aria-required="true" aria-describedby="req-pass-err">
+        <span class="field-error" id="req-pass-err"></span>
       </div>
       <button type="submit" class="btn-submit" id="request-btn">Submit Request</button>
     </form>
@@ -477,26 +497,54 @@ async function doLogin() {
   }
 }
 
+// F-018: per-field error helpers. Toggles aria-invalid + the visible
+// .field-error span sourced from the matching <span id="<input>-err">.
+// textContent (never innerHTML) so server-supplied error strings can't
+// inject markup.
+function setFieldError(inputId, message) {
+  const input = document.getElementById(inputId);
+  const errEl = document.getElementById(inputId + '-err');
+  if (!input || !errEl) return;
+  if (message) {
+    input.setAttribute('aria-invalid', 'true');
+    errEl.textContent = message;
+    errEl.classList.add('visible');
+  } else {
+    input.removeAttribute('aria-invalid');
+    errEl.textContent = '';
+    errEl.classList.remove('visible');
+  }
+}
+function clearAllRequestErrors() {
+  ['req-name','req-email','req-username','req-pass'].forEach(id => setFieldError(id, ''));
+}
+
 async function doRequest() {
   const name = document.getElementById('req-name').value.trim();
   const email = document.getElementById('req-email').value.trim();
   const company = document.getElementById('req-company').value.trim();
   const reason = document.getElementById('req-reason').value.trim();
   const username = document.getElementById('req-username').value.trim().toLowerCase();
-
-  if (!name || !email || !username) {
-    showMsg('request-msg', 'error', 'Name, email, and username are required.');
-    return;
-  }
-  if (username.length < 3) {
-    showMsg('request-msg', 'error', 'Username must be at least 3 characters.');
-    return;
-  }
-
-  // Password required for registration (min 10 chars; backend enforces zxcvbn too)
   const pass = document.getElementById('req-pass') ? document.getElementById('req-pass').value : '';
-  if (!pass || pass.length < 10) {
-    showMsg('request-msg', 'error', 'Password must be at least 10 characters.');
+
+  // F-018: per-field validation on submit. Collect all errors first so the
+  // user sees the full picture, then focus the first invalid field. The
+  // submit button stays ENABLED throughout (a11y antipattern to disable it
+  // while the form is invalid — APG recommends submit-then-validate).
+  clearAllRequestErrors();
+  const errors = [];
+  if (!name)                           errors.push(['req-name',     'This field is required']);
+  if (!email)                          errors.push(['req-email',    'This field is required']);
+  else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
+                                       errors.push(['req-email',    'Please enter a valid email address']);
+  if (!username)                       errors.push(['req-username', 'This field is required']);
+  else if (username.length < 3)        errors.push(['req-username', 'Username must be at least 3 characters']);
+  if (!pass)                           errors.push(['req-pass',     'This field is required']);
+  else if (pass.length < 10)           errors.push(['req-pass',     'Password must be at least 10 characters']);
+
+  if (errors.length) {
+    errors.forEach(([id, msg]) => setFieldError(id, msg));
+    document.getElementById(errors[0][0]).focus();
     return;
   }
 
@@ -520,9 +568,32 @@ async function doRequest() {
     if (document.getElementById('req-pass')) document.getElementById('req-pass').value = '';
   } catch(e) {
     setBtnBusy(reqBtn, false);
-    showMsg('request-msg', 'error', e.message || 'Registration failed.');
+    // F-018: route server errors to the matching field where possible so the
+    // user sees them in context. textContent (in setFieldError) prevents any
+    // HTML in the server string from being injected.
+    const msg = e.message || 'Registration failed.';
+    const lowered = msg.toLowerCase();
+    if (lowered.includes('username') && (lowered.includes('taken') || lowered.includes('already'))) {
+      setFieldError('req-username', 'This username is already taken — try another');
+      document.getElementById('req-username').focus();
+    } else if (lowered.includes('password')) {
+      setFieldError('req-pass', msg);
+      document.getElementById('req-pass').focus();
+    } else if (lowered.includes('email')) {
+      setFieldError('req-email', msg);
+      document.getElementById('req-email').focus();
+    } else {
+      showMsg('request-msg', 'error', msg);
+    }
   }
 }
+
+// F-018: clear field errors on input so the form feels responsive — a typed
+// character means the user is fixing the problem; don't keep yelling at them.
+['req-name','req-email','req-username','req-pass'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => setFieldError(id, ''));
+});
 
 // Password visibility toggle
 function togglePassVis(inputId, btn) {
