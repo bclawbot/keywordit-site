@@ -237,6 +237,23 @@ body::before {
   color: var(--text-muted);
   font-family: var(--mono);
 }
+/* F-022: legal-links row. Privacy/Terms live on the marketing site
+   (keywordit.xyz/gh-pages), so links are absolute, not relative. */
+.login-footer-links {
+  margin-top: 8px;
+  font-size: 11px;
+  font-family: var(--mono);
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.login-footer-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.login-footer-links a:hover,
+.login-footer-links a:focus { color: var(--text-dim); text-decoration: underline; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(16px); }
@@ -429,6 +446,10 @@ body::before {
 </div>
 
 <div class="login-footer">Access is reviewed manually · Typical approval: &lt;24h</div>
+<div class="login-footer-links">
+  <a href="https://keywordit.xyz/privacy.html">Privacy</a>
+  <a href="https://keywordit.xyz/terms.html">Terms</a>
+</div>
 
 </main>
 

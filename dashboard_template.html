@@ -367,7 +367,11 @@ input, select { font-family: var(--font-sans); }
 }
 #toast-region .toast.visible { opacity: 1; transform: translateY(0); }
 .kpi-label {
-  font-size: 9px; color: var(--text-tertiary);
+  /* F-073c: WCAG 1.4.4 (resize text) — 9px is below the readable
+     floor on retina + dark backgrounds. Bumped to 12px. Length is
+     fine: the longest label is "Best RPM" (8 chars). Other sub-12px
+     rules remain by design (data density in the table chrome). */
+  font-size: 12px; color: var(--text-tertiary);
   text-transform: uppercase; letter-spacing: 0.08em;
   font-family: var(--font-mono);
   margin-bottom: 4px;
@@ -382,7 +386,8 @@ input, select { font-family: var(--font-sans); }
 .kpi-value.accent { color: var(--accent); }
 .kpi-value.green { color: var(--c-green); }
 .kpi-sub {
-  font-size: 9px; color: var(--text-muted);
+  /* F-073c: same rationale as .kpi-label — bumped 9px → 12px. */
+  font-size: 12px; color: var(--text-muted);
   margin-top: 2px;
   font-family: var(--font-mono);
 }
