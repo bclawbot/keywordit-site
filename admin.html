@@ -234,6 +234,9 @@ body {
 .status-pending { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
 .status-approved { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
 .status-declined { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+/* F-082: rejected (admin declined a pending access request) — same visual
+   weight as declined since both terminate the user's access. */
+.status-rejected { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
 .role-admin { background: var(--teal-glow); color: var(--teal); border: 1px solid rgba(45,212,191,0.2); }
 .role-user { background: rgba(107,114,128,0.1); color: var(--text-dim); border: 1px solid rgba(107,114,128,0.2); }
 
@@ -594,7 +597,7 @@ function renderUsers() {
         <td>
           <div class="action-group">
             <button class="btn-approve" onclick="approveUser('${u.id}')">Approve</button>
-            <button class="btn-decline" onclick="suspendUser('${u.id}')">Decline</button>
+            <button class="btn-decline" onclick="rejectUser('${u.id}')">Reject</button>
           </div>
         </td>
       </tr>
@@ -637,6 +640,20 @@ async function suspendUser(userId) {
     const r = await apiFetch('/api/admin/users/' + userId + '/suspend', { method: 'POST' });
     if (!r || !r.ok) { toast('Failed to suspend'); return; }
     toast('User suspended');
+    renderAll();
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+// F-082: reject is the terminal status for a pending access request
+// the admin declines. Distinct from suspend (which is for previously
+// active users). Backend endpoint added in
+// keywordit-backend PR #3 (https://github.com/bclawbot/keywordit-backend/pull/3).
+async function rejectUser(userId) {
+  if (!confirm('Reject this access request? The user will not be able to sign in.')) return;
+  try {
+    const r = await apiFetch('/api/admin/users/' + userId + '/reject', { method: 'POST' });
+    if (!r || !r.ok) { toast('Failed to reject'); return; }
+    toast('Request rejected');
     renderAll();
   } catch(e) { toast('Error: ' + e.message); }
 }
