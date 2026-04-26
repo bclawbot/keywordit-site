@@ -50,7 +50,14 @@
   --bg-input: #0e0e14;
   --text-primary: #e8e8f0;
   --text-secondary: #7a7a8c;
-  --text-tertiary: #4a4a58;
+  /* F-070c: bumped from #4a4a58 (~3:1 on bg-surface) to #a0a0aa (~5.2:1)
+     so the ~30 muted-text surfaces — sys-bar labels, KPI subtitles,
+     metadata text in the table, exp/perf tab section titles, .ai-low /
+     .tag-UNSCORED / entity-status-test indicators — clear WCAG AA in
+     dark mode. Wave 4/5 fixed three high-traffic selectors via targeted
+     overrides; this commit broadens the fix to the variable everything
+     ELSE inherits from. Light-theme --text-tertiary stays at #8a8a9a. */
+  --text-tertiary: #a0a0aa;
   --text-muted: #2e2e3a;
   --border: #141418;
   --border-light: #1c1c24;
@@ -1678,7 +1685,7 @@ function signOut() {
 
 <script>
 window.OPPORTUNITIES = [];
-window.PIPELINE_META = {"generated_at": "2026-04-26T01:30:46.144994", "total_validated": 1121, "total_scored": 130, "total_golden": 6, "total_emerging": 9, "total_unscored": 991, "countries_covered": 49, "last_run_at": "2026-03-22T09:38:32.728917", "run_id": "run_20260426_0130", "metrics_from_google_kp": 0, "metrics_from_dataforseo": 0, "run_dates": ["2026-02-26", "2026-02-27", "2026-02-28", "2026-03-01", "2026-03-02", "2026-03-21", "2026-03-22"], "accumulated_runs": 7};
+window.PIPELINE_META = {"generated_at": "2026-04-26T16:28:50.633613", "total_validated": 1121, "total_scored": 130, "total_golden": 6, "total_emerging": 9, "total_unscored": 991, "countries_covered": 49, "last_run_at": "2026-03-22T09:38:32.728917", "run_id": "run_20260426_1628", "metrics_from_google_kp": 0, "metrics_from_dataforseo": 0, "run_dates": ["2026-02-26", "2026-02-27", "2026-02-28", "2026-03-01", "2026-03-02", "2026-03-21", "2026-03-22"], "accumulated_runs": 7};
 window.ANGLES = {};
 
 (function() {
