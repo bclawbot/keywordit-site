@@ -136,6 +136,21 @@ nav {
 .btn-launch:hover { box-shadow: 0 0 24px var(--teal-glow-strong); transform: translateY(-1px); }
 .btn-launch svg { width: 14px; height: 14px; }
 
+/* F-021: muted secondary variant for the demoted Launch App CTA in the
+   header. Same shape as .btn-launch (so the two read as a pair) but a
+   transparent background + subtle border instead of the prominent teal
+   fill, so Request Access wins the visual hierarchy. */
+.btn-launch-secondary {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; color: var(--text-dim);
+  padding: 8px 18px; border-radius: 6px;
+  font-size: 13px; font-weight: 500;
+  border: 1px solid var(--border); cursor: pointer; transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-launch-secondary:hover { border-color: var(--text-dim); color: var(--text); }
+.btn-launch-secondary svg { width: 14px; height: 14px; }
+
 /* ═══ HERO ═══ */
 .hero {
   min-height: 100vh;
@@ -404,9 +419,12 @@ h1 { animation-delay: 0.1s; }
     <a href="#how">How It Works</a>
     <a href="#access">Access</a>
   </div>
-  <a href="login.html" class="btn-launch" role="button">
-    Launch App
+  <a href="login.html?tab=request" class="btn-launch" role="button">
+    Request Access
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+  </a>
+  <a href="login.html" class="btn-launch-secondary" role="button">
+    Launch App
   </a>
   <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
     <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
@@ -559,8 +577,8 @@ h1 { animation-delay: 0.1s; }
 <footer>
   <div class="footer-left">© 2026 Keywordit</div>
   <div class="footer-right">
-    <a href="login.html">Launch App</a>
     <a href="login.html?tab=request">Request Access</a>
+    <a href="login.html">Launch App</a>
   </div>
 </footer>
 
