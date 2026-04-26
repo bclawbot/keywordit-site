@@ -418,6 +418,42 @@ a[role="button"], button, input[type="button"], input[type="submit"] {
   min-height: 44px;
 }
 
+/* F-015: cookie consent banner. Bottom-fixed dialog; focus-trapped while
+   open; removed from DOM entirely on Accept/Reject (not just hidden) so
+   stale aria-modal/focus-trap state can't accumulate. */
+#cookie-consent {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: var(--surface, #14141c);
+  border-top: 1px solid var(--border, #333);
+  padding: 16px 24px;
+  z-index: 9999;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+  font-family: var(--font, sans-serif);
+  font-size: 13px;
+  color: var(--text-dim, #ccc);
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.3);
+}
+#cookie-consent .cc-text { flex: 1; min-width: 280px; line-height: 1.5; }
+#cookie-consent .cc-text a { color: var(--accent, #2dd4bf); text-decoration: underline; }
+#cookie-consent strong { color: var(--text, #fff); }
+#cookie-consent .cc-buttons { display: flex; gap: 8px; flex-shrink: 0; }
+#cookie-consent button {
+  padding: 10px 20px;
+  border: 1px solid var(--border, #333);
+  border-radius: 6px;
+  font-family: var(--font, sans-serif); font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#cookie-consent .cc-accept {
+  background: var(--accent, #2dd4bf); color: #000; border-color: var(--accent);
+}
+#cookie-consent .cc-accept:hover { box-shadow: 0 0 16px rgba(45,212,191,0.4); }
+#cookie-consent .cc-reject {
+  background: transparent; color: var(--text-dim, #aaa);
+}
+#cookie-consent .cc-reject:hover { color: var(--text, #fff); border-color: var(--text-dim); }
+
 /* F-024: glossary tooltip pattern. Trigger is a button (NOT <abbr title>
    which is keyboard-inaccessible). aria-describedby links to the tooltip
    text by id. Tooltip is hidden by default; CSS reveals on hover/focus
@@ -680,6 +716,64 @@ document.addEventListener('keydown', e => {
   trigger.blur();
   setTimeout(() => wrap.removeAttribute('data-suppress'), 0);
 });
+
+// F-015: minimal cookie consent banner. Hand-rolled, no third-party.
+// Show on first visit if localStorage.keywordit_cookie_consent is null.
+// On Accept/Reject: persist decision + ISO timestamp, REMOVE the dialog
+// from DOM entirely (not just hide) so aria-modal / focus-trap state can't
+// linger. Banner has role="dialog" + aria-modal="true"; focus moves into
+// the dialog on first paint; Tab/Shift+Tab wrap inside.
+(function() {
+  const KEY = 'keywordit_cookie_consent';
+  let existing = null;
+  try { existing = localStorage.getItem(KEY); } catch(e) { /* private mode */ }
+  if (existing) return;  // already chose; don't show again
+
+  const previousFocus = document.activeElement;
+
+  const banner = document.createElement('div');
+  banner.id = 'cookie-consent';
+  banner.setAttribute('role', 'dialog');
+  banner.setAttribute('aria-modal', 'true');
+  banner.setAttribute('aria-labelledby', 'cc-heading');
+  banner.innerHTML =
+    '<div class="cc-text">' +
+      '<strong id="cc-heading">We use essential cookies and local storage</strong> to keep you signed in and remember your dashboard preferences. We don\'t use tracking cookies or sell your data. You can change your decision later via <a href="/privacy.html">Privacy Policy</a>.' +
+    '</div>' +
+    '<div class="cc-buttons">' +
+      '<button type="button" class="cc-accept" id="cc-accept">Accept</button>' +
+      '<button type="button" class="cc-reject" id="cc-reject">Reject</button>' +
+    '</div>';
+  document.body.appendChild(banner);
+
+  const acceptBtn = document.getElementById('cc-accept');
+  const rejectBtn = document.getElementById('cc-reject');
+
+  // Focus trap. Tab/Shift+Tab within Accept/Reject only.
+  banner.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    if (e.shiftKey && document.activeElement === acceptBtn) { e.preventDefault(); rejectBtn.focus(); }
+    else if (!e.shiftKey && document.activeElement === rejectBtn) { e.preventDefault(); acceptBtn.focus(); }
+  });
+
+  function dismiss(decision) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ decision, at: new Date().toISOString() }));
+    } catch(e) { /* private mode — best-effort persistence */ }
+    // F-015: remove from DOM entirely (not just hide). Stale aria-modal
+    // and focus-trap state can't linger if the node doesn't exist.
+    banner.remove();
+    if (previousFocus && typeof previousFocus.focus === 'function') {
+      try { previousFocus.focus(); } catch(_) {}
+    }
+  }
+
+  acceptBtn.addEventListener('click', () => dismiss('accepted'));
+  rejectBtn.addEventListener('click', () => dismiss('rejected'));
+
+  // Move focus into the dialog on first paint.
+  requestAnimationFrame(() => acceptBtn.focus());
+})();
 </script>
 </body>
 </html>
