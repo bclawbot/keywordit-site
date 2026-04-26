@@ -6,10 +6,35 @@
 <meta name="description" content="Keywordit — AI-powered media buying arbitrage research dashboard">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 <title>Keywordit — Search Arbitrage Intelligence</title>
+
+<!-- F-017: Open Graph + Twitter Card metadata for link unfurls. og-image.png
+     ships as a 1200×630 placeholder in the same commit; operator can swap
+     for a real marketing image later (same path, no markup change needed). -->
+<meta property="og:title" content="Keywordit — Search Arbitrage Intelligence">
+<meta property="og:description" content="AI-powered media-buying arbitrage research dashboard. Discover trending keywords with high CPC and low content saturation across 40+ countries.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://keywordit.xyz/">
+<meta property="og:image" content="https://keywordit.xyz/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="shared/base.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* F-053: respect prefers-reduced-motion. Same universal block as
+   Wave 5 across dashboard / login / admin / intelligence — collapses
+   every animation / transition / scroll-behavior to ~instant for users
+   who've set the OS preference. WCAG 2.3.3-recommended. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 [data-theme="dark"] {
@@ -110,6 +135,21 @@ nav {
 }
 .btn-launch:hover { box-shadow: 0 0 24px var(--teal-glow-strong); transform: translateY(-1px); }
 .btn-launch svg { width: 14px; height: 14px; }
+
+/* F-021: muted secondary variant for the demoted Launch App CTA in the
+   header. Same shape as .btn-launch (so the two read as a pair) but a
+   transparent background + subtle border instead of the prominent teal
+   fill, so Request Access wins the visual hierarchy. */
+.btn-launch-secondary {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; color: var(--text-dim);
+  padding: 8px 18px; border-radius: 6px;
+  font-size: 13px; font-weight: 500;
+  border: 1px solid var(--border); cursor: pointer; transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-launch-secondary:hover { border-color: var(--text-dim); color: var(--text); }
+.btn-launch-secondary svg { width: 14px; height: 14px; }
 
 /* ═══ HERO ═══ */
 .hero {
@@ -348,9 +388,24 @@ h1 { animation-delay: 0.1s; }
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
+
+/* Skip-link CSS — keep in sync with other pages. Wave 4 candidate refactor: shared/skip-link.css */
+.skip-link {
+  position: absolute; top: -40px; left: 8px;
+  padding: 8px 14px;
+  background: var(--teal, #2dd4bf); color: #000;
+  font-family: var(--mono, monospace); font-size: 12px;
+  border-radius: 4px; text-decoration: none;
+  z-index: 10000;
+}
+.skip-link:focus { top: 8px; outline: 2px solid var(--text, #e8e8f0); outline-offset: 2px; }
+#main-content:focus { outline: none; }
 </style>
 </head>
 <body>
+
+<!-- F-051: skip-link. First focusable element; visible only on keyboard focus. -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- NAV -->
 <nav>
@@ -364,15 +419,20 @@ h1 { animation-delay: 0.1s; }
     <a href="#how">How It Works</a>
     <a href="#access">Access</a>
   </div>
-  <a href="login.html" class="btn-launch" role="button">
-    Launch App
+  <a href="login.html?tab=request" class="btn-launch" role="button">
+    Request Access
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+  </a>
+  <a href="login.html" class="btn-launch-secondary" role="button">
+    Launch App
   </a>
   <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
     <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 1.78a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM18 9a1 1 0 110 2h-1a1 1 0 110-2h1zM3 9a1 1 0 110 2H2a1 1 0 110-2h1zm13.93 5.51a1 1 0 01-.02 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.43-.01zM4.78 14.78a1 1 0 011.41 0l.01.01a1 1 0 11-1.41 1.41l-.01-.01a1 1 0 010-1.41zM10 14a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 110-4 2 2 0 010 4zm0 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
     <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
   </button>
 </nav>
+
+<main id="main-content" tabindex="-1">
 
 <!-- HERO -->
 <section class="hero">
@@ -511,12 +571,14 @@ h1 { animation-delay: 0.1s; }
   </a>
 </section>
 
+</main>
+
 <!-- FOOTER -->
 <footer>
   <div class="footer-left">© 2026 Keywordit</div>
   <div class="footer-right">
-    <a href="login.html">Launch App</a>
     <a href="login.html?tab=request">Request Access</a>
+    <a href="login.html">Launch App</a>
   </div>
 </footer>
 
