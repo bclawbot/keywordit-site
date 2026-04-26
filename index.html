@@ -348,9 +348,24 @@ h1 { animation-delay: 0.1s; }
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
+
+/* Skip-link CSS — keep in sync with other pages. Wave 4 candidate refactor: shared/skip-link.css */
+.skip-link {
+  position: absolute; top: -40px; left: 8px;
+  padding: 8px 14px;
+  background: var(--teal, #2dd4bf); color: #000;
+  font-family: var(--mono, monospace); font-size: 12px;
+  border-radius: 4px; text-decoration: none;
+  z-index: 10000;
+}
+.skip-link:focus { top: 8px; outline: 2px solid var(--text, #e8e8f0); outline-offset: 2px; }
+#main-content:focus { outline: none; }
 </style>
 </head>
 <body>
+
+<!-- F-051: skip-link. First focusable element; visible only on keyboard focus. -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- NAV -->
 <nav>
