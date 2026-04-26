@@ -408,6 +408,61 @@ h1 { animation-delay: 0.1s; }
 }
 .skip-link:focus { top: 8px; outline: 2px solid var(--text, #e8e8f0); outline-offset: 2px; }
 #main-content:focus { outline: none; }
+
+/* F-024: glossary tooltip pattern. Trigger is a button (NOT <abbr title>
+   which is keyboard-inaccessible). aria-describedby links to the tooltip
+   text by id. Tooltip is hidden by default; CSS reveals on hover/focus
+   of the wrapper, JS Escape-handler force-hides it (APG pattern, same
+   as Wave 4 F-065). Anchored to the inline mention via .glossary-term
+   inline-block + relative positioning. */
+.glossary-term {
+  display: inline-flex; align-items: baseline; gap: 2px;
+  position: relative;
+  vertical-align: baseline;
+}
+.glossary-info {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  margin-left: 3px;
+  border: 1px solid var(--text-muted, #888);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-dim, #999);
+  font-family: var(--font, sans-serif);
+  font-size: 10px; font-weight: 700; line-height: 1;
+  cursor: help;
+  vertical-align: middle;
+  padding: 0;
+  /* Tap-target exception: 16×16 is intentional for the inline glossary
+     marker. min-width/min-height from F-020 is overridden below. */
+  min-width: 16px;
+  min-height: 16px;
+}
+.glossary-info:hover, .glossary-info:focus { color: var(--accent, #2dd4bf); border-color: var(--accent, #2dd4bf); }
+.glossary-info:focus { outline: 2px solid var(--accent, #2dd4bf); outline-offset: 2px; }
+[role="tooltip"].glossary-tooltip {
+  position: absolute;
+  top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  min-width: 240px; max-width: 320px;
+  padding: 10px 14px;
+  background: var(--surface, #14141c);
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: 6px;
+  color: var(--text, #e8e8f0);
+  font-family: var(--font, sans-serif);
+  font-size: 13px; font-weight: 400; line-height: 1.45;
+  text-transform: none; letter-spacing: 0;
+  white-space: normal; text-align: left;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  z-index: 1000;
+  pointer-events: none;
+}
+.glossary-tooltip[hidden] { display: none; }
+.glossary-term:hover .glossary-tooltip,
+.glossary-term:focus-within .glossary-tooltip {
+  display: block;
+}
+.glossary-term[data-suppress="true"] .glossary-tooltip { display: none !important; }
 </style>
 </head>
 <body>
@@ -454,8 +509,8 @@ h1 { animation-delay: 0.1s; }
     prices them in
   </h1>
   <p class="hero-sub">
-    Autonomous pipeline that scans 40+ countries daily and delivers GOLDEN
-    opportunities across 6&ndash;10 tier-1 markets per run &mdash; US, AU, GB,
+    Autonomous <span class="glossary-term">pipeline<button type="button" class="glossary-info" aria-label="Define pipeline" aria-describedby="tooltip-pipeline">i</button><span class="glossary-tooltip" role="tooltip" id="tooltip-pipeline" hidden>The 6-stage research process: scrape → filter → vet → score → rank → publish.</span></span> that scans 40+ countries daily and delivers <span class="glossary-term">GOLDEN<button type="button" class="glossary-info" aria-label="Define GOLDEN" aria-describedby="tooltip-golden">i</button><span class="glossary-tooltip" role="tooltip" id="tooltip-golden" hidden>Top-tier opportunity score (90+) — high CPC, high search volume, low content saturation.</span></span>
+    opportunities across 6&ndash;10 <span class="glossary-term">tier-1<button type="button" class="glossary-info" aria-label="Define tier-1" aria-describedby="tooltip-tier1">i</button><span class="glossary-tooltip" role="tooltip" id="tooltip-tier1" hidden>High-value English-speaking markets: US, UK, Canada, Australia, New Zealand. Higher CPC, higher competition.</span></span> markets per run &mdash; US, AU, GB,
     CA, DE primary. Before competition erodes the margins.
   </p>
   <div class="hero-ctas">
@@ -490,7 +545,7 @@ h1 { animation-delay: 0.1s; }
 <!-- VALUE SECTION -->
 <section class="section" id="value">
   <div class="section-label">Platform</div>
-  <h2 class="section-title">Intelligence infrastructure<br>for search arbitrage</h2>
+  <h2 class="section-title">Intelligence infrastructure<br>for search <span class="glossary-term">arbitrage<button type="button" class="glossary-info" aria-label="Define arbitrage" aria-describedby="tooltip-arbitrage">i</button><span class="glossary-tooltip" role="tooltip" id="tooltip-arbitrage" hidden>Buying cheap keywords and monetizing them at higher rates — the gap between content cost and ad revenue.</span></span></h2>
   <p class="section-desc">
     Keywordit monitors trending signals across multiple sources — social, search, 
     and news — then cross-validates them against live advertiser bid data to surface 
@@ -505,7 +560,7 @@ h1 { animation-delay: 0.1s; }
     </div>
     <div class="feature-card">
       <div class="feature-icon">◎</div>
-      <div class="feature-title">Live CPC Validation</div>
+      <div class="feature-title">Live <span class="glossary-term">CPC<button type="button" class="glossary-info" aria-label="Define CPC" aria-describedby="tooltip-cpc">i</button><span class="glossary-tooltip" role="tooltip" id="tooltip-cpc" hidden>Cost Per Click. The amount advertisers pay per click in a search ad auction. High CPC indicates demand for the keyword.</span></span> Validation</div>
       <div class="feature-desc">Every detected keyword is validated against real-time advertiser bid data — filtering out noise and surfacing only keywords with confirmed commercial value.</div>
     </div>
     <div class="feature-card">
@@ -598,5 +653,24 @@ h1 { animation-delay: 0.1s; }
 
 <script src="shared/theme.js"></script>
 <script src="shared/palette.js"></script>
+
+<script>
+// F-024: glossary tooltip Escape-dismiss + show/hide. CSS handles the
+// :hover and :focus-within reveal; this listener forces close on Escape
+// (per WAI-ARIA APG Tooltip pattern). data-suppress="true" on the wrapper
+// keeps the tooltip closed even while focus/hover is still on the
+// trigger; cleared on the next tick so subsequent interactions reopen
+// normally.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const trigger = document.activeElement;
+  if (!trigger || !trigger.classList || !trigger.classList.contains('glossary-info')) return;
+  const wrap = trigger.closest('.glossary-term');
+  if (!wrap) return;
+  wrap.setAttribute('data-suppress', 'true');
+  trigger.blur();
+  setTimeout(() => wrap.removeAttribute('data-suppress'), 0);
+});
+</script>
 </body>
 </html>
