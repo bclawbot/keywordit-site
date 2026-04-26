@@ -409,6 +409,15 @@ h1 { animation-delay: 0.1s; }
 .skip-link:focus { top: 8px; outline: 2px solid var(--text, #e8e8f0); outline-offset: 2px; }
 #main-content:focus { outline: none; }
 
+/* F-020: tap-target minimum 44×44 (WCAG 2.5.5). Universal rule covers
+   anchor-buttons, real <button>s, and submit inputs. Specific elements
+   that intentionally stay smaller (e.g. inline glossary "i" markers from
+   F-024) override their own min-width/min-height locally. */
+a[role="button"], button, input[type="button"], input[type="submit"] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
 /* F-024: glossary tooltip pattern. Trigger is a button (NOT <abbr title>
    which is keyboard-inaccessible). aria-describedby links to the tooltip
    text by id. Tooltip is hidden by default; CSS reveals on hover/focus
