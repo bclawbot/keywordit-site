@@ -338,15 +338,23 @@ h1 .accent { color: var(--teal); }
 }
 
 /* ═══ FOOTER ═══ */
+/* F-022: row-flex with gap, two stacked rows (brand+entity / link list).
+   Bracketed placeholders are designed to be visible — operator must
+   replace before announce. Text uses --text-dim for ≥4.5:1 contrast on
+   --bg in both themes. */
 footer {
   border-top: 1px solid var(--border);
-  padding: 40px 48px;
-  display: flex; align-items: center; justify-content: space-between;
+  padding: 32px 48px;
+  display: flex; flex-direction: column; gap: 12px; align-items: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
 }
-.footer-left { font-size: 12px; color: var(--text-muted); font-family: var(--mono); }
-.footer-right { display: flex; gap: 24px; }
-.footer-right a { font-size: 12px; color: var(--text-muted); transition: color 0.2s; }
-.footer-right a:hover { color: var(--text-dim); }
+.footer-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; align-items: center; }
+.footer-brand { color: var(--text); font-weight: 600; }
+.footer-entity { color: var(--text-muted); }
+.footer-row a { color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+.footer-row a:hover { color: var(--text); }
 
 /* ═══ HAMBURGER ═══ */
 .hamburger { display: none; background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; padding: 8px; }
@@ -400,6 +408,106 @@ h1 { animation-delay: 0.1s; }
 }
 .skip-link:focus { top: 8px; outline: 2px solid var(--text, #e8e8f0); outline-offset: 2px; }
 #main-content:focus { outline: none; }
+
+/* F-020: tap-target minimum 44×44 (WCAG 2.5.5). Universal rule covers
+   anchor-buttons, real <button>s, and submit inputs. Specific elements
+   that intentionally stay smaller (e.g. inline glossary "i" markers from
+   F-024) override their own min-width/min-height locally. */
+a[role="button"], button, input[type="button"], input[type="submit"] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* F-015: cookie consent banner. Bottom-fixed dialog; focus-trapped while
+   open; removed from DOM entirely on Accept/Reject (not just hidden) so
+   stale aria-modal/focus-trap state can't accumulate. */
+#cookie-consent {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: var(--surface, #14141c);
+  border-top: 1px solid var(--border, #333);
+  padding: 16px 24px;
+  z-index: 9999;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+  font-family: var(--font, sans-serif);
+  font-size: 13px;
+  color: var(--text-dim, #ccc);
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.3);
+}
+#cookie-consent .cc-text { flex: 1; min-width: 280px; line-height: 1.5; }
+#cookie-consent .cc-text a { color: var(--accent, #2dd4bf); text-decoration: underline; }
+#cookie-consent strong { color: var(--text, #fff); }
+#cookie-consent .cc-buttons { display: flex; gap: 8px; flex-shrink: 0; }
+#cookie-consent button {
+  padding: 10px 20px;
+  border: 1px solid var(--border, #333);
+  border-radius: 6px;
+  font-family: var(--font, sans-serif); font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#cookie-consent .cc-accept {
+  background: var(--accent, #2dd4bf); color: #000; border-color: var(--accent);
+}
+#cookie-consent .cc-accept:hover { box-shadow: 0 0 16px rgba(45,212,191,0.4); }
+#cookie-consent .cc-reject {
+  background: transparent; color: var(--text-dim, #aaa);
+}
+#cookie-consent .cc-reject:hover { color: var(--text, #fff); border-color: var(--text-dim); }
+
+/* F-024: glossary tooltip pattern. Trigger is a button (NOT <abbr title>
+   which is keyboard-inaccessible). aria-describedby links to the tooltip
+   text by id. Tooltip is hidden by default; CSS reveals on hover/focus
+   of the wrapper, JS Escape-handler force-hides it (APG pattern, same
+   as Wave 4 F-065). Anchored to the inline mention via .glossary-term
+   inline-block + relative positioning. */
+.glossary-term {
+  display: inline-flex; align-items: baseline; gap: 2px;
+  position: relative;
+  vertical-align: baseline;
+}
+.glossary-info {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  margin-left: 3px;
+  border: 1px solid var(--text-muted, #888);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-dim, #999);
+  font-family: var(--font, sans-serif);
+  font-size: 10px; font-weight: 700; line-height: 1;
+  cursor: help;
+  vertical-align: middle;
+  padding: 0;
+  /* Tap-target exception: 16×16 is intentional for the inline glossary
+     marker. min-width/min-height from F-020 is overridden below. */
+  min-width: 16px;
+  min-height: 16px;
+}
+.glossary-info:hover, .glossary-info:focus { color: var(--accent, #2dd4bf); border-color: var(--accent, #2dd4bf); }
+.glossary-info:focus { outline: 2px solid var(--accent, #2dd4bf); outline-offset: 2px; }
+[role="tooltip"].glossary-tooltip {
+  position: absolute;
+  top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  min-width: 240px; max-width: 320px;
+  padding: 10px 14px;
+  background: var(--surface, #14141c);
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: 6px;
+  color: var(--text, #e8e8f0);
+  font-family: var(--font, sans-serif);
+  font-size: 13px; font-weight: 400; line-height: 1.45;
+  text-transform: none; letter-spacing: 0;
+  white-space: normal; text-align: left;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  z-index: 1000;
+  pointer-events: none;
+}
+.glossary-tooltip[hidden] { display: none; }
+.glossary-term:hover .glossary-tooltip,
+.glossary-term:focus-within .glossary-tooltip {
+  display: block;
+}
+.glossary-term[data-suppress="true"] .glossary-tooltip { display: none !important; }
 </style>
 </head>
 <body>
@@ -446,8 +554,8 @@ h1 { animation-delay: 0.1s; }
     prices them in
   </h1>
   <p class="hero-sub">
-    Autonomous pipeline that scans 40+ countries daily and delivers GOLDEN
-    opportunities across 6&ndash;10 tier-1 markets per run &mdash; US, AU, GB,
+    Autonomous <span class="glossary-term">pipeline<button type="button" class="glossary-info" aria-label="Define pipeline" aria-describedby="tooltip-pipeline">i</button><span class="glossary-tooltip" role="tooltip" id="tooltip-pipeline" hidden>The 6-stage research process: scrape → filter → vet → score → rank → publish.</span></span> that scans 40+ countries daily and delivers <span class="glossary-term">GOLDEN<button type="button" class="glossary-info" aria-label="Define GOLDEN" aria-describedby="tooltip-golden">i</button><span class="glossary-tooltip" role="tooltip" id="tooltip-golden" hidden>Top-tier opportunity score (90+) — high CPC, high search volume, low content saturation.</span></span>
+    opportunities across 6&ndash;10 <span class="glossary-term">tier-1<button type="button" class="glossary-info" aria-label="Define tier-1" aria-describedby="tooltip-tier1">i</button><span class="glossary-tooltip" role="tooltip" id="tooltip-tier1" hidden>High-value English-speaking markets: US, UK, Canada, Australia, New Zealand. Higher CPC, higher competition.</span></span> markets per run &mdash; US, AU, GB,
     CA, DE primary. Before competition erodes the margins.
   </p>
   <div class="hero-ctas">
@@ -482,7 +590,7 @@ h1 { animation-delay: 0.1s; }
 <!-- VALUE SECTION -->
 <section class="section" id="value">
   <div class="section-label">Platform</div>
-  <h2 class="section-title">Intelligence infrastructure<br>for search arbitrage</h2>
+  <h2 class="section-title">Intelligence infrastructure<br>for search <span class="glossary-term">arbitrage<button type="button" class="glossary-info" aria-label="Define arbitrage" aria-describedby="tooltip-arbitrage">i</button><span class="glossary-tooltip" role="tooltip" id="tooltip-arbitrage" hidden>Buying cheap keywords and monetizing them at higher rates — the gap between content cost and ad revenue.</span></span></h2>
   <p class="section-desc">
     Keywordit monitors trending signals across multiple sources — social, search, 
     and news — then cross-validates them against live advertiser bid data to surface 
@@ -497,7 +605,7 @@ h1 { animation-delay: 0.1s; }
     </div>
     <div class="feature-card">
       <div class="feature-icon">◎</div>
-      <div class="feature-title">Live CPC Validation</div>
+      <div class="feature-title">Live <span class="glossary-term">CPC<button type="button" class="glossary-info" aria-label="Define CPC" aria-describedby="tooltip-cpc">i</button><span class="glossary-tooltip" role="tooltip" id="tooltip-cpc" hidden>Cost Per Click. The amount advertisers pay per click in a search ad auction. High CPC indicates demand for the keyword.</span></span> Validation</div>
       <div class="feature-desc">Every detected keyword is validated against real-time advertiser bid data — filtering out noise and surfacing only keywords with confirmed commercial value.</div>
     </div>
     <div class="feature-card">
@@ -575,14 +683,97 @@ h1 { animation-delay: 0.1s; }
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-left">© 2026 Keywordit</div>
-  <div class="footer-right">
-    <a href="login.html?tab=request">Request Access</a>
-    <a href="login.html">Launch App</a>
+  <div class="footer-row">
+    <span class="footer-brand">Keywordit</span>
+    <span class="footer-entity">© 2026 [LEGAL_ENTITY_PLACEHOLDER]. All rights reserved.</span>
+  </div>
+  <div class="footer-row">
+    <a href="mailto:[CONTACT_EMAIL_PLACEHOLDER]">Contact</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/login.html">Launch App</a>
+    <a href="/login.html?tab=request">Request Access</a>
   </div>
 </footer>
 
 <script src="shared/theme.js"></script>
 <script src="shared/palette.js"></script>
+
+<script>
+// F-024: glossary tooltip Escape-dismiss + show/hide. CSS handles the
+// :hover and :focus-within reveal; this listener forces close on Escape
+// (per WAI-ARIA APG Tooltip pattern). data-suppress="true" on the wrapper
+// keeps the tooltip closed even while focus/hover is still on the
+// trigger; cleared on the next tick so subsequent interactions reopen
+// normally.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const trigger = document.activeElement;
+  if (!trigger || !trigger.classList || !trigger.classList.contains('glossary-info')) return;
+  const wrap = trigger.closest('.glossary-term');
+  if (!wrap) return;
+  wrap.setAttribute('data-suppress', 'true');
+  trigger.blur();
+  setTimeout(() => wrap.removeAttribute('data-suppress'), 0);
+});
+
+// F-015: minimal cookie consent banner. Hand-rolled, no third-party.
+// Show on first visit if localStorage.keywordit_cookie_consent is null.
+// On Accept/Reject: persist decision + ISO timestamp, REMOVE the dialog
+// from DOM entirely (not just hide) so aria-modal / focus-trap state can't
+// linger. Banner has role="dialog" + aria-modal="true"; focus moves into
+// the dialog on first paint; Tab/Shift+Tab wrap inside.
+(function() {
+  const KEY = 'keywordit_cookie_consent';
+  let existing = null;
+  try { existing = localStorage.getItem(KEY); } catch(e) { /* private mode */ }
+  if (existing) return;  // already chose; don't show again
+
+  const previousFocus = document.activeElement;
+
+  const banner = document.createElement('div');
+  banner.id = 'cookie-consent';
+  banner.setAttribute('role', 'dialog');
+  banner.setAttribute('aria-modal', 'true');
+  banner.setAttribute('aria-labelledby', 'cc-heading');
+  banner.innerHTML =
+    '<div class="cc-text">' +
+      '<strong id="cc-heading">We use essential cookies and local storage</strong> to keep you signed in and remember your dashboard preferences. We don\'t use tracking cookies or sell your data. You can change your decision later via <a href="/privacy.html">Privacy Policy</a>.' +
+    '</div>' +
+    '<div class="cc-buttons">' +
+      '<button type="button" class="cc-accept" id="cc-accept">Accept</button>' +
+      '<button type="button" class="cc-reject" id="cc-reject">Reject</button>' +
+    '</div>';
+  document.body.appendChild(banner);
+
+  const acceptBtn = document.getElementById('cc-accept');
+  const rejectBtn = document.getElementById('cc-reject');
+
+  // Focus trap. Tab/Shift+Tab within Accept/Reject only.
+  banner.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    if (e.shiftKey && document.activeElement === acceptBtn) { e.preventDefault(); rejectBtn.focus(); }
+    else if (!e.shiftKey && document.activeElement === rejectBtn) { e.preventDefault(); acceptBtn.focus(); }
+  });
+
+  function dismiss(decision) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ decision, at: new Date().toISOString() }));
+    } catch(e) { /* private mode — best-effort persistence */ }
+    // F-015: remove from DOM entirely (not just hide). Stale aria-modal
+    // and focus-trap state can't linger if the node doesn't exist.
+    banner.remove();
+    if (previousFocus && typeof previousFocus.focus === 'function') {
+      try { previousFocus.focus(); } catch(_) {}
+    }
+  }
+
+  acceptBtn.addEventListener('click', () => dismiss('accepted'));
+  rejectBtn.addEventListener('click', () => dismiss('rejected'));
+
+  // Move focus into the dialog on first paint.
+  requestAnimationFrame(() => acceptBtn.focus());
+})();
+</script>
 </body>
 </html>

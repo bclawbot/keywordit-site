@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Keywordit terms of service — DRAFT, pending legal review.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
+<title>Keywordit — Terms of Service</title>
+
+<meta property="og:title" content="Keywordit — Terms of Service">
+<meta property="og:description" content="DRAFT terms of service for Keywordit, pending legal review.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://keywordit.xyz/terms.html">
+<meta property="og:image" content="https://keywordit.xyz/og-image.png">
+
+<link rel="stylesheet" href="shared/base.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* F-053: respect prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+[data-theme="dark"] {
+  --bg: #020203; --surface: #080810; --text: #e8e8f0; --text-dim: #7a7a8c; --text-muted: #a0a0aa;
+  --border: #14141c; --accent: #2dd4bf;
+}
+[data-theme="light"] {
+  --bg: #f5f5f7; --surface: #ffffff; --text: #1a1a2e; --text-dim: #5a5a70; --text-muted: #8a8a9a;
+  --border: #dcdce4; --accent: #0d9488;
+}
+:root { --font: 'Space Grotesk', -apple-system, sans-serif; --mono: 'JetBrains Mono', monospace; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font); background: var(--bg); color: var(--text);
+  min-height: 100vh; -webkit-font-smoothing: antialiased; line-height: 1.6;
+}
+
+/* Skip-link CSS — keep in sync with other pages. Wave 4 candidate refactor: shared/skip-link.css */
+.skip-link {
+  position: absolute; top: -40px; left: 8px;
+  padding: 8px 14px;
+  background: var(--accent, #2dd4bf); color: #000;
+  font-family: var(--mono, monospace); font-size: 12px;
+  border-radius: 4px; text-decoration: none;
+  z-index: 10000;
+}
+.skip-link:focus { top: 8px; outline: 2px solid var(--text, #e8e8f0); outline-offset: 2px; }
+#main-content:focus { outline: none; }
+
+main {
+  max-width: 760px; margin: 0 auto; padding: 48px 24px 80px;
+}
+main h1 { font-size: 32px; margin-bottom: 8px; letter-spacing: -0.02em; }
+main h2 { font-size: 18px; margin-top: 28px; margin-bottom: 8px; color: var(--text); }
+main p, main ul, main ol { font-size: 14px; color: var(--text-dim); margin-bottom: 12px; }
+main ul, main ol { padding-left: 24px; }
+main li { margin-bottom: 4px; }
+main strong { color: var(--text); font-weight: 600; }
+main a { color: var(--accent); text-decoration: underline; }
+main hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+/* F-016: DRAFT banner. role="status" (NOT role="alert" — no every-page-load
+   announcement). Visible-amber styling regardless of theme so reviewers can't
+   miss it. */
+.draft-banner {
+  background: #fff3cd; color: #856404;
+  border-left: 4px solid #ffcc33;
+  padding: 14px 20px; margin: 0 0 24px 0; font-size: 14px;
+}
+
+/* F-022: footer with bracketed placeholders. Reviewers must replace before
+   announcing. Color contrast via design tokens — must pass 4.5:1 on bg. */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.footer-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.footer-row a { color: var(--text-dim); text-decoration: none; }
+.footer-row a:hover { color: var(--text); }
+.footer-brand { color: var(--text); font-weight: 600; }
+
+/* F-020: tap-target minimum 44×44 (WCAG 2.5.5). */
+a[role="button"], button, input[type="button"], input[type="submit"] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+nav.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 24px; border-bottom: 1px solid var(--border);
+}
+nav.topbar a { color: var(--text); text-decoration: none; font-weight: 600; font-family: var(--mono); }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<nav class="topbar">
+  <a href="/index.html">keywordit<span style="color:var(--accent)">.xyz</span></a>
+  <a href="/index.html">← Home</a>
+</nav>
+
+<main id="main-content" tabindex="-1">
+
+<div class="draft-banner" role="status">
+  <strong>⚠ DRAFT — Pending legal review.</strong>
+  This document has not been reviewed by a qualified lawyer. The content below is starter material and may not reflect final policy. For legal questions, contact <strong>[CONTACT_EMAIL]</strong>.
+</div>
+
+<h1>Terms of Service</h1>
+<p><strong>Last updated:</strong> [DATE]</p>
+<h2>1. Acceptance</h2>
+<p>By requesting access to or using Keywordit, you agree to these Terms. If you do not agree, do not use the service.</p>
+<h2>2. Eligibility and accounts</h2>
+<p>Keywordit is invite-only. You must be at least 18, provide accurate information when requesting access, and keep your credentials confidential. You are responsible for activity on your account.</p>
+<h2>3. Acceptable use</h2>
+<p>You may not:</p>
+<ul>
+<li>Attempt to reverse-engineer, scrape, or bulk-extract data from the platform beyond the Export feature intended for your account.</li>
+<li>Resell, redistribute, or sub-license access to the platform.</li>
+<li>Use the platform to violate any law, infringe intellectual property, or run automated attacks.</li>
+<li>Share your account with other people.</li>
+</ul>
+<p>We may suspend or terminate accounts that violate these terms.</p>
+<h2>4. Service availability</h2>
+<p>Keywordit is provided <strong>as is</strong> and <strong>as available</strong>. We do not guarantee uninterrupted service, error-free operation, or specific data freshness. Scheduled maintenance and unplanned downtime may occur.</p>
+<h2>5. Data accuracy</h2>
+<p>Keyword, CPC, traffic, and arbitrage signals are produced by automated pipelines and third-party sources. We do not warrant that any insight, score, or opportunity will produce revenue. You are solely responsible for any business decisions made using the platform.</p>
+<h2>6. Intellectual property</h2>
+<p>The platform, including code, design, and documentation, is owned by us and protected by copyright and other laws. You receive a limited, revocable, non-transferable license to use the platform for your internal research purposes only.</p>
+<h2>7. Your content</h2>
+<p>If you input data into the platform (filters, notes, exports), you retain ownership. You grant us a limited license to process that data as needed to provide the service.</p>
+<h2>8. Limitation of liability</h2>
+<p>To the maximum extent permitted by law, our aggregate liability for any claim arising out of the service is limited to [AMOUNT, e.g. €100 or the fees paid in the prior 12 months, whichever is greater]. We are not liable for indirect, incidental, or consequential damages, including lost profits or lost opportunities.</p>
+<h2>9. Termination</h2>
+<p>Either party may terminate at any time. On termination, your access ends and we will delete or anonymize your data on the schedule in the Privacy Policy.</p>
+<h2>10. Governing law</h2>
+<p>These Terms are governed by the laws of [JURISDICTION]. Disputes will be resolved in the courts of [JURISDICTION].</p>
+<h2>11. Contact</h2>
+<p>Questions about these Terms: <strong>[CONTACT_EMAIL]</strong>.</p>
+
+</main>
+
+<footer>
+  <div class="footer-row">
+    <span class="footer-brand">Keywordit</span>
+    <span>© 2026 [LEGAL_ENTITY_PLACEHOLDER]. All rights reserved.</span>
+  </div>
+  <div class="footer-row">
+    <a href="mailto:[CONTACT_EMAIL_PLACEHOLDER]">Contact</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/login.html">Launch App</a>
+    <a href="/login.html?tab=request">Request Access</a>
+  </div>
+</footer>
+
+<script src="shared/theme.js"></script>
+</body>
+</html>

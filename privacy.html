@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Keywordit privacy policy — DRAFT, pending legal review.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
+<title>Keywordit — Privacy Policy</title>
+
+<meta property="og:title" content="Keywordit — Privacy Policy">
+<meta property="og:description" content="DRAFT privacy policy for Keywordit, pending legal review.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://keywordit.xyz/privacy.html">
+<meta property="og:image" content="https://keywordit.xyz/og-image.png">
+
+<link rel="stylesheet" href="shared/base.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* F-053: respect prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+[data-theme="dark"] {
+  --bg: #020203; --surface: #080810; --text: #e8e8f0; --text-dim: #7a7a8c; --text-muted: #a0a0aa;
+  --border: #14141c; --accent: #2dd4bf;
+}
+[data-theme="light"] {
+  --bg: #f5f5f7; --surface: #ffffff; --text: #1a1a2e; --text-dim: #5a5a70; --text-muted: #8a8a9a;
+  --border: #dcdce4; --accent: #0d9488;
+}
+:root { --font: 'Space Grotesk', -apple-system, sans-serif; --mono: 'JetBrains Mono', monospace; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font); background: var(--bg); color: var(--text);
+  min-height: 100vh; -webkit-font-smoothing: antialiased; line-height: 1.6;
+}
+
+/* Skip-link CSS — keep in sync with other pages. Wave 4 candidate refactor: shared/skip-link.css */
+.skip-link {
+  position: absolute; top: -40px; left: 8px;
+  padding: 8px 14px;
+  background: var(--accent, #2dd4bf); color: #000;
+  font-family: var(--mono, monospace); font-size: 12px;
+  border-radius: 4px; text-decoration: none;
+  z-index: 10000;
+}
+.skip-link:focus { top: 8px; outline: 2px solid var(--text, #e8e8f0); outline-offset: 2px; }
+#main-content:focus { outline: none; }
+
+main {
+  max-width: 760px; margin: 0 auto; padding: 48px 24px 80px;
+}
+main h1 { font-size: 32px; margin-bottom: 8px; letter-spacing: -0.02em; }
+main h2 { font-size: 18px; margin-top: 28px; margin-bottom: 8px; color: var(--text); }
+main p, main ul, main ol { font-size: 14px; color: var(--text-dim); margin-bottom: 12px; }
+main ul, main ol { padding-left: 24px; }
+main li { margin-bottom: 4px; }
+main strong { color: var(--text); font-weight: 600; }
+main a { color: var(--accent); text-decoration: underline; }
+main hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+/* F-016: DRAFT banner. role="status" (NOT role="alert" — no every-page-load
+   announcement). Visible-amber styling regardless of theme so reviewers can't
+   miss it. */
+.draft-banner {
+  background: #fff3cd; color: #856404;
+  border-left: 4px solid #ffcc33;
+  padding: 14px 20px; margin: 0 0 24px 0; font-size: 14px;
+}
+
+/* F-022: footer with bracketed placeholders. Reviewers must replace before
+   announcing. Color contrast via design tokens — must pass 4.5:1 on bg. */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.footer-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.footer-row a { color: var(--text-dim); text-decoration: none; }
+.footer-row a:hover { color: var(--text); }
+.footer-brand { color: var(--text); font-weight: 600; }
+
+/* F-020: tap-target minimum 44×44 (WCAG 2.5.5). */
+a[role="button"], button, input[type="button"], input[type="submit"] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+nav.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 24px; border-bottom: 1px solid var(--border);
+}
+nav.topbar a { color: var(--text); text-decoration: none; font-weight: 600; font-family: var(--mono); }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<nav class="topbar">
+  <a href="/index.html">keywordit<span style="color:var(--accent)">.xyz</span></a>
+  <a href="/index.html">← Home</a>
+</nav>
+
+<main id="main-content" tabindex="-1">
+
+<div class="draft-banner" role="status">
+  <strong>⚠ DRAFT — Pending legal review.</strong>
+  This document has not been reviewed by a qualified lawyer. The content below is starter material and may not reflect final policy. For legal questions, contact <strong>[CONTACT_EMAIL]</strong>.
+</div>
+
+<h1>Privacy Policy</h1>
+<p><strong>Last updated:</strong> [DATE]</p>
+<h2>Who we are</h2>
+<p>Keywordit ("we", "us") operates keywordit.xyz, an invite-only keyword and media-buying research platform. For any privacy questions, contact: <strong>[CONTACT_EMAIL]</strong>.</p>
+<h2>What we collect</h2>
+<p>We collect the minimum information needed to operate the service:</p>
+<ul>
+<li><strong>Account information</strong> you provide when requesting access: name, email, company, chosen username, and a password (stored as a one-way hash, never in plain text).</li>
+<li><strong>Usage data</strong> generated when you use the dashboard: which pages you view, which filters and searches you apply, and aggregated interaction events.</li>
+<li><strong>Technical data</strong> automatically sent by your browser: IP address, user agent, referrer, and approximate geolocation (country-level).</li>
+<li><strong>Cookies and local storage</strong> used to keep you signed in and remember your column and filter preferences.</li>
+</ul>
+<p>We do <strong>not</strong> collect payment information, government IDs, biometric data, or health data.</p>
+<h2>How we use it</h2>
+<p>We use your data to authenticate you, deliver the dashboard, keep the platform secure, respond to support requests, and improve the product. We may send you transactional emails related to your account (approval, password reset, security alerts). We do not send marketing emails unless you opt in.</p>
+<h2>Legal basis (GDPR)</h2>
+<p>Where GDPR applies, we rely on the following bases: <strong>contract</strong> (providing the service you signed up for), <strong>legitimate interest</strong> (security, fraud prevention, product analytics), and <strong>consent</strong> (non-essential cookies and marketing communications).</p>
+<h2>Who we share it with</h2>
+<p>We do not sell your data. We share limited data only with:</p>
+<ul>
+<li>Infrastructure providers we use to host and operate the service (e.g. [HOSTING_PROVIDER], [EMAIL_PROVIDER]).</li>
+<li>Analytics providers we use to understand product usage (e.g. [ANALYTICS_PROVIDER]).</li>
+<li>Authorities if compelled by valid legal process.</li>
+</ul>
+<p>A full list of sub-processors is available on request.</p>
+<h2>Where your data is stored</h2>
+<p>Data is stored in [REGION]. If you are in the EEA or UK, data may be transferred to [REGION] under appropriate safeguards (Standard Contractual Clauses).</p>
+<h2>How long we keep it</h2>
+<p>Account data: while your account is active, and up to 12 months after deletion for audit and security purposes. Usage logs: 13 months. Anonymized analytics: indefinitely.</p>
+<h2>Your rights</h2>
+<p>Under GDPR and similar laws you may request access, correction, deletion, portability, or restriction of your personal data, and you may withdraw consent at any time. Email <strong>[CONTACT_EMAIL]</strong> — we will respond within 30 days. You also have the right to lodge a complaint with your local data-protection authority.</p>
+<h2>Security</h2>
+<p>We use TLS for all connections, hash passwords with an industry-standard algorithm, and restrict internal access on a need-to-know basis. No system is perfectly secure; if we become aware of a breach affecting your data, we will notify you as required by law.</p>
+<h2>Children</h2>
+<p>Keywordit is not intended for users under 16. We do not knowingly collect data from children.</p>
+<h2>Changes</h2>
+<p>We may update this policy. Material changes will be announced on the landing page and by email where we have one on file.</p>
+<hr />
+
+</main>
+
+<footer>
+  <div class="footer-row">
+    <span class="footer-brand">Keywordit</span>
+    <span>© 2026 [LEGAL_ENTITY_PLACEHOLDER]. All rights reserved.</span>
+  </div>
+  <div class="footer-row">
+    <a href="mailto:[CONTACT_EMAIL_PLACEHOLDER]">Contact</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/login.html">Launch App</a>
+    <a href="/login.html?tab=request">Request Access</a>
+  </div>
+</footer>
+
+<script src="shared/theme.js"></script>
+</body>
+</html>
