@@ -50,7 +50,14 @@
   --bg-input: #0e0e14;
   --text-primary: #e8e8f0;
   --text-secondary: #7a7a8c;
-  --text-tertiary: #4a4a58;
+  /* F-070c: bumped from #4a4a58 (~3:1 on bg-surface) to #a0a0aa (~5.2:1)
+     so the ~30 muted-text surfaces — sys-bar labels, KPI subtitles,
+     metadata text in the table, exp/perf tab section titles, .ai-low /
+     .tag-UNSCORED / entity-status-test indicators — clear WCAG AA in
+     dark mode. Wave 4/5 fixed three high-traffic selectors via targeted
+     overrides; this commit broadens the fix to the variable everything
+     ELSE inherits from. Light-theme --text-tertiary stays at #8a8a9a. */
+  --text-tertiary: #a0a0aa;
   --text-muted: #2e2e3a;
   --border: #141418;
   --border-light: #1c1c24;
